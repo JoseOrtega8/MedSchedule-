@@ -1,17 +1,3 @@
-@import "tailwindcss";
-
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans:
-        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-        "Noto Color Emoji";
-}
-
 :root {
     --primary: #0a6ebd;
     --primary-dark: #084e8a;
@@ -120,10 +106,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition:
-        background-color 0.3s ease,
-        border-color 0.3s ease,
-        box-shadow 0.3s ease;
 }
 .topbar h6 {
     margin: 0;
@@ -197,42 +179,6 @@ body {
     border-radius: 10px;
     padding: 20px;
     color: white;
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
-    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
-}
-.stat-card.is-hovered,
-.stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.18);
-}
-.stat-card.animate-card.fade-in-start {
-    opacity: 0;
-    transform: translateY(14px);
-}
-.stat-card.animate-card.fade-in-visible {
-    animation: cardFadeInUp 0.45s ease forwards;
-}
-.stat-label {
-    font-size: 11px;
-    letter-spacing: 0.8px;
-    font-weight: 600;
-    opacity: 0.85;
-}
-.stat-number {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1.1;
-}
-.stat-detail {
-    font-size: 13px;
-    margin-top: 3px;
-    opacity: 0.9;
-}
-.stat-icon i {
-    font-size: 26px;
-    opacity: 0.95;
 }
 .stat-card.blue {
     background: linear-gradient(135deg, #0a6ebd, #0d4f8a);
@@ -258,75 +204,6 @@ body {
 .custom-table td {
     font-size: 14px;
     vertical-align: middle;
-}
-.log-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.log-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #e2e8f0;
-}
-.log-item:last-child {
-    border-bottom: none;
-}
-.log-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-.log-icon-success {
-    background: #dcfce7;
-    color: #166534;
-}
-.log-icon-info {
-    background: #dbeafe;
-    color: #1e3a8a;
-}
-.log-icon-danger {
-    background: #fee2e2;
-    color: #991b1b;
-}
-.log-icon-warning {
-    background: #fef3c7;
-    color: #92400e;
-}
-.log-icon-primary {
-    background: #e0e7ff;
-    color: #3730a3;
-}
-.log-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-.log-text {
-    font-size: 13px;
-    color: #334155;
-}
-.log-time {
-    font-size: 12px;
-    color: #64748b;
-}
-
-@keyframes cardFadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(14px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* LOGIN */
@@ -427,39 +304,13 @@ body {
 .about-hero {
     background: linear-gradient(135deg, #0d2137, #0a6ebd);
     color: white;
-    padding: 24px 24px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.about-hero-content {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 4px;
-    width: 100%;
-    max-width: 560px;
-    overflow: hidden;
-}
-.about-hero-title {
-    margin: 0 0 6px;
-    font-size: 32px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-.about-hero-title i {
-    font-size: 30px;
-}
-.about-hero-subtitle {
-    display: block;
-    margin: 0;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.92);
-    line-height: 1.35;
+    padding: 24px 20px;
+    text-align: center;
+    position: sticky;
+    height: 90px;
+    top: 0;
+    z-index: 100;
+    align-items: right;
 }
 .member-card {
     border-radius: 12px;
@@ -467,15 +318,6 @@ body {
     padding: 24px;
     text-align: center;
     background: white;
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease,
-        border-color 0.25s ease;
-}
-.member-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
-    border-color: #b6d5ef;
 }
 .member-avatar {
     width: 80px;
@@ -564,35 +406,6 @@ code {
 .txt-licencia code {
     font-size: 16px;
     color: #555;
-}
-
-.tech-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-.tech-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 7px 12px;
-    background: #e9f2fb;
-    color: #124a78;
-    border: 1px solid #d0e4f7;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.reveal-section {
-    opacity: 0;
-    transform: translateY(18px);
-    transition:
-        opacity 0.55s ease,
-        transform 0.55s ease;
-}
-.reveal-section.is-visible {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 /* Estilos adicionales para el sidebar y menús desplegables */
@@ -873,19 +686,6 @@ code {
 
     .overlay.show {
         display: block;
-    }
-
-    .about-hero {
-        align-items: center;
-        text-align: center;
-    }
-
-    .about-hero-content {
-        align-items: center;
-    }
-
-    .about-hero-title {
-        justify-content: center;
     }
 }
 
