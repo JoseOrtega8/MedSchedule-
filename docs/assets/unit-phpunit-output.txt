@@ -1,0 +1,37 @@
+
+   PASS  Tests\Unit\EnsureAdminRoleTest
+  ✓ handle allows admin user                                             0.04s  
+  ✓ handle throws for non admin user
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.01s  
+
+   PASS  Tests\Feature\ActivityLogControllerTest
+  ✓ logs endpoint returns filters and log rows                           0.01s  
+
+   PASS  Tests\Feature\AdminRbacAccessTest
+  ✓ admin rbac screen returns success for admin session                  0.01s  
+  ✓ admin rbac screen returns forbidden for non admin session
+
+   PASS  Tests\Feature\AppointmentControllerTest
+  ✓ agenda data returns doctor and items                                 0.01s  
+  ✓ pending appointment can be confirmed
+
+   PASS  Tests\Feature\DoctorProfileControllerTest
+  ✓ update rejects duplicate license number                              0.01s  
+  ✓ profile photo update accepts data url
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.01s  
+
+   PASS  Tests\Feature\ScheduleControllerTest
+  ✓ store calculates end time using consultation duration                0.01s  
+  ✓ blocked schedule cannot be deleted
+
+   PASS  Tests\Feature\SpecialtyControllerTest
+  ✓ create rejects duplicate specialty name                              0.01s  
+  ✓ delete rejects specialty with assigned doctors
+
+  Tests:    15 passed (349 assertions)
+  Duration: 0.14s
+

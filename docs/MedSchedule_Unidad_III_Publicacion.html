@@ -1,0 +1,371 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>MedSchedule - Unidad III</title>
+  <style type="text/css">
+    body { font-family: Arial, Helvetica, sans-serif; color: #111; }
+    p.p1 { margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; min-height: 14.0px; }
+    p.p2 { margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 20.0px Arial; }
+    p.p3 { margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 18.0px Arial; }
+    p.p4 { margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 12.0px Times; }
+    p.p5 { margin: 0.0px 0.0px 0.0px 0.0px; font: 20.0px Arial; min-height: 23.0px; }
+    p.p6 { margin: 0.0px 0.0px 10.0px 0.0px; text-align: justify; font: 14.0px Arial; }
+    p.p7 { margin: 0.0px 0.0px 6.0px 0.0px; font: 12.0px Times; }
+    p.p8 { margin: 0.0px 0.0px 6.0px 18.0px; font: 12.0px Times; }
+    p.p9 { margin: 0.0px 0.0px 6.0px 36.0px; font: 12.0px Times; }
+    p.heading { margin: 12.0px 0.0px 8.0px 0.0px; font: bold 14.0px Arial; }
+    p.subheading { margin: 10.0px 0.0px 6.0px 0.0px; font: bold 12.0px Arial; }
+    div.pagebreak { page-break-after: always; }
+    pre.code {
+      margin: 8.0px 0.0px 8.0px 0.0px;
+      padding: 10.0px;
+      font: 11.0px Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      border: 1px solid #cccccc;
+      background: #f7f7f7;
+    }
+    a { color: #0b57d0; text-decoration: underline; }
+    div.figure {
+      margin: 12.0px 0.0px 16.0px 0.0px;
+      text-align: center;
+    }
+    img.docshot {
+      width: 680px;
+      max-width: 100%;
+      border: 1px solid #cccccc;
+    }
+    p.caption {
+      margin: 6.0px 0.0px 0.0px 0.0px;
+      text-align: center;
+      font: 11.0px Times;
+    }
+  </style>
+</head>
+<body>
+<p class="p1"><br></p>
+<p class="p1"><br></p>
+<p class="p1"><br></p>
+<p class="p1"><br></p>
+<p class="p2"><b>UNIVERSIDAD TECNOLOGICA DE HERMOSILLO</b></p>
+<p class="p2">Ingenieria en Desarrollo y Gestion de Software</p>
+<p class="p3"><b>MATERIA:</b><br>Desarrollo Web Profesional</p>
+<p class="p2"><b>DOCUMENTACION DEL PROYECTO:</b></p>
+<p class="p2"><b>MedSchedule</b></p>
+<p class="p2">Publicacion, seguridad y liberacion de una aplicacion web</p>
+<p class="p2"><b>Mtro. [Nombre del docente]</b></p>
+<p class="p2">Presenta:</p>
+<p class="p2"><b>[Foto + Nombre del integrante 1]</b></p>
+<p class="p2"><b>[Foto + Nombre del integrante 2]</b></p>
+<p class="p2"><b>[Foto + Nombre del integrante 3]</b></p>
+<p class="p2">Grupo:</p>
+<p class="p2"><b>[IDGS__-__]</b></p>
+<p class="p5"><br></p>
+<p class="p6"><b>Hermosillo, Sonora.                                                     Marzo, 2026.</b></p>
+<div class="pagebreak"></div>
+
+<p class="p7"><b>Indice de contenidos</b></p>
+<p class="p1"><br></p>
+<p class="p7">0. Portada con foto de los integrantes (reemplazar los placeholders con las fotos reales).	1</p>
+<p class="p7">Indice de contenidos	2</p>
+<p class="p7">1. Configuracion de dominio	3</p>
+<p class="p7">2. Certificados de seguridad (Let's Encrypt) HTTPS	4</p>
+<p class="p7">3. Publicacion de la aplicacion web y evidencias para liberacion	5</p>
+<p class="p7">4. Funcionalidades minimas operando por integrante	7</p>
+<p class="p7">5. Pull Request / Merge Request por integrante	8</p>
+<p class="p7">7. Sistema de logueo, registro y reseteo de password	10</p>
+<p class="p7">8. Rol de Superadministrador: CRUD de usuarios y panel de logs	11</p>
+<p class="p7">9. Actualizacion de perfiles de usuario	12</p>
+<p class="p7">10. Issue de implementacion RBAC con UI	13</p>
+<p class="p7">11. Funcionalidades principales adicionales de entrada y salida	14</p>
+<p class="p7">12. Grafica o chart con datos reales de DB	15</p>
+<p class="p7">13. Busqueda con debounce y campo dependiente en tiempo real	16</p>
+<p class="p7">14. Pruebas unitarias, pruebas automaticas y code coverage	17</p>
+<p class="p7">15. Tag de release estable y URL del repositorio	19</p>
+<p class="p7">16. CI/CD con GitHub Actions o Jenkins	20</p>
+<p class="p7">17. Conclusiones, expansion, recomendaciones y problemas	22</p>
+<div class="pagebreak"></div>
+
+<p class="heading">1. Configuracion de dominio</p>
+<p class="p7">En esta seccion se documenta el mecanismo utilizado para exponer MedSchedule al publico general mediante una URL publica y accesible desde redes externas. Si no se dispone de dominio propio, se puede usar un DDNS (No-IP, DynDNS), ngrok, GitHub Codespaces, DomCloud o cualquier plataforma equivalente que permita acceso publico.</p>
+<p class="subheading">1.1 Estrategia seleccionada</p>
+<p class="p8">Opcion elegida: [Dominio propio / DDNS / ngrok / Codespaces / DomCloud]</p>
+<p class="p8">URL publica final: [https://tu-dominio-o-subdominio]</p>
+<p class="p8">Proveedor del servicio: [Proveedor]</p>
+<p class="p8">Fecha de configuracion: [dd/mm/aaaa]</p>
+<p class="subheading">1.2 Configuracion aplicada</p>
+<p class="p8">Registro DNS o tunel configurado: [A / CNAME / Tunnel / Proxy]</p>
+<p class="p8">IP publica o endpoint origen: [Dato tecnico]</p>
+<p class="p8">Puerto o servicio publicado: [80 / 443 / reverse proxy]</p>
+<p class="p8">Comandos o pasos ejecutados: [Resumen breve]</p>
+<p class="subheading">1.3 Evidencia requerida</p>
+<p class="p8">Captura del panel DNS, DDNS o tunel activo.</p>
+<p class="p8">Captura del sistema abierto desde una red externa o navegador en modo incognito.</p>
+<p class="p8">Captura de la URL publica funcionando desde un dispositivo distinto al entorno local.</p>
+
+<p class="heading">2. Certificados de seguridad (Let's Encrypt) HTTPS</p>
+<p class="p7">La publicacion del sistema debe operar sobre HTTPS con un certificado valido. La recomendacion es usar Let's Encrypt mediante Certbot, panel del hosting o un proxy administrado que emita y renueve automaticamente el certificado.</p>
+<p class="subheading">2.1 Datos del certificado</p>
+<p class="p8">Metodo de emision: [Let's Encrypt / hosting / proxy]</p>
+<p class="p8">Dominio cubierto: [dominio o subdominio]</p>
+<p class="p8">Fecha de emision: [dd/mm/aaaa]</p>
+<p class="p8">Fecha de expiracion: [dd/mm/aaaa]</p>
+<p class="subheading">2.2 Configuracion de seguridad</p>
+<p class="p8">Redireccion HTTP a HTTPS: [Si / No]</p>
+<p class="p8">Renovacion automatica habilitada: [Si / No]</p>
+<p class="p8">Puerto 443 activo: [Si / No]</p>
+<p class="subheading">2.3 Evidencia requerida</p>
+<p class="p8">Captura del candado del navegador.</p>
+<p class="p8">Captura del detalle del certificado emitido.</p>
+<p class="p8">Captura de la redireccion desde HTTP hacia HTTPS.</p>
+
+<p class="heading">3. Publicacion de la aplicacion web y evidencias para liberacion</p>
+<p class="p7">La publicacion debe documentarse a partir del caso de estudio planeado y considerando las pruebas necesarias antes de liberar una version estable. Esta seccion resume entorno, evidencia incluida y totales de pruebas o validaciones ejecutadas.</p>
+<p class="subheading">3.1 Caso de estudio</p>
+<p class="p8">Nombre del sistema: MedSchedule.</p>
+<p class="p8">Objetivo del despliegue: publicar una plataforma web para gestion de citas medicas con roles diferenciados y acceso publico controlado por HTTPS.</p>
+<p class="p8">Entorno de produccion o preproduccion: [Servidor / hosting / VPS / Codespace / tunel]</p>
+<p class="subheading">3.2 Resumen de liberacion</p>
+<p class="p8">Version liberada: [vX.Y.Z]</p>
+<p class="p8">Fecha de liberacion: [dd/mm/aaaa]</p>
+<p class="p8">Commit base: [hash]</p>
+<p class="p8">Rama base: [main / develop / release]</p>
+<p class="subheading">3.3 Evidencia incluida</p>
+<p class="p8">Acceso publico al sistema.</p>
+<p class="p8">Captura del login o landing en produccion.</p>
+<p class="p8">Captura de HTTPS activo.</p>
+<p class="p8">Captura de modulos principales operando.</p>
+<p class="p8">Captura de pruebas manuales y automaticas.</p>
+<p class="subheading">3.4 Totales para liberacion</p>
+<p class="p8">Pruebas manuales ejecutadas: [total]</p>
+<p class="p8">Pruebas unitarias backend: [total]</p>
+<p class="p8">Pruebas unitarias frontend: [total]</p>
+<p class="p8">Pruebas automaticas Selenium IDE: [total]</p>
+<p class="p8">Defectos criticos abiertos al liberar: [0 / numero]</p>
+<p class="p8">Tickets cerrados incluidos en la liberacion: [total]</p>
+
+<p class="heading">4. Funcionalidades minimas operando por integrante</p>
+<p class="p7">Cada integrante debe exponer las funcionalidades minimas que desarrollaron y demostrar su operacion con ticket o tarjeta asociada. A continuacion se agregan los issues implementados y la evidencia visual de las pantallas desarrolladas en el sistema.</p>
+<p class="subheading">4.1 Tickets implementados y URL de seguimiento</p>
+<p class="p8">Issue #21: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/21">[feat]: implementar UI de gestion de roles y permisos RBAC</a></p>
+<p class="p8">Issue #26: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/26">[feat]: implementar vista de agenda del doctor</a></p>
+<p class="p8">Issue #36: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/36">[feat]: implementar vista de CRUD de especialidades medicas</a></p>
+<p class="p8">Issue #37: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/37">[feat]: implementar vista de gestion de horarios del doctor</a></p>
+<p class="p8">Issue #40: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/40">[feat]: implementar vista de perfil profesional del doctor</a></p>
+<p class="p8">Issue #42: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/42">[feat]: implementar vista de panel de logs de actividad</a></p>
+<p class="subheading">4.2 Evidencia visual de pantallas implementadas</p>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/agenda.png" alt="Vista de agenda del doctor">
+  <p class="caption">Figura 1. Vista de agenda del doctor relacionada con el issue #26.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/especialidades.png" alt="Vista de CRUD de especialidades medicas">
+  <p class="caption">Figura 2. Vista de CRUD de especialidades medicas relacionada con el issue #36.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/horarios.png" alt="Vista de gestion de horarios del doctor">
+  <p class="caption">Figura 3. Vista de gestion de horarios del doctor relacionada con el issue #37.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/perfil.png" alt="Vista de perfil profesional del doctor">
+  <p class="caption">Figura 4. Vista de perfil profesional del doctor relacionada con el issue #40.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/logs.png" alt="Vista de panel de logs de actividad">
+  <p class="caption">Figura 5. Vista del panel de logs de actividad relacionada con el issue #42.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/rbac.png" alt="Vista de gestion de roles y permisos RBAC">
+  <p class="caption">Figura 6. Vista de gestion de roles y permisos RBAC relacionada con el issue #21.</p>
+</div>
+<p class="subheading">4.3 Capturas complementarias del sistema</p>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/about.png" alt="Vista About del sistema">
+  <p class="caption">Figura 7. Pantalla About del sistema.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/screenshots/dashboard.png" alt="Dashboard administrativo del sistema">
+  <p class="caption">Figura 8. Dashboard administrativo del sistema.</p>
+</div>
+
+<p class="heading">5. Pull Request / Merge Request por integrante</p>
+<p class="p7">Se deben presentar obligatoriamente al menos dos tickets por integrante, mostrando el Pull Request o Merge Request completo, la rama, la descripcion de la tarjeta, la revision y la funcionalidad desarrollada mediante vertical slice.</p>
+<p class="subheading">5.1 Formato sugerido por Pull Request</p>
+<p class="p8">Integrante: [Nombre]</p>
+<p class="p8">Ticket / tarjeta: [#___]</p>
+<p class="p8">Rama: [feature/___]</p>
+<p class="p8">PR / MR: [#___]</p>
+<p class="p8">Descripcion suficiente: [Que problema resuelve y que entrego]</p>
+<p class="p8">Archivos principales modificados: [Lista breve]</p>
+<p class="p8">Evidencia de code review / aprobacion: [Captura o URL]</p>
+<p class="p8">Demo de la funcionalidad: [Captura, video o URL]</p>
+<p class="p8">Issues ya relacionados con los desarrollos visibles en esta entrega: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/21">#21</a>, <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/26">#26</a>, <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/36">#36</a>, <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/37">#37</a>, <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/40">#40</a>, <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/42">#42</a>.</p>
+<p class="subheading">5.2 PR obligatorio 1</p>
+<p class="p8">[Completar con la informacion del primer ticket del integrante]</p>
+<p class="subheading">5.3 PR obligatorio 2</p>
+<p class="p8">[Completar con la informacion del segundo ticket del integrante]</p>
+
+<p class="heading">7. Sistema de logueo, registro y reseteo de password</p>
+<p class="p7">El sistema debe contar con flujo de autenticacion, registro y validacion de autenticidad mediante PIN enviado por correo electronico, asi como reseteo de password. Esta seccion debe documentar las pantallas, flujo y evidencia del proceso.</p>
+<p class="p8">Pantallas incluidas: login, registro, verificacion por PIN, forgot password, reset password.</p>
+<p class="p8">Campos minimos: email, password, confirmacion, PIN de verificacion.</p>
+<p class="p8">Evidencia: capturas del correo, captura del formulario, captura del reseteo exitoso.</p>
+<p class="p8">Tickets relacionados: [#___, #___]</p>
+
+<p class="heading">8. Rol de Superadministrador: CRUD de usuarios y panel de logs</p>
+<p class="p7">El rol de superadministrador debe demostrar control total sobre usuarios registrados y contar con panel de logs para registrar acciones relevantes como logueo, deslogueo, navegacion y procesos criticos.</p>
+<p class="p8">CRUD de usuarios: alta, consulta, edicion, cambio de estado o eliminacion segun reglas del sistema.</p>
+<p class="p8">Panel de logs: usuario, fecha, accion, modulo o proceso relevante.</p>
+<p class="p8">Evidencia: capturas del CRUD y del panel de logs funcionando.</p>
+<p class="p8">Tickets relacionados: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/42">#42 Panel de logs de actividad</a> y <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/21">#21 Gestion de roles y permisos RBAC</a>.</p>
+
+<p class="heading">9. Actualizacion de perfiles de usuario</p>
+<p class="p7">Cada usuario registrado debe poder actualizar al menos su nombre y cargar una fotografia de perfil. Esta seccion debe incluir la evidencia de la carga de imagen y del cambio de datos reflejado en la interfaz.</p>
+<p class="p8">Campos minimos editables: nombre, telefono, fotografia.</p>
+<p class="p8">Restricciones sugeridas: formato de telefono, tipo y peso maximo de imagen.</p>
+<p class="p8">Evidencia: antes y despues del cambio de perfil.</p>
+<p class="p8">Ticket relacionado: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/40">#40 Perfil profesional del doctor</a>.</p>
+
+<p class="heading">10. Issue de implementacion RBAC con UI</p>
+<p class="p7">Debe existir un issue especifico para Role-Based Access Control y una interfaz administrativa para gestionar usuarios, roles y permisos con buenas practicas de separacion de responsabilidades, legibilidad y trazabilidad.</p>
+<p class="p8">Roles minimos: admin, doctor, patient.</p>
+<p class="p8">Permisos documentados: [Lista de permisos clave]</p>
+<p class="p8">UI de administracion: asignacion de roles, visualizacion de permisos, alta y baja logica si aplica.</p>
+<p class="p8">Buenas practicas usadas: [Repository / Services / Validators / Controllers delgados / otros]</p>
+<p class="p8">Issue base: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/21">#21 - implementar UI de gestion de roles y permisos RBAC</a></p>
+
+<p class="heading">11. Funcionalidades principales adicionales de entrada y salida</p>
+<p class="p7">Ademas de los requerimientos obligatorios, el sistema debe presentar al menos una funcionalidad de entrada y una de salida propias del caso de estudio.</p>
+<p class="subheading">11.1 Funcionalidad principal de entrada</p>
+<p class="p8">Nombre: agenda medica y gestion de horarios del doctor.</p>
+<p class="p8">Tickets relacionados: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/26">#26</a> y <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/37">#37</a>.</p>
+<p class="p8">Entradas capturadas: fecha, hora de inicio, hora de fin calculada, paciente, especialidad y motivo.</p>
+<p class="p8">Reglas de validacion: cambios de estatus, horarios bloqueados visibles, calculo automatico de end_time y filtros por fecha.</p>
+<p class="subheading">11.2 Funcionalidad principal de salida</p>
+<p class="p8">Nombre: panel de logs de actividad y panel RBAC administrativo.</p>
+<p class="p8">Tickets relacionados: <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/42">#42</a> y <a href="https://github.com/JoseOrtega8/MedSchedule-/issues/21">#21</a>.</p>
+<p class="p8">Datos mostrados: usuario, accion, modelo, descripcion, IP, user agent, fecha, roles y permisos asignados.</p>
+<p class="p8">Criterio de exito: demostrar consulta, filtros, detalle JSON, cambio de rol y actualizacion visual de permisos.</p>
+
+<p class="heading">12. Grafica o chart con datos reales de DB</p>
+<p class="p7">Se debe agregar una funcionalidad con grafica para el superadministrador o cualquier chart que refleje informacion real de la base de datos. La recomendacion es mostrar usuarios registrados por fecha, citas por estatus o actividad por periodo.</p>
+<p class="p8">Tipo de grafica: [Line / Bar / Pie / Area]</p>
+<p class="p8">Fuente de datos: [Tabla o consulta]</p>
+<p class="p8">Rango de fechas: [Periodo]</p>
+<p class="p8">Evidencia: captura de la grafica y ticket relacionado.</p>
+
+<p class="heading">13. Busqueda con debounce y campo dependiente en tiempo real</p>
+<p class="p7">Se debe mostrar al menos una captura y explicacion de una busqueda con debounce y de un campo dependiente que reaccione en tiempo real, como combos dependientes, switches o filtros conectados a datos dinamicos.</p>
+<p class="p8">Campo de busqueda: [Nombre del modulo]</p>
+<p class="p8">Tiempo de debounce: [ms]</p>
+<p class="p8">Campo dependiente: [Combo / switch / select enlazado]</p>
+<p class="p8">Evidencia: capturas del comportamiento en tiempo real.</p>
+
+<p class="heading">14. Pruebas unitarias, pruebas automaticas y code coverage</p>
+<p class="p7">Por cada issue obligatorio de cada integrante se debe presentar al menos una prueba unitaria de frontend, una prueba unitaria de backend y una evidencia de automatizacion con Selenium IDE. En esta entrega se deja evidencia automatica real con Playwright para E2E y con PHPUnit/Laravel para pruebas unitarias y feature del backend.</p>
+<p class="subheading">14.1 Evidencia detallada de pruebas E2E</p>
+<p class="p8">Herramienta ejecutada: Playwright.</p>
+<p class="p8">Comando utilizado: <b>npx playwright test</b></p>
+<p class="p8">Base URL probada: <b>http://127.0.0.1:8000</b></p>
+<p class="p8">Archivo de pruebas: <b>/tmp/medschedule-e2e-doc/tests/medschedule.spec.js</b></p>
+<p class="p8">Casos ejecutados:</p>
+<p class="p9">- about page smoke: valida visibilidad de <b>about-hero</b> y <b>about-stack</b>.</p>
+<p class="p9">- dashboard admin smoke: valida KPIs y panel de logs del dashboard.</p>
+<p class="p9">- doctor agenda smoke: valida estadisticos y panel principal de la agenda del doctor.</p>
+<p class="p8">Resultado observado: <b>3 pruebas aprobadas de 3</b> en <b>3.4s</b>.</p>
+<p class="p8">Archivos de evidencia generados:</p>
+<p class="p9">- Reporte HTML: <b>docs/assets/e2e/playwright-report/index.html</b></p>
+<p class="p9">- Salida de consola: <b>docs/assets/e2e/playwright-output.txt</b></p>
+<p class="p9">- Resumen visual: <b>docs/assets/e2e/playwright-summary.png</b></p>
+<div class="figure">
+  <img class="docshot" src="assets/e2e/playwright-report.png" alt="Reporte visual de pruebas E2E">
+  <p class="caption">Figura 9. Reporte HTML de Playwright con las pruebas E2E ejecutadas.</p>
+</div>
+<div class="figure">
+  <img class="docshot" src="assets/e2e/playwright-summary.png" alt="Resumen textual de la corrida E2E">
+  <p class="caption">Figura 10. Salida resumida de consola de la corrida E2E.</p>
+</div>
+<p class="subheading">14.2 Pruebas unitarias y feature del backend</p>
+<p class="p8">Herramienta ejecutada: PHPUnit mediante <b>php artisan test</b>.</p>
+<p class="p8">Resultado observado: <b>15 pruebas aprobadas</b> y <b>349 assertions</b>.</p>
+<p class="p8">Archivos de prueba agregados para esta entrega:</p>
+<p class="p9">- <b>tests/Unit/EnsureAdminRoleTest.php</b>: valida acceso permitido para admin y rechazo 403 para usuarios sin rol admin.</p>
+<p class="p9">- <b>tests/Feature/AppointmentControllerTest.php</b>: valida carga de agenda y confirmacion de cita pendiente.</p>
+<p class="p9">- <b>tests/Feature/ScheduleControllerTest.php</b>: valida calculo de end_time y restriccion de borrado en horarios bloqueados.</p>
+<p class="p9">- <b>tests/Feature/DoctorProfileControllerTest.php</b>: valida licencia unica y actualizacion de foto de perfil.</p>
+<p class="p9">- <b>tests/Feature/SpecialtyControllerTest.php</b>: valida nombre unico y bloqueo de eliminacion con doctores asignados.</p>
+<p class="p9">- <b>tests/Feature/ActivityLogControllerTest.php</b>: valida filtros y estructura del payload de logs.</p>
+<p class="p9">- <b>tests/Feature/AdminRbacAccessTest.php</b>: valida acceso correcto y restriccion del panel RBAC.</p>
+<p class="p8">Archivo de evidencia generado: <b>docs/assets/unit-phpunit-output.txt</b></p>
+<p class="p8">Resumen visual generado: <b>docs/assets/unit/phpunit-summary.png</b></p>
+<div class="figure">
+  <img class="docshot" src="assets/unit/phpunit-summary.png" alt="Resumen visual de pruebas unitarias y feature">
+  <p class="caption">Figura 11. Evidencia visual de la ejecucion de pruebas unitarias y feature con Laravel.</p>
+</div>
+<p class="subheading">14.3 Matriz resumida por issue cubierto</p>
+<p class="p8">Issue #21 RBAC: cubierto por <b>EnsureAdminRoleTest</b> y <b>AdminRbacAccessTest</b>.</p>
+<p class="p8">Issue #26 Agenda del doctor: cubierto por <b>AppointmentControllerTest</b> y por la suite E2E Playwright.</p>
+<p class="p8">Issue #36 Especialidades medicas: cubierto por <b>SpecialtyControllerTest</b>.</p>
+<p class="p8">Issue #37 Horarios del doctor: cubierto por <b>ScheduleControllerTest</b>.</p>
+<p class="p8">Issue #40 Perfil profesional del doctor: cubierto por <b>DoctorProfileControllerTest</b>.</p>
+<p class="p8">Issue #42 Panel de logs: cubierto por <b>ActivityLogControllerTest</b>.</p>
+<p class="subheading">14.4 Cobertura</p>
+<p class="p8">Herramienta disponible en backend: PHPUnit. En esta evidencia se documenta la ejecucion de suites reales, pero no se genero reporte HTML de code coverage dentro del proyecto actual.</p>
+<p class="p8">Pendiente recomendado: habilitar Xdebug o PCOV y generar <b>--coverage-html docs/coverage</b> para cerrar completamente el apartado de cobertura.</p>
+
+<p class="heading">15. Tag de release estable y URL del repositorio</p>
+<p class="p7">La liberacion debe incluir un tag en GitHub de la version estable y la URL del repositorio donde pueda verificarse dicha release.</p>
+<p class="p8">Repositorio: [https://github.com/usuario/repositorio]</p>
+<p class="p8">Tag de release: [v1.0.0]</p>
+<p class="p8">Fecha de creacion del tag: [dd/mm/aaaa]</p>
+<p class="p8">Notas de la version: [Resumen de cambios incluidos]</p>
+
+<p class="heading">16. CI/CD con GitHub Actions o Jenkins</p>
+<p class="p7">El repositorio debe incluir al menos un issue o ticket de CI/CD y la evidencia del pipeline ejecutando tareas como linting, prettier, unit testing, conventional commits o deploy. Tambien se debe incluir evidencia de excepciones o fallos cuando el pipeline no pasa.</p>
+<p class="p8">Issue / ticket de CI/CD: [#___]</p>
+<p class="p8">Herramienta elegida: [GitHub Actions / Jenkins]</p>
+<p class="p8">Workflow o job implementado: [Nombre]</p>
+<p class="p8">Evidencia de exito: [Captura del pipeline en verde]</p>
+<p class="p8">Evidencia de error: [Captura del pipeline fallando y razon]</p>
+<p class="subheading">16.1 Ejemplo minimo de workflow</p>
+<pre class="code">jobs:
+  lint-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint 1
+        run: npx eslint . --ext .js,.vue --fix
+
+      - name: Run Prettier 2
+        run: npx prettier --write "**/*.{js,vue,json,css,scss}"
+
+      - name: unit-testing for js 3
+        run: npm test</pre>
+
+<p class="heading">17. Conclusiones, expansion, recomendaciones y problemas</p>
+<p class="p7">El documento debe cerrar con conclusiones por equipo, sugerencias de expansion del sistema, recomendaciones tecnicas, problemas encontrados durante el desarrollo y una lista de futuros tickets etiquetados como TODO dentro del repositorio, preferentemente en la carpeta <b>/docs</b>.</p>
+<p class="subheading">17.1 Conclusiones</p>
+<p class="p8">[Resumen del aprendizaje tecnico, organizacion del equipo y estado del sistema]</p>
+<p class="subheading">17.2 Sugerencias de expansion</p>
+<p class="p8">TODO 1: [Nueva funcionalidad]</p>
+<p class="p8">TODO 2: [Mejora de arquitectura, rendimiento o seguridad]</p>
+<p class="subheading">17.3 Recomendaciones</p>
+<p class="p8">[Buenas practicas, ajustes de infraestructura, estrategia de pruebas, monitoreo, backups]</p>
+<p class="subheading">17.4 Problemas encontrados</p>
+<p class="p8">Ticket / problema: [Descripcion del obstaculo tecnico y como se resolvio o se mitigara]</p>
+
+<p class="p7"><b>Nota final:</b> este documento mantiene el mismo nivel de evaluacion de las unidades anteriores, por lo que cada seccion debe cerrarse con evidencia verificable, capturas suficientes, URLs, tickets relacionados y demostracion funcional del sistema.</p>
+</body>
+</html>
