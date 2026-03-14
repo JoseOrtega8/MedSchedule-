@@ -1,0 +1,329 @@
+/* =============================================
+   GESTION DE ESPECIALIDADES - Admin Panel Styles
+   ============================================= */
+
+.specialties-shell {
+    background: #dde3e8;
+    min-height: calc(100vh - 70px);
+}
+
+.specialties-panel,
+.specialty-form-panel {
+    border-radius: 12px;
+}
+
+.specialties-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.specialties-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.specialties-title i {
+    color: #2563eb;
+}
+
+.specialties-new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-weight: 600;
+}
+
+.specialties-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.specialty-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid #d6dde5;
+    border-left: 4px solid #1976d2;
+    border-radius: 10px;
+    background: #ffffff;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.specialty-card:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+
+.specialty-card.is-selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.specialty-card.is-inactive {
+    opacity: 0.66;
+    border-left-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.specialty-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.specialty-icon.primary {
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+.specialty-icon.success {
+    color: #15803d;
+    background: #dcfce7;
+}
+
+.specialty-icon.muted {
+    color: #64748b;
+    background: #e2e8f0;
+}
+
+.specialty-icon.warning {
+    color: #b45309;
+    background: #fef3c7;
+}
+
+.specialty-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.specialty-name {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.specialty-meta {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.specialty-side {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.specialty-count {
+    font-size: 13px;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.specialty-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.specialty-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.specialty-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.specialty-action-btn.edit {
+    color: #2563eb;
+    border-color: #93c5fd;
+}
+
+.specialty-action-btn.edit:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+}
+
+.specialty-action-btn.delete {
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+
+.specialty-action-btn.delete:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.specialty-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.specialties-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.specialties-note i {
+    color: #64748b;
+}
+
+.specialty-feedback {
+    border-radius: 10px;
+    font-size: 14px;
+    padding: 10px 12px;
+}
+
+.specialty-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.specialty-label span {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.specialty-input {
+    border-radius: 10px;
+    border-color: #cbd5e1;
+    min-height: 46px;
+}
+
+.specialty-input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14);
+}
+
+.specialty-input.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.14);
+}
+
+.specialty-status-toggle {
+    min-height: 46px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    background: #fff;
+}
+
+.specialty-status-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.specialty-status-toggle .form-check-input {
+    width: 44px;
+    height: 24px;
+}
+
+.specialty-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.specialty-submit-btn,
+#cancelEditBtn {
+    border-radius: 10px;
+    font-weight: 600;
+    min-height: 44px;
+}
+
+.specialty-empty-state {
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 36px 20px;
+    text-align: center;
+    color: #64748b;
+    background: #f8fafc;
+}
+
+.specialty-empty-state i {
+    display: block;
+    font-size: 36px;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+
+@media (max-width: 992px) {
+    .specialty-card {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .specialty-side {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .specialties-shell {
+        padding-top: 16px;
+    }
+
+    .specialties-panel-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .specialties-new-btn {
+        justify-content: center;
+    }
+
+    .specialty-side {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .specialty-actions {
+        justify-content: flex-end;
+    }
+}
