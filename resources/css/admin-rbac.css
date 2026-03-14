@@ -1,0 +1,488 @@
+/* =============================================
+   GESTION DE ROLES Y PERMISOS - Admin Panel
+   ============================================= */
+
+.admin-rbac-shell {
+    background: #dde3e8;
+    min-height: calc(100vh - 70px);
+}
+
+.admin-rbac-feedback {
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.rbac-users-panel,
+.rbac-roles-panel,
+.rbac-permissions-panel {
+    border-radius: 12px;
+}
+
+.rbac-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rbac-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rbac-panel-title i {
+    color: #2563eb;
+}
+
+.rbac-primary-btn {
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.rbac-primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
+.rbac-users-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #dbe2ea;
+    padding: 14px 16px;
+}
+
+.rbac-users-table td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.rbac-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+}
+
+.rbac-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.rbac-user-name {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rbac-email-text {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.rbac-role-badge,
+.rbac-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: lowercase;
+}
+
+.rbac-role-badge.admin {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.rbac-role-badge.doctor {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.rbac-role-badge.patient {
+    background: #fef3c7;
+    color: #a16207;
+}
+
+.rbac-status-badge.activo {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.rbac-status-badge.inactivo {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.rbac-action-btn {
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.rbac-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
+}
+
+.rbac-roles-list,
+.rbac-permissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rbac-role-card {
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: #fff;
+}
+
+.rbac-role-card.admin {
+    background: #f8fbff;
+    border-color: #d7e8ff;
+}
+
+.rbac-role-card.doctor {
+    background: #f7fcf8;
+    border-color: #d8efde;
+}
+
+.rbac-role-card.patient {
+    background: #fffdf6;
+    border-color: #f6e7b4;
+}
+
+.rbac-role-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.rbac-role-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    text-transform: lowercase;
+}
+
+.rbac-role-tag.admin {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.rbac-role-tag.doctor {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.rbac-role-tag.patient {
+    background: #fef3c7;
+    color: #a16207;
+}
+
+.rbac-role-count {
+    color: #475569;
+    font-size: 13px;
+}
+
+.rbac-role-permissions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rbac-permission-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid #dbe2ea;
+    border-radius: 999px;
+    background: white;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rbac-permission-chip.is-disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-style: dashed;
+}
+
+.rbac-chip-remove {
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    font-size: 12px;
+    padding: 0;
+    line-height: 1;
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.rbac-chip-remove:hover {
+    color: #dc2626;
+    transform: scale(1.08);
+}
+
+.rbac-chip-add {
+    border: 1px dashed #bfdbfe;
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.rbac-chip-add:hover {
+    transform: translateY(-1px);
+    background: #dbeafe;
+    border-color: #93c5fd;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
+}
+
+.rbac-system-permission {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 6px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.rbac-system-permission:first-child {
+    border-top: none;
+}
+
+.rbac-system-permission-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 3px;
+}
+
+.rbac-system-permission-desc {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.rbac-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.rbac-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.rbac-switch-slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: #d1d5db;
+    border-radius: 999px;
+    transition: background-color 0.2s ease;
+}
+
+.rbac-switch-slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.rbac-switch input:checked + .rbac-switch-slider {
+    background: #2563eb;
+}
+
+.rbac-switch input:checked + .rbac-switch-slider::before {
+    transform: translateX(20px);
+}
+
+.rbac-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1300;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+
+.rbac-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1301;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+
+.rbac-modal.is-open,
+.rbac-modal-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.rbac-modal-card {
+    width: 100%;
+    max-width: 460px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+    padding: 20px;
+    transform: translateY(18px) scale(0.98);
+    transition:
+        transform 0.24s ease,
+        box-shadow 0.24s ease;
+}
+
+.rbac-modal.is-open .rbac-modal-card {
+    transform: translateY(0) scale(1);
+}
+
+.rbac-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.rbac-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #64748b;
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.rbac-modal-close:hover {
+    color: #0f172a;
+    transform: rotate(90deg);
+}
+
+.rbac-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.rbac-input {
+    min-height: 44px;
+    border-radius: 10px;
+    border-color: #cbd5e1;
+}
+
+.rbac-input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14);
+}
+
+.rbac-textarea {
+    min-height: 110px;
+}
+
+.rbac-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 992px) {
+    .rbac-system-permission {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-rbac-shell {
+        padding-top: 16px;
+    }
+
+    .rbac-panel-header,
+    .rbac-role-card-header,
+    .rbac-modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rbac-modal-actions .btn,
+    .rbac-primary-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

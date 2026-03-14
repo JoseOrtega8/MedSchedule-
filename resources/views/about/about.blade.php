@@ -39,7 +39,7 @@
 
   <div class="container py-5" style="max-width:800px">
 
-    <section class="about-hero reveal-section mb-4">
+    <section class="about-hero reveal-section mb-4" data-testid="about-hero">
       <div class="about-hero-content">
         <h1 class="about-hero-title">
           <i class="bi bi-calendar2-heart"></i>
@@ -49,7 +49,7 @@
       </div>
     </section>
 
-    <div class="card border-0 shadow-sm mb-4 reveal-section">
+    <div class="card border-0 shadow-sm mb-4 reveal-section" data-testid="about-descripcion">
       <div class="card-body p-4">
         <h2 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Descripción general del proyecto</h2>
         <p class="txt-proyecto"><strong>MedSchedule</strong> es una aplicación web profesional orientada a la administración integral de citas médicas entre pacientes, doctores y administradores. El sistema permite registrar usuarios, gestionar agendas médicas, programar citas, llevar historiales y generar registros de auditoría.</p>
@@ -58,7 +58,7 @@
     </div>
 
     <h5 class="fw-bold mb-3 reveal-section"><i class="bi bi-people me-2 text-primary"></i>Equipo de desarrollo</h5>
-    <div class="row g-3 mb-4 reveal-section">
+    <div class="row g-3 mb-4 reveal-section" data-testid="about-equipo">
       <div class="col-md-6">
         <div class="member-card">
           <div class="member-avatar bg-member-avatar-1">JC</div>
@@ -93,7 +93,7 @@
       </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4 reveal-section">
+    <div class="card border-0 shadow-sm mb-4 reveal-section" data-testid="about-stack">
       <div class="card-body p-4">
         <h5 class="fw-bold mb-3"><i class="bi bi-stack me-2 text-primary"></i>Stack tecnológico</h5>
         <div class="tech-badges">
@@ -109,7 +109,7 @@
       </div>
     </div>
 
-    <div class="card border-0 shadow-sm reveal-section">
+    <div class="card border-0 shadow-sm reveal-section" data-testid="about-licencia">
       <div class="card-body p-4">
         <h5 class="fw-bold mb-2"><i class="bi bi-file-earmark-text me-2 text-primary"></i><strong>MIT License</strong></h5>
         <p class="txt-licencia mb-2">Copyright (c) 2026 Jose Carlos Calles Ortega, Ulises Castro Domínguez, Luis Angel Andrade Silva, Jose Ramon Ibarra Fontes.</p>

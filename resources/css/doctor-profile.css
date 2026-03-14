@@ -1,0 +1,230 @@
+/* =============================================
+   MI PERFIL PROFESIONAL - Doctor Panel Styles
+   ============================================= */
+
+.doctor-profile-shell {
+    background: #dde3e8;
+    min-height: calc(100vh - 70px);
+}
+
+.doctor-profile-summary-card,
+.doctor-profile-form-panel {
+    border-radius: 12px;
+}
+
+.doctor-profile-summary-card .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.doctor-profile-avatar {
+    width: 92px;
+    height: 92px;
+    border-radius: 18px;
+    background: #28a745;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 16px;
+}
+
+.doctor-profile-avatar.has-photo {
+    color: transparent;
+}
+
+.doctor-profile-name {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.doctor-profile-last-name {
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.doctor-profile-role {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: lowercase;
+    margin-bottom: 18px;
+}
+
+.doctor-photo-btn {
+    width: 100%;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.doctor-photo-help {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.doctor-profile-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.doctor-profile-title i {
+    color: #2563eb;
+}
+
+.doctor-profile-feedback {
+    border-radius: 10px;
+    font-size: 14px;
+    padding: 10px 12px;
+}
+
+.doctor-profile-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.doctor-profile-label span {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.doctor-profile-input {
+    border-radius: 10px;
+    border-color: #cbd5e1;
+    min-height: 46px;
+}
+
+.doctor-profile-input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.14);
+}
+
+.doctor-profile-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.doctor-profile-divider {
+    margin: 24px 0 12px;
+    color: #cbd5e1;
+}
+
+.doctor-profile-section-label {
+    margin: 0 0 16px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.doctor-profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.doctor-profile-toast-container {
+    position: fixed;
+    top: 88px;
+    right: 22px;
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.doctor-profile-toast {
+    min-width: 280px;
+    max-width: 340px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border-left: 4px solid #16a34a;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.doctor-profile-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.doctor-profile-toast.danger {
+    border-left-color: #dc2626;
+}
+
+.doctor-profile-toast-icon {
+    color: #16a34a;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.doctor-profile-toast.danger .doctor-profile-toast-icon {
+    color: #dc2626;
+}
+
+.doctor-profile-toast-copy {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .doctor-profile-shell {
+        padding-top: 16px;
+    }
+
+    .doctor-profile-actions {
+        flex-direction: column-reverse;
+    }
+
+    .doctor-profile-actions .btn {
+        width: 100%;
+    }
+
+    .doctor-profile-toast-container {
+        left: 16px;
+        right: 16px;
+        top: auto;
+        bottom: 18px;
+    }
+
+    .doctor-profile-toast {
+        min-width: 0;
+        max-width: none;
+    }
+}

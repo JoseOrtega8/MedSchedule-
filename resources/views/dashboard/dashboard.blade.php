@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MedSchedule - Dashboard</title>
+  <title>MedSchedule - Dashboard Admin</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <script>
@@ -23,7 +23,7 @@
 
 <div class="app-wrapper">
   <!-- SIDEBAR -->
-  <x-sidebar active="dashboard" />
+  <x-sidebar active="admin-dashboard" variant="admin" />
 
   <!-- CONTENT WRAPPER -->
   <div class="content-wrapper">
@@ -32,17 +32,21 @@
     <x-topbar
       title="Dashboard"
       icon="bi bi-speedometer2"
-      date-text="Miércoles, 12 Feb 2026"
+      subtitle="Admin / Dashboard"
       :show-avatar-menu="true"
+      badge-text="admin"
+      badge-tone="danger"
+      avatar-text="JC"
+      avatar-color="#1976d2"
     />
 
     <!-- DASHBOARD CONTENT -->
-    <div class="dashboard-content p-4">
+    <div class="dashboard-content p-4 dashboard-admin-shell">
 
       <!-- Stat Cards -->
       <div class="row g-3 mb-4">
         <div class="col-lg-3 col-md-6">
-          <div class="stat-card blue animate-card" data-card-index="0">
+          <div class="stat-card blue animate-card" data-card-index="0" data-testid="kpi-total-usuarios">
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="stat-label">TOTAL USUARIOS</div>
@@ -56,7 +60,7 @@
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
-          <div class="stat-card teal animate-card" data-card-index="1">
+          <div class="stat-card teal animate-card" data-card-index="1" data-testid="kpi-citas-dia">
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="stat-label">CITAS HOY</div>
@@ -70,7 +74,7 @@
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
-          <div class="stat-card green animate-card" data-card-index="2">
+          <div class="stat-card green animate-card" data-card-index="2" data-testid="kpi-doctores-activos">
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="stat-label">DOCTORES ACTIVOS</div>
@@ -84,7 +88,7 @@
           </div>
         </div>
         <div class="col-lg-3 col-md-6">
-          <div class="stat-card orange animate-card" data-card-index="3">
+          <div class="stat-card orange animate-card" data-card-index="3" data-testid="kpi-citas-mes">
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="stat-label">CITAS ESTE MES</div>
@@ -104,7 +108,7 @@
 
         <!-- Citas Recientes -->
         <div class="col-lg-8">
-          <div class="card border-0 shadow-sm">
+          <div class="card border-0 shadow-sm" data-testid="tabla-citas-recientes">
             <div class="card-body p-4">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Citas recientes</h6>
@@ -139,7 +143,7 @@
 
         <!-- Logs Recientes -->
         <div class="col-lg-4">
-          <div class="card border-0 shadow-sm">
+          <div class="card border-0 shadow-sm" data-testid="panel-logs">
             <div class="card-body p-4">
               <h6 class="fw-bold mb-3"><i class="bi bi-journal-text me-2 text-primary"></i>Logs recientes</h6>
 
