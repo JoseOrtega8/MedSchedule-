@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ActivityLogController;
 use App\Models\User;
 
 
@@ -30,6 +31,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard', function () {
 		return "Admin Dashboard";
 	})->name('admin.dashboard');
+
+	// Activity Logs
+	Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs.index');
+	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
+	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
 });
 
 Route::middleware(['auth', 'role:doctor'])->group(function () {
