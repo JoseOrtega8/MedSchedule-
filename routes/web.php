@@ -33,9 +33,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');
 	Route::get('/admin/dashboard/appointments-chart', [DashboardController::class, 'getAppointmentsChart'])->name('admin.dashboard.appointments-chart');
 	Route::get('/admin/dashboard/recent-activity', [DashboardController::class, 'getRecentActivity'])->name('admin.dashboard.recent-activity');
-	Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs.index');
-	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
-	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
+	// Logs — descomentar cuando se haga merge de feat/32-activity-log-controller
+	// Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs.index');
+	// Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
+	// Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
 });
 
 Route::middleware(['auth', 'role:doctor'])->group(function () {
