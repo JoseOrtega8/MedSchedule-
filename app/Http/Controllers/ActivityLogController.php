@@ -2,13 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ActivityLogController extends Controller
 {
+    public function index(): View
+    {
+        $this->assertAdminAccess();
+
+        return view('admin.logs');
+    }
+
     public function indexData(Request $request): JsonResponse
     {
+        if ($request->user() && ! $request->user()->hasRole('admin')) {
+            abort(403);
+        }
+
         return response()->json([
             'filters' => [
                 'actions' => ['login', 'logout', 'create', 'update', 'delete'],
@@ -18,6 +32,27 @@ class ActivityLogController extends Controller
             ],
             'logs' => $this->logsPayload($request),
         ]);
+    }
+
+    public function show(int $id): View
+    {
+        $this->assertAdminAccess();
+
+        $log = ActivityLog::with('user')->findOrFail($id);
+
+        return view('admin.logs.show', compact('log'));
+    }
+
+    public function getByUser(int $userId): View
+    {
+        $this->assertAdminAccess();
+
+        $logs = ActivityLog::with('user')
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return view('admin.logs.index', compact('logs'));
     }
 
     private function logsPayload(Request $request): array
@@ -30,6 +65,11 @@ class ActivityLogController extends Controller
         }
 
         return $logs;
+    }
+
+    private function assertAdminAccess(): void
+    {
+        abort_unless(Auth::check() && Auth::user()->hasRole('admin'), 403);
     }
 
     private function defaultLogs(): array
