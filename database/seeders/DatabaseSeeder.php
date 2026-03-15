@@ -16,33 +16,35 @@ class DatabaseSeeder extends Seeder
 		$patientRole = Role::firstOrCreate(['name' => 'patient']);
 
 		// Crear usuario admin
-		$admin = User::factory()->create([
-			'name' => 'Admin',
+		$admin = User::firstOrCreate(['email' => 'admin@test.com'], [
+			'name'      => 'Admin',
 			'last_name' => 'Robel',
-			'email' => 'admin@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
 		]);
-
 		$admin->assignRole($adminRole);
 
 		// Crear doctor
-		$doctor = User::factory()->create([
-			'name' => 'Doctor',
+		$doctor = User::firstOrCreate(['email' => 'doctor@test.com'], [
+			'name'      => 'Doctor',
 			'last_name' => 'Test',
-			'email' => 'doctor@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
 		]);
-
 		$doctor->assignRole($doctorRole);
 
 		// Crear patient
-		$patient = User::factory()->create([
-			'name' => 'Patient',
+		$patient = User::firstOrCreate(['email' => 'patient@test.com'], [
+			'name'      => 'Patient',
 			'last_name' => 'Test',
-			'email' => 'patient@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
 		]);
-
 		$patient->assignRole($patientRole);
+
+		// Seeders adicionales
+		$this->call([
+			DoctorProfileSeeder::class,
+			PatientProfileSeeder::class,
+			ScheduleSeeder::class,
+			AppointmentSeeder::class,
+		]);
 	}
 }
