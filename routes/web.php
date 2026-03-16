@@ -14,9 +14,7 @@ Route::get('/', function () {
 	return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-	return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
 	Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -39,12 +37,12 @@ Route::view('/about', 'about.about')->name('about');
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-	Route::get('/admin/dashboard/data', [DashboardController::class, 'adminData'])->name('admin.dashboard.data');
+	Route::get('/dashboard/data', [DashboardController::class, 'adminData'])->name('dashboard.data');
 	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');
 	Route::get('/admin/dashboard/appointments-chart', [DashboardController::class, 'getAppointmentsChart'])->name('admin.dashboard.appointments-chart');
 	Route::get('/admin/dashboard/recent-activity', [DashboardController::class, 'getRecentActivity'])->name('admin.dashboard.recent-activity');
-	Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs.index');
-	Route::get('/admin/logs/data', [ActivityLogController::class, 'index'])->name('admin.logs.data');
+	Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
+	Route::get('/admin/logs/data', [ActivityLogController::class, 'indexData'])->name('admin.logs.data');
 	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
 	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
 	Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');

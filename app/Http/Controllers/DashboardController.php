@@ -34,20 +34,65 @@ class DashboardController extends Controller
 	 */
 	private function adminDashboard()
 	{
-		$data = [
-			'total_users'    => User::count(),
-			'total_doctors'  => User::role('doctor')->count(),
-			'total_patients' => User::role('patient')->count(),
-			'appointments_by_status' => Appointment::selectRaw('status, count(*) as total')
-				->groupBy('status')
-				->pluck('total', 'status'),
-			'recent_activity' => ActivityLog::with('user')
-				->orderBy('created_at', 'desc')
-				->take(10)
-				->get(),
-		];
+		$today = Carbon::today();
+		$thisMonth = Carbon::now()->startOfMonth();
 
-		return response()->json($data);
+		$appointmentsToday = Appointment::whereDate('appointment_date', $today)->count();
+		$appointmentsMonth = Appointment::whereDate('appointment_date', '>=', $thisMonth)->count();
+		$pendingToday = Appointment::whereDate('appointment_date', $today)->where('status', 'pending')->count();
+
+		$recentAppointments = Appointment::with(['patient', 'doctor'])
+			->orderBy('appointment_date', 'desc')
+			->take(10)
+			->get()
+			->map(fn($a) => [
+				'patient'  => $a->patient ? $a->patient->name . ' ' . $a->patient->last_name : 'N/A',
+				'doctor'   => $a->doctor ? 'Dr. ' . $a->doctor->last_name : 'N/A',
+				'datetime' => $a->appointment_date . ' ' . $a->start_time,
+				'status'   => $a->status,
+			]);
+
+		$recentActivity = ActivityLog::with('user')
+			->orderBy('created_at', 'desc')
+			->take(5)
+			->get()
+			->map(fn($log) => [
+				'icon' => match ($log->action) {
+					'login'  => 'bi-box-arrow-in-right',
+					'logout' => 'bi-box-arrow-left',
+					'create' => 'bi-plus-circle',
+					'update' => 'bi-pencil-square',
+					'delete' => 'bi-trash',
+					default  => 'bi-info-circle',
+				},
+				'tone' => match ($log->action) {
+					'login'  => 'primary',
+					'logout' => 'secondary',
+					'create' => 'success',
+					'update' => 'warning',
+					'delete' => 'danger',
+					default  => 'info',
+				},
+				'text' => $log->description,
+				'time' => $log->created_at->diffForHumans(),
+			]);
+
+		return response()->json([
+			'stats' => [
+				'totalUsers'        => User::count(),
+				'appointmentsToday' => $appointmentsToday,
+				'activeDoctors'     => User::role('doctor')->count(),
+				'appointmentsMonth' => $appointmentsMonth,
+				'details' => [
+					'totalUsers'            => User::role('doctor')->count() . ' doctores, ' . User::role('patient')->count() . ' pacientes',
+					'appointmentsToday'     => $pendingToday . ' pendientes',
+					'activeDoctors'         => 'registrados',
+					'appointmentsMonth'     => 'este mes',
+				],
+			],
+			'recentAppointments' => $recentAppointments,
+			'activityLogs'       => $recentActivity,
+		]);
 	}
 
 	/**

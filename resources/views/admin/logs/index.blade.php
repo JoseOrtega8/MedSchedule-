@@ -2,103 +2,105 @@
 <html lang="es">
 
 <head>
-	<meta charset="UTF-8">
-	<title>Panel de Logs — MedSchedule</title>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>MedSchedule - Panel de Logs</title>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+	<script>
+		window.adminLogsDataUrl = "{{ route('admin.logs.data') }}";
+	</script>
+	@vite([
+	'resources/css/app.css',
+	'resources/css/admin-logs.css',
+	'resources/js/topbar-date.js',
+	'resources/js/admin-logs.js',
+	])
 </head>
 
-<body class="bg-light p-4">
+<body>
 
-	<div class="container-fluid">
-		<h4 class="mb-4">Panel de Logs de Actividad</h4>
+	<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-		{{-- FILTROS --}}
-		<form method="GET" action="{{ route('admin.logs.index') }}" class="card p-3 mb-4">
-			<div class="row g-2">
-				<div class="col-md-2">
-					<select name="action" class="form-select form-select-sm">
-						<option value="">Todas las acciones</option>
-						<option value="login" {{ request('action') == 'login' ? 'selected' : '' }}>login</option>
-						<option value="logout" {{ request('action') == 'logout' ? 'selected' : '' }}>logout</option>
-						<option value="create" {{ request('action') == 'create' ? 'selected' : '' }}>create</option>
-						<option value="update" {{ request('action') == 'update' ? 'selected' : '' }}>update</option>
-						<option value="delete" {{ request('action') == 'delete' ? 'selected' : '' }}>delete</option>
-					</select>
-				</div>
-				<div class="col-md-2">
-					<select name="model_type" class="form-select form-select-sm">
-						<option value="">Todos los modelos</option>
-						<option value="User" {{ request('model_type') == 'User' ? 'selected' : '' }}>User</option>
-						<option value="Appointment" {{ request('model_type') == 'Appointment' ? 'selected' : '' }}>Appointment</option>
-						<option value="Schedule" {{ request('model_type') == 'Schedule' ? 'selected' : '' }}>Schedule</option>
-					</select>
-				</div>
-				<div class="col-md-2">
-					<input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
-				</div>
-				<div class="col-md-2">
-					<input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
-				</div>
-				<div class="col-md-2">
-					<button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
-					<a href="{{ route('admin.logs.index') }}" class="btn btn-secondary btn-sm">Limpiar</a>
-				</div>
-			</div>
-		</form>
+	<button class="mobile-toggle" onclick="toggleSidebar()">
+		<i class="bi bi-list" style="font-size: 24px;"></i>
+	</button>
 
-		{{-- TABLA --}}
-		<div class="card">
-			<div class="card-body p-0">
-				<table class="table table-sm table-hover mb-0" style="font-size:13px">
-					<thead class="table-light">
-						<tr>
-							<th class="px-3 py-2">Usuario</th>
-							<th>action</th>
-							<th>model_type</th>
-							<th>description</th>
-							<th>ip_address</th>
-							<th>created_at</th>
-							<th>Detalle</th>
-						</tr>
-					</thead>
-					<tbody>
-						@forelse($logs as $log)
-						<tr>
-							<td class="px-3 py-2">
-								{{ $log->user ? $log->user->name . ' ' . $log->user->last_name : 'Sistema' }}
-							</td>
-							<td>
-								<span class="badge 
-                                @if($log->action == 'login') bg-success
-                                @elseif($log->action == 'logout') bg-secondary
-                                @elseif($log->action == 'create') bg-info
-                                @elseif($log->action == 'update') bg-warning text-dark
-                                @elseif($log->action == 'delete') bg-danger
-                                @else bg-light text-dark
-                                @endif">
-									{{ $log->action }}
-								</span>
-							</td>
-							<td class="text-muted">{{ $log->model_type ?? '—' }}</td>
-							<td>{{ $log->description }}</td>
-							<td class="text-muted">{{ $log->ip_address }}</td>
-							<td class="text-muted">{{ $log->created_at }}</td>
-							<td>
-								<a href="{{ route('admin.logs.show', $log->id) }}" class="btn btn-sm btn-outline-secondary" style="font-size:11px">Ver</a>
-							</td>
-						</tr>
-						@empty
-						<tr>
-							<td colspan="7" class="text-center text-muted py-4">No hay logs registrados</td>
-						</tr>
-						@endforelse
-					</tbody>
-				</table>
+	<div class="app-wrapper">
+		<x-sidebar active="admin-logs" variant="admin" />
 
-				{{-- PAGINACION --}}
-				<div class="px-3 py-2 d-flex justify-content-between align-items-center">
-					<small class="text-muted">{{ $logs->total() }} registros totales</small>
-					{{ $logs->withQueryString()->links() }}
+		<div class="content-wrapper">
+			<x-topbar
+				title="Panel de Logs"
+				icon="bi bi-journal-text"
+				subtitle="Admin / Activity Logs"
+				:show-avatar-menu="true"
+				badge-text="admin"
+				badge-tone="danger"
+				avatar-text="JC"
+				avatar-color="#1976d2" />
+
+			<div class="dashboard-content p-4 admin-logs-shell">
+				<div class="card border-0 shadow-sm logs-filters-panel mb-4" data-testid="admin-logs-filters">
+					<div class="card-body p-3">
+						<div class="row g-3 align-items-end">
+							<div class="col-lg-2 col-md-6">
+								<label class="form-label logs-filter-label" for="logActionFilter">Accion</label>
+								<select class="form-select logs-filter-input" id="logActionFilter"></select>
+							</div>
+							<div class="col-lg-2 col-md-6">
+								<label class="form-label logs-filter-label" for="logModelFilter">Modelo</label>
+								<select class="form-select logs-filter-input" id="logModelFilter"></select>
+							</div>
+							<div class="col-lg-2 col-md-6">
+								<label class="form-label logs-filter-label" for="logDateFrom">Desde</label>
+								<input class="form-control logs-filter-input" id="logDateFrom" type="date" />
+							</div>
+							<div class="col-lg-2 col-md-6">
+								<label class="form-label logs-filter-label" for="logDateTo">Hasta</label>
+								<input class="form-control logs-filter-input" id="logDateTo" type="date" />
+							</div>
+							<div class="col-lg-4 col-md-12 d-flex justify-content-lg-end">
+								<button class="btn btn-outline-secondary logs-clear-btn" id="clearLogFiltersBtn" type="button">
+									<i class="bi bi-arrow-counterclockwise"></i>
+									Limpiar filtros
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card border-0 shadow-sm logs-table-panel" data-testid="admin-logs-table">
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table logs-table mb-0">
+								<thead>
+									<tr>
+										<th>user_id</th>
+										<th>action</th>
+										<th>model_type</th>
+										<th>description</th>
+										<th>ip_address</th>
+										<th>user_agent</th>
+										<th>created_at</th>
+										<th class="text-center">Detalle</th>
+									</tr>
+								</thead>
+								<tbody id="adminLogsTableBody">
+									<tr>
+										<td colspan="8" class="text-center text-muted py-4">Cargando logs...</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<div class="logs-table-footer">
+							<span class="logs-page-info" id="adminLogsPageInfo">Cargando...</span>
+							<nav aria-label="Paginacion de logs">
+								<ul class="pagination pagination-sm mb-0" id="adminLogsPagination"></ul>
+							</nav>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

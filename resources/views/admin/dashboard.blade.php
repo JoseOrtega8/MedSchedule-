@@ -2,157 +2,170 @@
 <html lang="es">
 
 <head>
-	<meta charset="UTF-8">
-	<title>Dashboard Admin — MedSchedule</title>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>MedSchedule - Dashboard Admin</title>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+	<script>
+		window.dashboardDataUrl = "{{ route('dashboard.data') }}";
+	</script>
+	@vite([
+	'resources/css/app.css',
+	'resources/js/about.js',
+	'resources/js/topbar-date.js',
+	'resources/js/dashboard.js'
+	])
 </head>
 
-<body class="bg-light p-4">
-	<div class="container-fluid">
-		<h4 class="mb-4">Dashboard Administrador</h4>
+<body>
 
-		<!-- TARJETAS -->
-		<div class="row g-3 mb-4" id="stats"></div>
+	<!-- Overlay para móvil -->
+	<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-		<!-- GRAFICA -->
-		<div class="row g-3 mb-4">
-			<div class="col-md-6">
-				<div class="card border-0 shadow-sm">
-					<div class="card-body">
-						<h6 class="fw-bold mb-3">Usuarios registrados por fecha</h6>
-						<canvas id="usersChart"></canvas>
+	<!-- Botón hamburguesa móvil -->
+	<button class="mobile-toggle" onclick="toggleSidebar()">
+		<i class="bi bi-list" style="font-size: 24px;"></i>
+	</button>
+
+	<div class="app-wrapper">
+		<!-- SIDEBAR -->
+		<x-sidebar active="admin-dashboard" variant="admin" />
+
+		<!-- CONTENT WRAPPER -->
+		<div class="content-wrapper">
+
+			<!-- TOPBAR -->
+			<x-topbar
+				title="Dashboard"
+				icon="bi bi-speedometer2"
+				subtitle="Admin / Dashboard"
+				:show-avatar-menu="true"
+				badge-text="admin"
+				badge-tone="danger"
+				avatar-text="JC"
+				avatar-color="#1976d2" />
+
+			<!-- DASHBOARD CONTENT -->
+			<div class="dashboard-content p-4 dashboard-admin-shell">
+
+				<!-- Stat Cards -->
+				<div class="row g-3 mb-4">
+					<div class="col-lg-3 col-md-6">
+						<div class="stat-card blue animate-card" data-card-index="0" data-testid="kpi-total-usuarios">
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<div class="stat-label">TOTAL USUARIOS</div>
+									<div class="stat-number" id="statTotalUsers">--</div>
+									<div class="stat-detail" id="statTotalUsersDetail">Cargando...</div>
+								</div>
+								<div class="stat-icon">
+									<i class="bi bi-people"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-md-6">
+						<div class="stat-card teal animate-card" data-card-index="1" data-testid="kpi-citas-dia">
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<div class="stat-label">CITAS HOY</div>
+									<div class="stat-number" id="statAppointmentsToday">--</div>
+									<div class="stat-detail" id="statAppointmentsTodayDetail">Cargando...</div>
+								</div>
+								<div class="stat-icon">
+									<i class="bi bi-calendar-check"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-md-6">
+						<div class="stat-card green animate-card" data-card-index="2" data-testid="kpi-doctores-activos">
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<div class="stat-label">DOCTORES ACTIVOS</div>
+									<div class="stat-number" id="statActiveDoctors">--</div>
+									<div class="stat-detail" id="statActiveDoctorsDetail">Cargando...</div>
+								</div>
+								<div class="stat-icon">
+									<i class="bi bi-person-badge"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-md-6">
+						<div class="stat-card orange animate-card" data-card-index="3" data-testid="kpi-citas-mes">
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<div class="stat-label">CITAS ESTE MES</div>
+									<div class="stat-number" id="statAppointmentsMonth">--</div>
+									<div class="stat-detail" id="statAppointmentsMonthDetail">Cargando...</div>
+								</div>
+								<div class="stat-icon">
+									<i class="bi bi-graph-up-arrow"></i>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div class="col-md-6">
-				<div class="card border-0 shadow-sm">
-					<div class="card-body">
-						<h6 class="fw-bold mb-3">Citas por estado</h6>
-						<canvas id="appointmentsChart"></canvas>
-					</div>
-				</div>
-			</div>
-		</div>
 
-		<!-- ACTIVIDAD RECIENTE -->
-		<div class="card border-0 shadow-sm">
-			<div class="card-body">
-				<h6 class="fw-bold mb-3">Actividad Reciente</h6>
-				<table class="table table-sm" style="font-size:13px">
-					<thead class="table-light">
-						<tr>
-							<th>Usuario</th>
-							<th>Acción</th>
-							<th>Descripción</th>
-							<th>Fecha</th>
-						</tr>
-					</thead>
-					<tbody id="activityTable"></tbody>
-				</table>
+				<!-- Citas Recientes + Logs -->
+				<div class="row g-3">
+
+					<!-- Citas Recientes -->
+					<div class="col-lg-8">
+						<div class="card border-0 shadow-sm" data-testid="tabla-citas-recientes">
+							<div class="card-body p-4">
+								<div class="d-flex justify-content-between align-items-center mb-3">
+									<h6 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Citas recientes</h6>
+									<button class="btn btn-outline-primary btn-sm" type="button" id="btnRefreshDashboard">Actualizar</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table custom-table mb-0">
+										<thead>
+											<tr>
+												<th>Paciente</th>
+												<th>Doctor</th>
+												<th>Fecha</th>
+												<th>Estado</th>
+											</tr>
+										</thead>
+										<tbody id="recentAppointmentsBody">
+											<tr>
+												<td colspan="4" class="text-center text-muted py-4">Cargando citas...</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<div class="d-flex justify-content-between align-items-center mt-3">
+									<small class="text-muted" id="appointmentsPageInfo">Cargando...</small>
+									<nav aria-label="Paginación de citas recientes">
+										<ul class="pagination pagination-sm mb-0" id="appointmentsPagination"></ul>
+									</nav>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Logs Recientes -->
+					<div class="col-lg-4">
+						<div class="card border-0 shadow-sm" data-testid="panel-logs">
+							<div class="card-body p-4">
+								<h6 class="fw-bold mb-3"><i class="bi bi-journal-text me-2 text-primary"></i>Logs recientes</h6>
+
+								<div class="log-list" id="activityLogs">
+									<div class="text-muted small">Cargando logs...</div>
+								</div>
+
+							</div>
+						</div>
+					</div>
+
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<script>
-		async function loadDashboard() {
-			const res = await fetch('/admin/dashboard/data');
-			const data = await res.json();
-
-			// Tarjetas
-			document.getElementById('stats').innerHTML = `
-        <div class="col-md-3">
-            <div class="card text-white border-0 shadow-sm" style="background:#0d2137">
-                <div class="card-body"><h6>Total Usuarios</h6><h2>${data.total_users}</h2></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white border-0 shadow-sm bg-success">
-                <div class="card-body"><h6>Doctores</h6><h2>${data.total_doctors}</h2></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white border-0 shadow-sm bg-warning">
-                <div class="card-body"><h6>Pacientes</h6><h2>${data.total_patients}</h2></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white border-0 shadow-sm bg-info">
-                <div class="card-body"><h6>Citas Totales</h6><h2>${Object.values(data.appointments_by_status).reduce((a,b)=>a+b,0)}</h2></div>
-            </div>
-        </div>
-    `;
-
-			// Actividad reciente
-			document.getElementById('activityTable').innerHTML = data.recent_activity.map(log => `
-        <tr>
-            <td>${log.user ? log.user.name + ' ' + log.user.last_name : 'Sistema'}</td>
-            <td><span class="badge bg-primary">${log.action}</span></td>
-            <td>${log.description}</td>
-            <td class="text-muted">${log.created_at}</td>
-        </tr>
-    `).join('');
-		}
-
-		async function loadCharts() {
-			// Usuarios chart
-			const resUsers = await fetch('/admin/dashboard/users-chart');
-			const usersData = await resUsers.json();
-			new Chart(document.getElementById('usersChart'), {
-				type: 'line',
-				data: {
-					labels: usersData.map(d => d.date),
-					datasets: [{
-						label: 'Usuarios registrados',
-						data: usersData.map(d => d.total),
-						borderColor: '#0d2137',
-						tension: 0.3,
-						fill: true,
-						backgroundColor: 'rgba(13,33,55,0.1)'
-					}]
-				}
-			});
-
-			// Appointments chart
-			const resApp = await fetch('/admin/dashboard/appointments-chart');
-			const appData = await resApp.json();
-			const statuses = [...new Set(appData.map(d => d.status))];
-			const dates = [...new Set(appData.map(d => d.date))];
-			const colors = {
-				pending: '#ffc107',
-				confirmed: '#0d6efd',
-				completed: '#28a745',
-				cancelled: '#dc3545'
-			};
-			new Chart(document.getElementById('appointmentsChart'), {
-				type: 'bar',
-				data: {
-					labels: dates,
-					datasets: statuses.map(status => ({
-						label: status,
-						data: dates.map(date => {
-							const found = appData.find(d => d.date === date && d.status === status);
-							return found ? found.total : 0;
-						}),
-						backgroundColor: colors[status] || '#6c757d'
-					}))
-				},
-				options: {
-					scales: {
-						x: {
-							stacked: true
-						},
-						y: {
-							stacked: true
-						}
-					}
-				}
-			});
-		}
-
-		loadDashboard();
-		loadCharts();
-	</script>
 </body>
 
 </html>
