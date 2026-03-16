@@ -16,6 +16,16 @@
 	'resources/js/topbar-date.js',
 	'resources/js/dashboard.js'
 	])
+	<script>
+		< script >
+			window.dashboardDataUrl = "{{ route('dashboard.data') }}";
+		window.medScheduleRoutes = {
+			logout: "{{ route('logout') }}",
+			profile: "{{ route('profile.edit') }}",
+			resetPassword: "{{ route('password.request') }}"
+		};
+	</script>
+	</script>
 </head>
 
 <body>
