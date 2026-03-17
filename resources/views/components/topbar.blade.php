@@ -1,14 +1,13 @@
 @props([
-'title' => 'Dashboard',
-'icon' => 'bi bi-speedometer2',
-'subtitle' => null,
-'dateText' => null,
+'title' => 'Mi Perfil Profesional',
+'icon' => 'bi bi-person-square',
+'subtitle' => 'Doctor / Perfil',
 'dynamicDate' => true,
-'showAvatarMenu' => false,
-'badgeText' => null,
+'showAvatarMenu' => true,
+'badgeText' => 'doctor',
 'badgeTone' => 'success',
-'avatarText' => 'A',
-'avatarColor' => null,
+'avatarText' => strtoupper(substr(Auth::user()->name,0,1) . substr(Auth::user()->last_name,0,1)),
+'avatarColor' => '#28a745',
 ])
 
 <div class="topbar">
@@ -19,11 +18,9 @@
 		@endif
 	</div>
 	<div class="d-flex align-items-center gap-3">
-		@if(!is_null($dateText) || $dynamicDate)
-		<span
-			class="topbar-date"
-			@if($dynamicDate) data-dynamic-date @endif>
-			{{ $dateText ?? now()->format('d/m/Y') }}
+		@if($dynamicDate)
+		<span class="topbar-date" data-dynamic-date>
+			{{ now()->format('d/m/Y') }}
 		</span>
 		@endif
 
@@ -34,7 +31,6 @@
 		</span>
 		@endif
 
-		@if($showAvatarMenu)
 		<div class="avatar-menu" data-avatar-menu>
 			<button
 				class="avatar avatar-button"
@@ -42,15 +38,15 @@
 				data-avatar-trigger
 				aria-label="Abrir menú de usuario"
 				aria-expanded="false"
-				@if($avatarColor) style="background: {{ $avatarColor }};" @endif>
+				style="background: {{ $avatarColor }};">
 				{{ $avatarText }}
 			</button>
 			<div class="avatar-dropdown" data-avatar-dropdown>
-				<a class="avatar-item" href="{{ route('profile.edit') }}">
+				<a class="avatar-item" href="{{ route('doctor.profile') }}">
 					<i class="bi bi-person-circle"></i>
 					<span>Mi Perfil</span>
 				</a>
-				<a class="avatar-item" href="{{ route('profile.edit') }}">
+				<a class="avatar-item" href="{{ route('doctor.profile') }}">
 					<i class="bi bi-key"></i>
 					<span>Cambiar contraseña</span>
 				</a>
@@ -63,10 +59,5 @@
 				</form>
 			</div>
 		</div>
-		@else
-		<span class="avatar avatar-static" @if($avatarColor) style="background: {{ $avatarColor }};" @endif>
-			{{ $avatarText }}
-		</span>
-		@endif
 	</div>
 </div>

@@ -87,4 +87,25 @@ class GoogleCalendarService
 			Log::error('Google Calendar deleteEvent error: ' . $e->getMessage());
 		}
 	}
+	public function listEvents($startDate, $endDate): array
+	{
+		if (!$this->client) return [];
+
+		try {
+			$service = new Calendar($this->client);
+			$calendarId = config('services.google.calendar_id', 'primary');
+
+			$events = $service->events->listEvents($calendarId, [
+				'timeMin' => $startDate instanceof \DateTimeInterface ? $startDate->format(\DateTime::ATOM) : $startDate,
+				'timeMax' => $endDate instanceof \DateTimeInterface ? $endDate->format(\DateTime::ATOM) : $endDate,
+				'singleEvents' => true,
+				'orderBy' => 'startTime',
+			]);
+
+			return $events->getItems() ?? [];
+		} catch (\Exception $e) {
+			\Log::error('Google Calendar listEvents error: ' . $e->getMessage());
+			return [];
+		}
+	}
 }
