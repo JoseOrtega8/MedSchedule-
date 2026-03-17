@@ -22,7 +22,7 @@ class DashboardController extends Controller
 		if ($user->hasRole('admin')) {
 			return view('admin.dashboard');
 		} elseif ($user->hasRole('doctor')) {
-			return view('doctor.dashboard');
+			return redirect()->route('doctor.agenda');
 		} elseif ($user->hasRole('patient')) {
 			return view('patient.dashboard');
 		}
@@ -98,25 +98,33 @@ class DashboardController extends Controller
 	/**
 	 * Dashboard del doctor
 	 */
-	private function doctorDashboard()
+	public function agendaData()
 	{
 		$user = Auth::user();
 		$today = Carbon::today();
 
-		$data = [
-			'citas_hoy' => Appointment::where('doctor_id', $user->id)
-				->whereDate('appointment_date', $today)
-				->get(),
-			'total_pacientes_atendidos' => Appointment::where('doctor_id', $user->id)
-				->where('status', 'completed')
-				->count(),
-			'citas_por_status' => Appointment::where('doctor_id', $user->id)
-				->selectRaw('status, count(*) as total')
-				->groupBy('status')
-				->pluck('total', 'status'),
-		];
+		$appointments = Appointment::where('doctor_id', $user->id)
+			->get()
+			->map(function ($a) {
+				return [
+					'id' => $a->id,
+					'date' => $a->appointment_date, // 👈 IMPORTANTE
+					'start_time' => $a->start_time,
+					'end_time' => $a->end_time,
+					'status' => $a->status,
+					'patient' => $a->patient_name ?? 'Paciente',
+					'specialty' => $a->specialty ?? 'General',
+					'reason' => $a->reason ?? 'Consulta',
+					'color' => '#0d6efd',
+					'initials' => substr($a->patient_name ?? 'P', 0, 2),
+					'appointment_history' => [], // opcional
+				];
+			});
 
-		return response()->json($data);
+		return response()->json([
+			'agenda_items' => $appointments,
+			'reference_date' => $today->toDateString(),
+		]);
 	}
 
 	/**

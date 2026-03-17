@@ -15,10 +15,10 @@ class AppointmentController extends Controller
 	public function agendaData(Request $request): JsonResponse
 	{
 		$user = Auth::user();
-		$today = Carbon::today()->format('Y-m-d');
+		$today = now()->format('Y-m-d');
 
-		// Obtener citas del doctor
-		$appointments = Appointment::with(['patient', 'specialty'])
+		// Citas locales del doctor
+		$appointments = Appointment::with(['patient', 'specialty', 'schedule'])
 			->where('doctor_id', $user->id)
 			->get()
 			->map(function ($a) {
@@ -30,42 +30,71 @@ class AppointmentController extends Controller
 				$color = $colors[$a->patient_id % count($colors)];
 
 				return [
-					'id'           => $a->id,
-					'date'         => $a->appointment_date,
-					'start_time'   => $a->start_time,
-					'end_time'     => $a->end_time,
-					'patient'      => $patient ? $patient->name . ' ' . $patient->last_name : 'N/A',
-					'initials'     => $initials,
-					'color'        => $color,
-					'specialty'    => $a->specialty ? $a->specialty->name : 'N/A',
-					'reason'       => $a->reason ?? '',
-					'status'       => $a->status,
+					'id' => $a->id,
+					'date' => $a->appointment_date,
+					'start_time' => $a->start_time,
+					'end_time' => $a->end_time,
+					'patient' => $patient ? $patient->name . ' ' . $patient->last_name : 'N/A',
+					'initials' => $initials,
+					'color' => $color,
+					'specialty' => $a->specialty ? $a->specialty->name : 'N/A',
+					'reason' => $a->reason ?? '',
+					'status' => $a->status,
 					'schedule_status' => $a->schedule ? $a->schedule->status : null,
 					'appointment_history' => [],
+					'source' => 'local',
 				];
 			});
 
-		// Obtener horarios bloqueados sin cita
-		$schedules = Schedule::where('doctor_id', $user->id)
+		// Horarios bloqueados sin cita
+		$schedules = \App\Models\Schedule::where('doctor_id', $user->id)
 			->where('status', 'blocked')
-			->whereNotIn('id', $appointments->pluck('id'))
 			->get()
 			->map(function ($s) {
 				return [
-					'id'             => 'schedule_' . $s->id,
-					'date'           => $s->date,
-					'start_time'     => $s->start_time,
-					'end_time'       => $s->end_time,
+					'id' => 'schedule_' . $s->id,
+					'date' => $s->date,
+					'start_time' => $s->start_time,
+					'end_time' => $s->end_time,
 					'schedule_status' => 'blocked',
-					'note'           => 'schedules.status = blocked',
+					'note' => 'Horario bloqueado',
+					'source' => 'local',
 				];
 			});
 
-		$agendaItems = $appointments->merge($schedules)->values();
+		// Citas de Google Calendar
+		$gCalService = new \App\Services\GoogleCalendarService();
+		$gcalEvents = $gCalService->listEvents(
+			now()->startOfDay(),
+			now()->endOfDay()
+		);
+
+		$gcalMapped = collect($gcalEvents)->map(function ($event) {
+			$start = $event->start->dateTime ?? $event->start->date;
+			$end   = $event->end->dateTime ?? $event->end->date;
+
+			return [
+				'id' => 'gcal_' . $event->id,
+				'date' => substr($start, 0, 10),
+				'start_time' => substr($start, 11, 5),
+				'end_time' => substr($end, 11, 5),
+				'patient' => $event->summary ?? 'Cita Google',
+				'initials' => 'G',
+				'color' => '#4285F4',
+				'specialty' => null,
+				'reason' => $event->description ?? '',
+				'status' => 'confirmed',
+				'schedule_status' => null,
+				'appointment_history' => [],
+				'source' => 'google',
+			];
+		});
+
+		$agendaItems = $appointments->merge($schedules)->merge($gcalMapped)->values();
 
 		return response()->json([
 			'reference_date' => $today,
-			'agenda_items'   => $agendaItems,
+			'agenda_items' => $agendaItems,
 		]);
 	}
 

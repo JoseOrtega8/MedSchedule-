@@ -29,7 +29,22 @@ class User extends Authenticatable
 	{
 		return [
 			'email_verified_at' => 'datetime',
-			'password' => 'hashed',
+			'password'          => 'hashed',
 		];
+	}
+
+	public function doctorProfile()
+	{
+		return $this->hasOne(DoctorProfile::class);
+	}
+
+	public function patientProfile()
+	{
+		return $this->hasOne(PatientProfile::class);
+	}
+
+	public function activityLogs()
+	{
+		return $this->hasMany(ActivityLog::class);
 	}
 }
