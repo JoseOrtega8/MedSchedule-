@@ -1,0 +1,16 @@
+[90m= [39m[34;4mApp\Models\Appointment[39;24m {#6092
+    [34mid[39m: [35m9[39m,
+    [34mpatient_id[39m: [35m3[39m,
+    [34mdoctor_id[39m: [35m2[39m,
+    [34mschedule_id[39m: [35m12[39m,
+    [34mspecialty_id[39m: [35m1[39m,
+    [34mappointment_date[39m: "[32m2026-03-15[39m",
+    [34mstart_time[39m: "[32m09:30:00[39m",
+    [34mend_time[39m: "[32m10:00:00[39m",
+    [34mstatus[39m: "[32mconfirmed[39m",
+    [34mreason[39m: "[32mDolor en el pecho al hacer ejercicio[39m",
+    [34mgoogle_event_id[39m: [36mnull[39m,
+    [34mcreated_at[39m: "[32m2026-03-15 08:10:21[39m",
+    [34mupdated_at[39m: "[32m2026-03-15 08:10:21[39m",
+  }
+

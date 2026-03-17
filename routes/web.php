@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ActivityLogController;
 use App\Models\User;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoogleCalendarController;
 
 
 Route::get('/', function () {
@@ -42,6 +43,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'role:doctor'])->group(function () {
 	Route::get('/doctor/dashboard', [DashboardController::class, 'index'])->name('doctor.dashboard');
 	Route::get('/doctor/dashboard/data', [DashboardController::class, 'doctorData'])->name('doctor.dashboard.data');
+	Route::post('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'sync'])->name('appointments.calendar.sync');
+	Route::delete('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'unsync'])->name('appointments.calendar.unsync');
 });
 
 Route::middleware(['auth', 'role:patient'])->group(function () {
