@@ -15,34 +15,37 @@ class DatabaseSeeder extends Seeder
 		$doctorRole  = Role::firstOrCreate(['name' => 'doctor']);
 		$patientRole = Role::firstOrCreate(['name' => 'patient']);
 
-		// Crear usuario admin
-		$admin = User::factory()->create([
-			'name' => 'Admin',
+		// Crear usuarios
+		$admin = User::firstOrCreate(['email' => 'admin@test.com'], [
+			'name'      => 'Admin',
 			'last_name' => 'Robel',
-			'email' => 'admin@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
+			'phone'     => '662-000-0001',
+			'status'    => 1,
 		]);
-
 		$admin->assignRole($adminRole);
 
-		// Crear doctor
-		$doctor = User::factory()->create([
-			'name' => 'Doctor',
+		$doctor = User::firstOrCreate(['email' => 'doctor@test.com'], [
+			'name'      => 'Doctor',
 			'last_name' => 'Test',
-			'email' => 'doctor@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
+			'phone'     => '662-000-0002',
+			'status'    => 1,
 		]);
-
 		$doctor->assignRole($doctorRole);
 
-		// Crear patient
-		$patient = User::factory()->create([
-			'name' => 'Patient',
+		$patient = User::firstOrCreate(['email' => 'patient@test.com'], [
+			'name'      => 'Patient',
 			'last_name' => 'Test',
-			'email' => 'patient@test.com',
-			'password' => bcrypt('password'),
+			'password'  => bcrypt('password'),
+			'phone'     => '662-000-0003',
+			'status'    => 1,
 		]);
-
 		$patient->assignRole($patientRole);
+
+		// Correr FullDataSeeder solo si no hay datos
+		if (\App\Models\Specialty::count() === 0) {
+			$this->call(FullDataSeeder::class);
+		}
 	}
 }
