@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorProfileController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\SpecialtyController;
 use App\Models\User;
 
@@ -20,6 +21,10 @@ Route::middleware('auth')->group(function () {
 	Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 	Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 	Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+	// Google Calendar — accesible para admin y doctor
+	Route::post('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'sync'])->name('appointments.calendar.sync');
+	Route::delete('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'unsync'])->name('appointments.calendar.unsync');
 });
 
 Route::get('/test-role', function () {
@@ -28,12 +33,6 @@ Route::get('/test-role', function () {
 });
 
 Route::view('/about', 'about.about')->name('about');
-
-/*
-|--------------------------------------------------------------------------
-| Dashboards por rol
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -52,7 +51,43 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 	Route::delete('/admin/especialidades/{specialty}', [SpecialtyController::class, 'destroy'])->name('admin.specialties.destroy');
 	Route::view('/admin/rbac', 'admin.rbac')->name('admin.rbac');
 	Route::get('/admin/rbac/data', function () {
-		return response()->json(['message' => 'RBAC data endpoint']);
+		$users = \App\Models\User::with('roles')->get()->map(function ($u) {
+			return [
+				'id'       => $u->id,
+				'initials' => strtoupper(substr($u->name, 0, 1) . substr($u->last_name, 0, 1)),
+				'color'    => '#1976d2',
+				'name'     => $u->name . ' ' . $u->last_name,
+				'email'    => $u->email,
+				'roleId'   => $u->roles->first()?->name ?? 'sin-rol',
+				'status'   => $u->status ? 'activo' : 'inactivo',
+			];
+		});
+
+		$roles = \Spatie\Permission\Models\Role::with('permissions')->get()->map(function ($r) {
+			return [
+				'id'            => $r->name,
+				'label'         => $r->name,
+				'icon'          => match ($r->name) {
+					'admin'   => 'bi bi-shield-lock',
+					'doctor'  => 'bi bi-file-earmark-medical',
+					'patient' => 'bi bi-person',
+					default   => 'bi bi-circle',
+				},
+				'tone'          => $r->name,
+				'permissionIds' => $r->permissions->pluck('name')->toArray(),
+			];
+		});
+
+		$permissions = \Spatie\Permission\Models\Permission::all()->map(function ($p) {
+			return [
+				'id'          => $p->name,
+				'label'       => $p->name,
+				'description' => $p->name,
+				'enabled'     => true,
+			];
+		});
+
+		return response()->json(compact('users', 'roles', 'permissions'));
 	})->name('admin.rbac.data');
 });
 

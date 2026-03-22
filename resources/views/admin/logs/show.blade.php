@@ -11,7 +11,7 @@
 	<div class="container">
 		<div class="d-flex justify-content-between align-items-center mb-4">
 			<h4>Detalle de Log #{{ $log->id }}</h4>
-			<a href="{{ route('admin.logs.index') }}" class="btn btn-secondary btn-sm">← Volver</a>
+			<a href="{{ route('admin.logs') }}" class="btn btn-secondary btn-sm">← Volver</a>
 		</div>
 		<div class="card">
 			<div class="card-body">

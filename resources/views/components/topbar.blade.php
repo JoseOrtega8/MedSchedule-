@@ -46,7 +46,7 @@
 					<i class="bi bi-person-circle"></i>
 					<span>Mi Perfil</span>
 				</a>
-				<a class="avatar-item" href="{{ route('doctor.profile') }}">
+				<a class="avatar-item" href="{{ route('profile.edit') }}">
 					<i class="bi bi-key"></i>
 					<span>Cambiar contraseña</span>
 				</a>
