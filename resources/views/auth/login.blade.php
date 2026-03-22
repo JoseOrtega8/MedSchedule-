@@ -54,6 +54,9 @@
 					<label class="form-label">Contraseña</label>
 					<input type="password" name="password" class="form-control" required>
 				</div>
+				<div class="mb-3 text-end">
+					<a href="{{ route('password.request') }}" class="small text-muted">¿Olvidaste tu contraseña?</a>
+				</div>
 
 				<div class="d-grid">
 					<button class="btn btn-primary">
