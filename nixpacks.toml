@@ -1,0 +1,2 @@
+[start]
+cmd = "php artisan migrate --force && SERVER_NAME=:$PORT frankenphp run --config /Caddyfile"

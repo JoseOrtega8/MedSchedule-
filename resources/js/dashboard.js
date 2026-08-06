@@ -239,3 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         setText("appointmentsPageInfo", "Error al cargar datos");
     }
 });
+
+
+
+

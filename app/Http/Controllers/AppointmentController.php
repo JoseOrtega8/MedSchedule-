@@ -2,280 +2,150 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
+use App\Models\Schedule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
-    public function agendaData(Request $request): JsonResponse
-    {
-        return response()->json($this->agendaPayload($request));
-    }
+	public function agendaData(Request $request): JsonResponse
+	{
+		$user = Auth::user();
+		$today = now()->format('Y-m-d');
 
-    public function update(Request $request, int $appointment): JsonResponse
-    {
-        $validated = $request->validate([
-            'status' => ['required', 'string', Rule::in(['confirmed', 'cancelled'])],
-        ]);
+		// Citas locales del doctor
+		$appointments = Appointment::with(['patient', 'specialty', 'schedule'])
+			->where('doctor_id', $user->id)
+			->get()
+			->map(function ($a) {
+				$patient = $a->patient;
+				$initials = $patient
+					? strtoupper(substr($patient->name, 0, 1) . substr($patient->last_name, 0, 1))
+					: '??';
+				$colors = ['#9a7b07', '#7c8795', '#27a6be', '#dd4799', '#4f7cff', '#f08a24', '#7d53c8'];
+				$color = $colors[$a->patient_id % count($colors)];
 
-        $payload = $this->agendaPayload($request);
-        $index = $this->findAgendaItemIndex($payload['agenda_items'], $appointment);
+				return [
+					'id' => $a->id,
+					'date' => $a->appointment_date,
+					'start_time' => $a->start_time,
+					'end_time' => $a->end_time,
+					'patient' => $patient ? $patient->name . ' ' . $patient->last_name : 'N/A',
+					'initials' => $initials,
+					'color' => $color,
+					'specialty' => $a->specialty ? $a->specialty->name : 'N/A',
+					'reason' => $a->reason ?? '',
+					'status' => $a->status,
+					'schedule_status' => $a->schedule ? $a->schedule->status : null,
+					'appointment_history' => [],
+					'source' => 'local',
+				];
+			});
 
-        if ($index === null) {
-            return response()->json([
-                'message' => 'La cita solicitada no existe.',
-            ], 404);
-        }
+		// Horarios bloqueados sin cita
+		$schedules = \App\Models\Schedule::where('doctor_id', $user->id)
+			->where('status', 'blocked')
+			->get()
+			->map(function ($s) {
+				return [
+					'id' => 'schedule_' . $s->id,
+					'date' => $s->date,
+					'start_time' => $s->start_time,
+					'end_time' => $s->end_time,
+					'schedule_status' => 'blocked',
+					'note' => 'Horario bloqueado',
+					'source' => 'local',
+				];
+			});
 
-        $item = $payload['agenda_items'][$index];
+		// Citas de Google Calendar
+		$gCalService = new \App\Services\GoogleCalendarService();
+		$gcalEvents = $gCalService->listEvents(
+			now()->startOfDay(),
+			now()->endOfDay()
+		);
 
-        if (($item['schedule_status'] ?? null) === 'blocked') {
-            return response()->json([
-                'message' => 'No puedes actualizar un bloque de horario.',
-            ], 422);
-        }
+		$gcalMapped = collect($gcalEvents)->map(function ($event) {
+			$start = $event->start->dateTime ?? $event->start->date;
+			$end   = $event->end->dateTime ?? $event->end->date;
 
-        if (($item['status'] ?? null) !== 'pending') {
-            return response()->json([
-                'message' => 'Solo las citas pendientes pueden actualizarse desde esta agenda.',
-            ], 422);
-        }
+			return [
+				'id' => 'gcal_' . $event->id,
+				'date' => substr($start, 0, 10),
+				'start_time' => substr($start, 11, 5),
+				'end_time' => substr($end, 11, 5),
+				'patient' => $event->summary ?? 'Cita Google',
+				'initials' => 'G',
+				'color' => '#4285F4',
+				'specialty' => null,
+				'reason' => $event->description ?? '',
+				'status' => 'confirmed',
+				'schedule_status' => null,
+				'appointment_history' => [],
+				'source' => 'google',
+			];
+		});
 
-        $newStatus = $validated['status'];
-        $payload['agenda_items'][$index]['status'] = $newStatus;
-        $payload['agenda_items'][$index]['appointment_history'][] = [
-            'date' => now()->format('Y-m-d H:i:s'),
-            'event' => $newStatus === 'confirmed'
-                ? 'Cita confirmada por el doctor'
-                : 'Cita cancelada por el doctor',
-            'status' => $newStatus,
-        ];
+		$agendaItems = $appointments->merge($schedules)->merge($gcalMapped)->values();
 
-        $request->session()->put('doctor_agenda_payload', $payload);
+		return response()->json([
+			'reference_date' => $today,
+			'agenda_items' => $agendaItems,
+		]);
+	}
 
-        return response()->json([
-            'message' => $newStatus === 'confirmed'
-                ? 'La cita fue confirmada correctamente.'
-                : 'La cita fue cancelada correctamente.',
-            'appointment' => $payload['agenda_items'][$index],
-        ]);
-    }
+	public function update(Request $request, int $appointment): JsonResponse
+	{
+		$validated = $request->validate([
+			'status' => ['required', 'string', Rule::in(['confirmed', 'cancelled'])],
+		]);
 
-    private function agendaPayload(Request $request): array
-    {
-        $payload = $request->session()->get('doctor_agenda_payload');
+		$apt = Appointment::where('doctor_id', Auth::user()->id)
+			->findOrFail($appointment);
 
-        if (! is_array($payload)) {
-            $payload = $this->defaultAgendaPayload();
-            $request->session()->put('doctor_agenda_payload', $payload);
-        }
+		if ($apt->status !== 'pending') {
+			return response()->json([
+				'message' => 'Solo las citas pendientes pueden actualizarse.',
+			], 422);
+		}
 
-        return $payload;
-    }
+		$apt->status = $validated['status'];
 
-    private function findAgendaItemIndex(array $items, int $appointmentId): ?int
-    {
-        foreach ($items as $index => $item) {
-            if ((int) ($item['id'] ?? 0) === $appointmentId) {
-                return $index;
-            }
-        }
+		// Si se cancela revertir schedule a available
+		if ($validated['status'] === 'cancelled' && $apt->schedule_id) {
+			$apt->schedule->update(['status' => 'available']);
+		}
 
-        return null;
-    }
+		$apt->save();
 
-    private function defaultAgendaPayload(): array
-    {
-        return [
-            'doctor' => [
-                'name' => 'Dra. Maria Gutierrez',
-                'initials' => 'MG',
-                'role' => 'doctor',
-            ],
-            'reference_date' => '2026-03-10',
-            'agenda_items' => [
-                [
-                    'id' => 1,
-                    'date' => '2026-03-10',
-                    'start_time' => '09:00:00',
-                    'end_time' => '09:30:00',
-                    'patient' => 'Ana Lopez',
-                    'initials' => 'AL',
-                    'color' => '#9a7b07',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Dolor en el pecho al hacer ejercicio',
-                    'status' => 'confirmed',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-08 12:30:00',
-                            'event' => 'Cita creada por paciente',
-                            'status' => 'pending',
-                        ],
-                        [
-                            'date' => '2026-03-09 08:15:00',
-                            'event' => 'Cita confirmada por doctor',
-                            'status' => 'confirmed',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 2,
-                    'date' => '2026-03-10',
-                    'start_time' => '10:00:00',
-                    'end_time' => '10:30:00',
-                    'patient' => 'Carlos Ramirez',
-                    'initials' => 'CR',
-                    'color' => '#7c8795',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Revision de rutina',
-                    'status' => 'pending',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-09 10:00:00',
-                            'event' => 'Cita creada por paciente',
-                            'status' => 'pending',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 3,
-                    'date' => '2026-03-10',
-                    'start_time' => '11:00:00',
-                    'end_time' => '11:30:00',
-                    'patient' => 'Maria Perez',
-                    'initials' => 'MP',
-                    'color' => '#27a6be',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Seguimiento post-operatorio',
-                    'status' => 'completed',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-07 09:10:00',
-                            'event' => 'Cita creada por recepcion',
-                            'status' => 'pending',
-                        ],
-                        [
-                            'date' => '2026-03-08 11:45:00',
-                            'event' => 'Cita confirmada por doctor',
-                            'status' => 'confirmed',
-                        ],
-                        [
-                            'date' => '2026-03-10 11:45:00',
-                            'event' => 'Consulta completada',
-                            'status' => 'completed',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 4,
-                    'date' => '2026-03-10',
-                    'start_time' => '12:00:00',
-                    'end_time' => '13:00:00',
-                    'schedule_status' => 'blocked',
-                    'note' => 'schedules.status = blocked',
-                ],
-                [
-                    'id' => 5,
-                    'date' => '2026-03-10',
-                    'start_time' => '14:00:00',
-                    'end_time' => '14:30:00',
-                    'patient' => 'Luis Martinez',
-                    'initials' => 'LM',
-                    'color' => '#dd4799',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Primera consulta - arritmia',
-                    'status' => 'cancelled',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-08 17:22:00',
-                            'event' => 'Cita creada por paciente',
-                            'status' => 'pending',
-                        ],
-                        [
-                            'date' => '2026-03-09 19:10:00',
-                            'event' => 'Cita cancelada por paciente',
-                            'status' => 'cancelled',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 6,
-                    'date' => '2026-03-10',
-                    'start_time' => '16:00:00',
-                    'end_time' => '16:30:00',
-                    'patient' => 'Diana Solis',
-                    'initials' => 'DS',
-                    'color' => '#4f7cff',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Evaluacion pre-quirurgica',
-                    'status' => 'pending',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-09 14:40:00',
-                            'event' => 'Cita creada por recepcion',
-                            'status' => 'pending',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 7,
-                    'date' => '2026-03-11',
-                    'start_time' => '08:30:00',
-                    'end_time' => '09:00:00',
-                    'patient' => 'Roberto Diaz',
-                    'initials' => 'RD',
-                    'color' => '#f08a24',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Control de presion arterial',
-                    'status' => 'confirmed',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-10 07:50:00',
-                            'event' => 'Cita confirmada por doctor',
-                            'status' => 'confirmed',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 8,
-                    'date' => '2026-03-11',
-                    'start_time' => '10:00:00',
-                    'end_time' => '10:30:00',
-                    'patient' => 'Elena Vega',
-                    'initials' => 'EV',
-                    'color' => '#7d53c8',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Electrocardiograma de seguimiento',
-                    'status' => 'pending',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-10 15:00:00',
-                            'event' => 'Cita creada por paciente',
-                            'status' => 'pending',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 9,
-                    'date' => '2026-03-12',
-                    'start_time' => '09:00:00',
-                    'end_time' => '09:30:00',
-                    'patient' => 'Pedro Solis',
-                    'initials' => 'PS',
-                    'color' => '#1380dd',
-                    'specialty' => 'Cardiologia',
-                    'reason' => 'Revision post-cirugia',
-                    'status' => 'confirmed',
-                    'appointment_history' => [
-                        [
-                            'date' => '2026-03-11 12:20:00',
-                            'event' => 'Cita confirmada por doctor',
-                            'status' => 'confirmed',
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
+		$colors = ['#9a7b07', '#7c8795', '#27a6be', '#dd4799', '#4f7cff', '#f08a24', '#7d53c8'];
+		$patient = $apt->patient;
+		$initials = $patient
+			? strtoupper(substr($patient->name, 0, 1) . substr($patient->last_name, 0, 1))
+			: '??';
+
+		return response()->json([
+			'message' => $validated['status'] === 'confirmed'
+				? 'La cita fue confirmada correctamente.'
+				: 'La cita fue cancelada correctamente.',
+			'appointment' => [
+				'id'              => $apt->id,
+				'date'            => $apt->appointment_date,
+				'start_time'      => $apt->start_time,
+				'end_time'        => $apt->end_time,
+				'patient'         => $patient ? $patient->name . ' ' . $patient->last_name : 'N/A',
+				'initials'        => $initials,
+				'color'           => $colors[$apt->patient_id % count($colors)],
+				'specialty'       => $apt->specialty ? $apt->specialty->name : 'N/A',
+				'reason'          => $apt->reason ?? '',
+				'status'          => $apt->status,
+				'schedule_status' => $apt->schedule ? $apt->schedule->status : null,
+				'appointment_history' => [],
+			],
+		]);
+	}
 }

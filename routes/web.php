@@ -1,222 +1,116 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorProfileController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\SpecialtyController;
-use Illuminate\Support\Facades\Route;
+use App\Models\User;
 
 Route::get('/', function () {
-    return view('welcome');
+	return view('welcome');
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+	Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+	Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+	Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+	// Google Calendar — accesible para admin y doctor
+	Route::post('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'sync'])->name('appointments.calendar.sync');
+	Route::delete('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'unsync'])->name('appointments.calendar.unsync');
+});
+
+Route::get('/test-role', function () {
+	$user = User::first();
+	return ['roles' => $user->getRoleNames(), 'has_admin' => $user->hasRole('admin')];
 });
 
 Route::view('/about', 'about.about')->name('about');
-Route::view('/dashboard', 'dashboard.dashboard')->name('dashboard');
-Route::view('/doctor/agenda', 'doctor.agenda')->name('doctor.agenda');
-Route::view('/doctor/horarios', 'doctor.horarios')->name('doctor.schedules');
-Route::view('/doctor/perfil', 'doctor.perfil')->name('doctor.profile');
-Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');
-Route::view('/admin/logs', 'admin.logs')->name('admin.logs');
 
-Route::get('/dashboard/data', function () {
-    return response()->json([
-        'stats' => [
-            'totalUsers' => 148,
-            'appointmentsToday' => 34,
-            'activeDoctors' => 12,
-            'appointmentsMonth' => 312,
-            'details' => [
-                'totalUsers' => '+12 este mes',
-                'appointmentsToday' => '8 pendientes',
-                'activeDoctors' => '2 en consulta',
-                'appointmentsMonth' => '+18% vs mes anterior',
-            ],
-        ],
-        'recentAppointments' => [
-            ['patient' => 'Maria Lopez', 'doctor' => 'Dr. Garcia', 'datetime' => '01/03/2026 10:00', 'status' => 'confirmada'],
-            ['patient' => 'Carlos Ruiz', 'doctor' => 'Dra. Martinez', 'datetime' => '01/03/2026 11:30', 'status' => 'confirmada'],
-            ['patient' => 'Ana Torres', 'doctor' => 'Dr. Garcia', 'datetime' => '01/03/2026 14:00', 'status' => 'cancelada'],
-            ['patient' => 'Pedro Soto', 'doctor' => 'Dr. Ramirez', 'datetime' => '02/03/2026 09:00', 'status' => 'pendiente'],
-            ['patient' => 'Laura Perez', 'doctor' => 'Dra. Martinez', 'datetime' => '02/03/2026 10:15', 'status' => 'confirmada'],
-            ['patient' => 'Miguel Vega', 'doctor' => 'Dr. Herrera', 'datetime' => '02/03/2026 12:40', 'status' => 'pendiente'],
-            ['patient' => 'Sofia Campos', 'doctor' => 'Dra. Navarro', 'datetime' => '02/03/2026 16:00', 'status' => 'confirmada'],
-            ['patient' => 'Jorge Ibarra', 'doctor' => 'Dr. Ramirez', 'datetime' => '03/03/2026 09:30', 'status' => 'cancelada'],
-            ['patient' => 'Elena Mora', 'doctor' => 'Dra. Navarro', 'datetime' => '03/03/2026 11:00', 'status' => 'confirmada'],
-            ['patient' => 'Daniel Cruz', 'doctor' => 'Dr. Herrera', 'datetime' => '03/03/2026 13:20', 'status' => 'pendiente'],
-        ],
-        'activityLogs' => [
-            ['icon' => 'bi-person-plus', 'tone' => 'success', 'text' => 'Nuevo usuario registrado', 'time' => 'hace 5 min'],
-            ['icon' => 'bi-calendar-plus', 'tone' => 'info', 'text' => 'Cita programada #312', 'time' => 'hace 30 min'],
-            ['icon' => 'bi-calendar-x', 'tone' => 'danger', 'text' => 'Cita cancelada #309', 'time' => 'hace 45 min'],
-            ['icon' => 'bi-pencil-square', 'tone' => 'warning', 'text' => 'Perfil actualizado', 'time' => 'hace 1 hora'],
-            ['icon' => 'bi-box-arrow-in-right', 'tone' => 'primary', 'text' => 'Login: admin@medschedule.com', 'time' => 'hace 2 horas'],
-        ],
-    ]);
-})->name('dashboard.data');
+Route::middleware(['auth', 'role:admin'])->group(function () {
+	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+	Route::get('/dashboard/data', [DashboardController::class, 'adminData'])->name('dashboard.data');
+	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');
+	Route::get('/admin/dashboard/appointments-chart', [DashboardController::class, 'getAppointmentsChart'])->name('admin.dashboard.appointments-chart');
+	Route::get('/admin/dashboard/recent-activity', [DashboardController::class, 'getRecentActivity'])->name('admin.dashboard.recent-activity');
+	Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
+	Route::get('/admin/logs/data', [ActivityLogController::class, 'indexData'])->name('admin.logs.data');
+	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
+	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
+	Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');
+	Route::get('/admin/especialidades/data', [SpecialtyController::class, 'indexData'])->name('admin.specialties.data');
+	Route::post('/admin/especialidades', [SpecialtyController::class, 'store'])->name('admin.specialties.store');
+	Route::patch('/admin/especialidades/{specialty}', [SpecialtyController::class, 'update'])->name('admin.specialties.update');
+	Route::delete('/admin/especialidades/{specialty}', [SpecialtyController::class, 'destroy'])->name('admin.specialties.destroy');
+	Route::view('/admin/rbac', 'admin.rbac')->name('admin.rbac');
+	Route::get('/admin/rbac/data', function () {
+		$users = \App\Models\User::with('roles')->get()->map(function ($u) {
+			return [
+				'id'       => $u->id,
+				'initials' => strtoupper(substr($u->name, 0, 1) . substr($u->last_name, 0, 1)),
+				'color'    => '#1976d2',
+				'name'     => $u->name . ' ' . $u->last_name,
+				'email'    => $u->email,
+				'roleId'   => $u->roles->first()?->name ?? 'sin-rol',
+				'status'   => $u->status ? 'activo' : 'inactivo',
+			];
+		});
 
-Route::get('/doctor/agenda/data', [AppointmentController::class, 'agendaData'])->name('doctor.agenda.data');
-Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+		$roles = \Spatie\Permission\Models\Role::with('permissions')->get()->map(function ($r) {
+			return [
+				'id'            => $r->name,
+				'label'         => $r->name,
+				'icon'          => match ($r->name) {
+					'admin'   => 'bi bi-shield-lock',
+					'doctor'  => 'bi bi-file-earmark-medical',
+					'patient' => 'bi bi-person',
+					default   => 'bi bi-circle',
+				},
+				'tone'          => $r->name,
+				'permissionIds' => $r->permissions->pluck('name')->toArray(),
+			];
+		});
 
-Route::get('/doctor/horarios/data', [ScheduleController::class, 'indexData'])->name('doctor.schedules.data');
-Route::post('/doctor/horarios', [ScheduleController::class, 'store'])->name('doctor.schedules.store');
-Route::patch('/doctor/horarios/{schedule}', [ScheduleController::class, 'update'])->name('doctor.schedules.update');
-Route::delete('/doctor/horarios/{schedule}', [ScheduleController::class, 'destroy'])->name('doctor.schedules.destroy');
+		$permissions = \Spatie\Permission\Models\Permission::all()->map(function ($p) {
+			return [
+				'id'          => $p->name,
+				'label'       => $p->name,
+				'description' => $p->name,
+				'enabled'     => true,
+			];
+		});
 
-Route::get('/doctor/perfil/data', [DoctorProfileController::class, 'indexData'])->name('doctor.profile.data');
-Route::patch('/doctor/perfil', [DoctorProfileController::class, 'update'])->name('doctor.profile.update');
-Route::post('/doctor/perfil/photo', [DoctorProfileController::class, 'updatePhoto'])->name('doctor.profile.photo');
-
-Route::get('/admin/especialidades/data', [SpecialtyController::class, 'indexData'])->name('admin.specialties.data');
-Route::post('/admin/especialidades', [SpecialtyController::class, 'store'])->name('admin.specialties.store');
-Route::patch('/admin/especialidades/{specialty}', [SpecialtyController::class, 'update'])->name('admin.specialties.update');
-Route::delete('/admin/especialidades/{specialty}', [SpecialtyController::class, 'destroy'])->name('admin.specialties.destroy');
-
-Route::get('/admin/logs/data', [ActivityLogController::class, 'indexData'])->name('admin.logs.data');
-
-Route::middleware('admin.role')->group(function () {
-    Route::view('/admin/rbac', 'admin.rbac')->name('admin.rbac');
-
-    Route::get('/admin/rbac/data', function () {
-        // TEMPORARY MOCK DATA.
-        // Remove this payload when the admin RBAC backend is available in production.
-        return response()->json([
-            'users' => [
-                [
-                    'id' => 1,
-                    'initials' => 'JC',
-                    'color' => '#1976d2',
-                    'name' => 'Jose Carlos Calles',
-                    'email' => 'admin@medschedule.com',
-                    'roleId' => 'admin',
-                    'status' => 'activo',
-                ],
-                [
-                    'id' => 2,
-                    'initials' => 'MG',
-                    'color' => '#28a745',
-                    'name' => 'Dr. Miguel Garcia',
-                    'email' => 'garcia@medschedule.com',
-                    'roleId' => 'doctor',
-                    'status' => 'activo',
-                ],
-                [
-                    'id' => 3,
-                    'initials' => 'AL',
-                    'color' => '#fd7e14',
-                    'name' => 'Ana Lopez',
-                    'email' => 'ana@gmail.com',
-                    'roleId' => 'patient',
-                    'status' => 'activo',
-                ],
-                [
-                    'id' => 4,
-                    'initials' => 'CR',
-                    'color' => '#6b7280',
-                    'name' => 'Carlos Ramirez',
-                    'email' => 'carlos@gmail.com',
-                    'roleId' => 'patient',
-                    'status' => 'inactivo',
-                ],
-            ],
-            'roles' => [
-                [
-                    'id' => 'admin',
-                    'label' => 'admin',
-                    'icon' => 'bi bi-shield-lock',
-                    'tone' => 'admin',
-                    'permissionIds' => [
-                        'gestionar_usuarios',
-                        'ver_logs',
-                        'ver_estadisticas',
-                        'gestionar_citas',
-                    ],
-                ],
-                [
-                    'id' => 'doctor',
-                    'label' => 'doctor',
-                    'icon' => 'bi bi-file-earmark-medical',
-                    'tone' => 'doctor',
-                    'permissionIds' => [
-                        'ver_agenda',
-                        'confirmar_citas',
-                        'escribir_historial',
-                    ],
-                ],
-                [
-                    'id' => 'patient',
-                    'label' => 'patient',
-                    'icon' => 'bi bi-person',
-                    'tone' => 'patient',
-                    'permissionIds' => [
-                        'agendar_cita',
-                        'cancelar_cita',
-                        'ver_mis_citas',
-                    ],
-                ],
-            ],
-            'permissions' => [
-                [
-                    'id' => 'gestionar_usuarios',
-                    'label' => 'gestionar_usuarios',
-                    'description' => 'Crear, editar y desactivar usuarios',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'ver_logs',
-                    'label' => 'ver_logs',
-                    'description' => 'Ver registros de actividad',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'ver_estadisticas',
-                    'label' => 'ver_estadisticas',
-                    'description' => 'Consultar paneles administrativos',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'gestionar_citas',
-                    'label' => 'gestionar_citas',
-                    'description' => 'Crear y reasignar citas medicas',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'ver_agenda',
-                    'label' => 'ver_agenda',
-                    'description' => 'Revisar agenda diaria del doctor',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'confirmar_citas',
-                    'label' => 'confirmar_citas',
-                    'description' => 'Confirmar o cancelar citas',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'escribir_historial',
-                    'label' => 'escribir_historial',
-                    'description' => 'Agregar diagnostico y tratamiento',
-                    'enabled' => false,
-                ],
-                [
-                    'id' => 'agendar_cita',
-                    'label' => 'agendar_cita',
-                    'description' => 'Solicitar nueva cita medica',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'cancelar_cita',
-                    'label' => 'cancelar_cita',
-                    'description' => 'Cancelar citas propias',
-                    'enabled' => true,
-                ],
-                [
-                    'id' => 'ver_mis_citas',
-                    'label' => 'ver_mis_citas',
-                    'description' => 'Consultar citas agendadas',
-                    'enabled' => true,
-                ],
-            ],
-        ]);
-    })->name('admin.rbac.data');
+		return response()->json(compact('users', 'roles', 'permissions'));
+	})->name('admin.rbac.data');
 });
+
+Route::middleware(['auth', 'role:doctor'])->group(function () {
+	Route::get('/doctor/dashboard', [DashboardController::class, 'index'])->name('doctor.dashboard');
+	Route::get('/doctor/dashboard/data', [DashboardController::class, 'doctorData'])->name('doctor.dashboard.data');
+	Route::view('/doctor/agenda', 'doctor.agenda')->name('doctor.agenda');
+	Route::get('/doctor/agenda/data', [AppointmentController::class, 'agendaData'])->name('doctor.agenda.data');
+	Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+	Route::view('/doctor/horarios', 'doctor.horarios')->name('doctor.schedules');
+	Route::get('/doctor/horarios/data', [ScheduleController::class, 'indexData'])->name('doctor.schedules.data');
+	Route::post('/doctor/horarios', [ScheduleController::class, 'store'])->name('doctor.schedules.store');
+	Route::patch('/doctor/horarios/{schedule}', [ScheduleController::class, 'update'])->name('doctor.schedules.update');
+	Route::delete('/doctor/horarios/{schedule}', [ScheduleController::class, 'destroy'])->name('doctor.schedules.destroy');
+	Route::view('/doctor/perfil', 'doctor.perfil')->name('doctor.profile');
+	Route::get('/doctor/perfil/data', [DoctorProfileController::class, 'indexData'])->name('doctor.profile.data');
+	Route::patch('/doctor/perfil', [DoctorProfileController::class, 'update'])->name('doctor.profile.update');
+	Route::post('/doctor/perfil/photo', [DoctorProfileController::class, 'updatePhoto'])->name('doctor.profile.photo');
+});
+
+Route::middleware(['auth', 'role:patient'])->group(function () {
+	Route::get('/patient/dashboard', [DashboardController::class, 'index'])->name('patient.dashboard');
+	Route::get('/patient/dashboard/data', [DashboardController::class, 'patientData'])->name('patient.dashboard.data');
+});
+
+require __DIR__ . '/auth.php';
