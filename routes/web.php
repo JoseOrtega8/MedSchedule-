@@ -27,14 +27,9 @@ Route::middleware('auth')->group(function () {
 	Route::delete('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'unsync'])->name('appointments.calendar.unsync');
 });
 
-Route::get('/test-role', function () {
-	$user = User::first();
-	return ['roles' => $user->getRoleNames(), 'has_admin' => $user->hasRole('admin')];
-});
-
 Route::view('/about', 'about.about')->name('about');
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:admin', 'throttle:60,1'])->group(function () {
 	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 	Route::get('/dashboard/data', [DashboardController::class, 'adminData'])->name('dashboard.data');
 	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');
