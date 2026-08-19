@@ -15,6 +15,7 @@ class PatientProfile extends Model
 		'emergency_contact_name',
 		'emergency_contact_phone',
 		'curp',
+		'photo_path',
 	];
 
 	public function user()
