@@ -16,11 +16,13 @@ class DoctorProfile extends Model
 
 	public function user()
 	{
-		return $this->belongsTo(User::class);
-	}
+		return $this->belongsTo(User::class, 'user_id');	}
 
 	public function specialty()
 	{
-		return $this->belongsTo(Specialty::class);
+		return $this->belongsTo(Specialty::class, 'specialty_id');
 	}
+
 }
+
+

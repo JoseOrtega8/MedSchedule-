@@ -19,11 +19,11 @@ class DashboardController extends Controller
 	{
 		$user = Auth::user();
 
-		if ($user->hasRole('admin')) {
+		if ($user->hasRole('Admin')) {
 			return view('admin.dashboard');
-		} elseif ($user->hasRole('doctor')) {
+		} elseif ($user->hasRole('Doctor')) {
 			return redirect()->route('doctor.agenda');
-		} elseif ($user->hasRole('patient')) {
+		} elseif ($user->hasRole('Patient')) {
 			return view('patient.dashboard');
 		}
 
@@ -81,10 +81,10 @@ class DashboardController extends Controller
 			'stats' => [
 				'totalUsers'        => User::count(),
 				'appointmentsToday' => $appointmentsToday,
-				'activeDoctors'     => User::role('doctor')->count(),
+				'activeDoctors'     => User::role('Doctor')->count(),
 				'appointmentsMonth' => $appointmentsMonth,
 				'details' => [
-					'totalUsers'            => User::role('doctor')->count() . ' doctores, ' . User::role('patient')->count() . ' pacientes',
+					'totalUsers'            => User::role('Doctor')->count() . ' doctores, ' . User::role('Patient')->count() . ' pacientes',
 					'appointmentsToday'     => $pendingToday . ' pendientes',
 					'activeDoctors'         => 'registrados',
 					'appointmentsMonth'     => 'este mes',
@@ -155,7 +155,7 @@ class DashboardController extends Controller
 	 */
 	public function getUsersChart(Request $request)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -179,7 +179,7 @@ class DashboardController extends Controller
 	 */
 	public function getAppointmentsChart(Request $request)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -203,7 +203,7 @@ class DashboardController extends Controller
 	 */
 	public function getRecentActivity()
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -222,7 +222,7 @@ class DashboardController extends Controller
 
 	public function doctorData()
 	{
-		return $this->doctorDashboard();
+		return $this->agendaData();
 	}
 
 	public function patientData()
