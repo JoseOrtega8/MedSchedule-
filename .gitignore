@@ -25,3 +25,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Artefactos de pruebas E2E Playwright
+/test-results
+/tests/playwright-report
+/tests/playwright_gestion_usuarios/evidencia
+/playwright/.cache

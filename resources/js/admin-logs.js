@@ -1,6 +1,12 @@
 /**
  * MedSchedule - Panel de Logs (Admin Panel)
- * Loads temporary mock data asynchronously and handles client-side filtering.
+ *
+ * Soporta dos formatos de respuesta (fix #60, defensivo ante AS5):
+ *   1) Arreglo plano (formato viejo): payload.logs = [ ... ]  -> paginacion client-side.
+ *   2) Objeto paginado de Laravel (formato nuevo): payload.logs = { data, current_page, last_page, total, per_page }
+ *      -> paginacion server-side (refetch por pagina conservando filtros).
+ * Se detecta el formato en tiempo de ejecucion, por lo que la vista no se rompe
+ * cuando el backend migre al shape paginado.
  */
 
 const adminLogsState = {
@@ -9,6 +15,16 @@ const adminLogsState = {
     expandedLogId: null,
     currentPage: 1,
     pageSize: 20,
+    // Modo server: true cuando el backend responde con objeto paginado.
+    serverMode: false,
+    // Metadatos de paginacion del servidor (solo en serverMode).
+    serverMeta: {
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+    },
+    // Evita refetch concurrentes mientras hay una peticion en curso.
+    isLoading: false,
     defaults: {
         from: "",
         to: "",
@@ -33,8 +49,23 @@ function toggleSidebar() {
 
 window.toggleSidebar = toggleSidebar;
 
-async function loadAdminLogsData() {
-    const endpoint = window.adminLogsDataUrl || "/admin/logs/data";
+/**
+ * Descarga los logs. En serverMode envia pagina + filtros como query params
+ * para que el backend pagine y filtre; en modo cliente descarga todo una vez.
+ */
+async function loadAdminLogsData(params = {}) {
+    const baseEndpoint = window.adminLogsDataUrl || "/admin/logs/data";
+    const query = new URLSearchParams();
+
+    if (params.page) query.set("page", params.page);
+    if (params.action) query.set("action", params.action);
+    if (params.model) query.set("model", params.model);
+    if (params.from) query.set("from", params.from);
+    if (params.to) query.set("to", params.to);
+
+    const separator = baseEndpoint.includes("?") ? "&" : "?";
+    const endpoint = query.toString() ? `${baseEndpoint}${separator}${query.toString()}` : baseEndpoint;
+
     const response = await fetch(endpoint, {
         headers: {
             Accept: "application/json",
@@ -46,6 +77,37 @@ async function loadAdminLogsData() {
     }
 
     return response.json();
+}
+
+/**
+ * Normaliza el shape de logs. Devuelve { logs, pagination }.
+ * - pagination es null cuando el formato es arreglo plano (modo cliente).
+ * - pagination trae metadatos cuando es objeto paginado de Laravel (modo server).
+ */
+function normalizeLogsPayload(payload) {
+    // El endpoint envuelve los logs bajo la llave "logs"; si no existe, usar el payload directo.
+    const raw = payload && payload.logs !== undefined ? payload.logs : payload;
+
+    // Formato viejo: arreglo plano.
+    if (Array.isArray(raw)) {
+        return { logs: raw, pagination: null };
+    }
+
+    // Formato nuevo: objeto paginado de Laravel { data, current_page, last_page, total }.
+    if (raw && typeof raw === "object" && Array.isArray(raw.data)) {
+        return {
+            logs: raw.data,
+            pagination: {
+                currentPage: Number(raw.current_page) || 1,
+                lastPage: Number(raw.last_page) || 1,
+                total: Number(raw.total) || raw.data.length,
+                perPage: Number(raw.per_page) || raw.data.length,
+            },
+        };
+    }
+
+    // Shape desconocido: degradar a vacio sin romper la vista.
+    return { logs: [], pagination: null };
 }
 
 function buildSelectOptions(selectId, items, defaultLabel) {
@@ -73,7 +135,16 @@ function getLogDate(log) {
     return String(log.createdAt || "").slice(0, 10);
 }
 
+/**
+ * Aplica filtros. En modo cliente filtra el arreglo completo en memoria;
+ * en serverMode dispara un refetch de la pagina 1 conservando los filtros.
+ */
 function applyFilters() {
+    if (adminLogsState.serverMode) {
+        fetchServerPage(1);
+        return;
+    }
+
     const filters = getCurrentFilters();
 
     adminLogsState.filteredLogs = adminLogsState.logs.filter(function (log) {
@@ -101,6 +172,65 @@ function applyFilters() {
     renderLogsTable();
 }
 
+/**
+ * Refetch de una pagina en serverMode. Conserva los filtros actuales
+ * y muestra indicador de carga mientras llega la respuesta.
+ */
+function fetchServerPage(page) {
+    if (adminLogsState.isLoading) return;
+
+    const filters = getCurrentFilters();
+    setLoading(true);
+
+    loadAdminLogsData({ page: page, ...filters })
+        .then(function (payload) {
+            const { logs, pagination } = normalizeLogsPayload(payload);
+            adminLogsState.logs = logs;
+            adminLogsState.filteredLogs = logs;
+
+            if (pagination) {
+                adminLogsState.serverMeta = pagination;
+                adminLogsState.currentPage = pagination.currentPage;
+            }
+
+            renderLogsTable();
+        })
+        .catch(function (error) {
+            console.error("No se pudo cargar la pagina de logs:", error);
+            renderLogsError();
+        })
+        .finally(function () {
+            setLoading(false);
+        });
+}
+
+/** Indicador de carga entre paginas. */
+function setLoading(isLoading) {
+    adminLogsState.isLoading = isLoading;
+
+    const info = document.getElementById("adminLogsPageInfo");
+    if (info && isLoading) {
+        info.textContent = "Cargando...";
+    }
+
+    const pagination = document.getElementById("adminLogsPagination");
+    if (pagination) {
+        pagination.classList.toggle("is-loading", isLoading);
+    }
+}
+
+function renderLogsError() {
+    const tbody = document.getElementById("adminLogsTableBody");
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="logs-empty-state">No fue posible cargar los logs.</td>
+            </tr>
+        `;
+    }
+    renderLogsPageInfo(0, 0, 0);
+}
+
 function formatJson(value) {
     if (Array.isArray(value) && value.length === 0) {
         return "{}";
@@ -117,13 +247,28 @@ function renderLogsTable() {
     const tbody = document.getElementById("adminLogsTableBody");
     if (!tbody) return;
 
-    const total = adminLogsState.filteredLogs.length;
-    const totalPages = Math.max(1, Math.ceil(total / adminLogsState.pageSize));
-    adminLogsState.currentPage = Math.min(adminLogsState.currentPage, totalPages);
+    // En serverMode los datos ya vienen paginados por el backend; en modo cliente se corta aqui.
+    let total;
+    let totalPages;
+    let start;
+    let rows;
 
-    const start = (adminLogsState.currentPage - 1) * adminLogsState.pageSize;
-    const end = start + adminLogsState.pageSize;
-    const rows = adminLogsState.filteredLogs.slice(start, end);
+    if (adminLogsState.serverMode) {
+        total = adminLogsState.serverMeta.total;
+        totalPages = adminLogsState.serverMeta.lastPage;
+        adminLogsState.currentPage = adminLogsState.serverMeta.currentPage;
+        start = (adminLogsState.currentPage - 1) * adminLogsState.pageSize;
+        rows = adminLogsState.filteredLogs;
+    } else {
+        total = adminLogsState.filteredLogs.length;
+        totalPages = Math.max(1, Math.ceil(total / adminLogsState.pageSize));
+        adminLogsState.currentPage = Math.min(adminLogsState.currentPage, totalPages);
+        start = (adminLogsState.currentPage - 1) * adminLogsState.pageSize;
+        const end = start + adminLogsState.pageSize;
+        rows = adminLogsState.filteredLogs.slice(start, end);
+    }
+
+    const end = start + rows.length;
 
     if (!rows.length) {
         tbody.innerHTML = `
@@ -217,6 +362,16 @@ function createPageButton(label, disabled, onClick, isActive) {
     return li;
 }
 
+/** Navega a una pagina: refetch en serverMode, corte en memoria en modo cliente. */
+function goToPage(page) {
+    if (adminLogsState.serverMode) {
+        fetchServerPage(page);
+        return;
+    }
+    adminLogsState.currentPage = page;
+    renderLogsTable();
+}
+
 function renderLogsPagination(totalPages) {
     const pagination = document.getElementById("adminLogsPagination");
     if (!pagination) return;
@@ -230,8 +385,7 @@ function renderLogsPagination(totalPages) {
             "<",
             adminLogsState.currentPage === 1,
             function () {
-                adminLogsState.currentPage -= 1;
-                renderLogsTable();
+                goToPage(adminLogsState.currentPage - 1);
             },
             false,
         ),
@@ -243,8 +397,7 @@ function renderLogsPagination(totalPages) {
                 String(page),
                 false,
                 function () {
-                    adminLogsState.currentPage = page;
-                    renderLogsTable();
+                    goToPage(page);
                 },
                 page === adminLogsState.currentPage,
             ),
@@ -256,8 +409,7 @@ function renderLogsPagination(totalPages) {
             ">",
             adminLogsState.currentPage === totalPages,
             function () {
-                adminLogsState.currentPage += 1;
-                renderLogsTable();
+                goToPage(adminLogsState.currentPage + 1);
             },
             false,
         ),
@@ -318,8 +470,19 @@ document.addEventListener("DOMContentLoaded", function () {
     loadAdminLogsData()
         .then(function (payload) {
             const filters = payload.filters || {};
-            adminLogsState.logs = payload.logs || [];
-            adminLogsState.filteredLogs = adminLogsState.logs.slice();
+            const { logs, pagination } = normalizeLogsPayload(payload);
+
+            // Activa modo server cuando el backend responde paginado.
+            adminLogsState.serverMode = pagination !== null;
+            adminLogsState.logs = logs;
+            adminLogsState.filteredLogs = logs.slice();
+
+            if (pagination) {
+                adminLogsState.serverMeta = pagination;
+                adminLogsState.currentPage = pagination.currentPage;
+                adminLogsState.pageSize = pagination.perPage || adminLogsState.pageSize;
+            }
+
             adminLogsState.defaults.from = filters.defaultFrom || "";
             adminLogsState.defaults.to = filters.defaultTo || "";
 
@@ -331,18 +494,15 @@ document.addEventListener("DOMContentLoaded", function () {
             if (dateFrom) dateFrom.value = adminLogsState.defaults.from;
             if (dateTo) dateTo.value = adminLogsState.defaults.to;
 
-            applyFilters();
+            if (adminLogsState.serverMode) {
+                // Ya tenemos la primera pagina; solo renderizar.
+                renderLogsTable();
+            } else {
+                applyFilters();
+            }
         })
         .catch(function (error) {
             console.error("No se pudieron cargar los logs:", error);
-            const tbody = document.getElementById("adminLogsTableBody");
-            if (tbody) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="logs-empty-state">No fue posible cargar los logs temporales.</td>
-                    </tr>
-                `;
-            }
-            renderLogsPageInfo(0, 0, 0);
+            renderLogsError();
         });
 });
