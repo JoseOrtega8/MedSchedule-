@@ -6,24 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Appointment extends Model
 {
-	protected $fillable = [
-		'patient_id',
-		'doctor_id',
-		'schedule_id',
-		'specialty_id',
-		'appointment_date',
-		'start_time',
-		'end_time',
-		'status',
-		'reason',
-		'google_event_id',
-	];
+protected $fillable = [
+    'patient_id',
+    'doctor_id',
+    'specialty_id',
+    'appointment_date',
+    'start_time',
+    'end_time',
+    'status',
+    'reason'
+];
+
 
 	public function patient()
 	{
 		return $this->belongsTo(User::class, 'patient_id');
 	}
-
 	public function doctor()
 	{
 		return $this->belongsTo(User::class, 'doctor_id');
@@ -43,4 +41,10 @@ class Appointment extends Model
 	{
 		return $this->hasOne(AppointmentHistory::class);
 	}
+
+	public function patientProfile()
+	{
+		return $this->belongsTo(PatientProfile::class, 'patient_id');
+	}
+
 }

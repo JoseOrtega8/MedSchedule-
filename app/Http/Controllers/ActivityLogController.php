@@ -13,7 +13,7 @@ class ActivityLogController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -25,7 +25,7 @@ class ActivityLogController extends Controller
 	 */
 	public function show($id)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -39,7 +39,7 @@ class ActivityLogController extends Controller
 	 */
 	public function getByUser($user_id)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 
@@ -53,7 +53,7 @@ class ActivityLogController extends Controller
 
 	public function indexData(Request $request)
 	{
-		if (!Auth::user()->hasRole('admin')) {
+		if (!Auth::user()->hasRole('Admin')) {
 			abort(403);
 		}
 

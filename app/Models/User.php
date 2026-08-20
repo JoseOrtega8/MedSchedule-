@@ -11,6 +11,7 @@ class User extends Authenticatable
 {
 	use HasFactory, Notifiable, HasRoles;
 
+	protected $guard_name = 'web';
 	protected $fillable = [
 		'name',
 		'last_name',
@@ -35,16 +36,22 @@ class User extends Authenticatable
 
 	public function doctorProfile()
 	{
-		return $this->hasOne(DoctorProfile::class);
+		return $this->hasOne(DoctorProfile::class, 'user_id');
 	}
 
 	public function patientProfile()
 	{
-		return $this->hasOne(PatientProfile::class);
+		return $this->hasOne(PatientProfile::class, 'user_id');
 	}
 
 	public function activityLogs()
 	{
 		return $this->hasMany(ActivityLog::class);
 	}
+	public function specialty()
+	{
+		return $this->belongsTo(Specialty::class, 'specialty_id');
+	}
+
+
 }

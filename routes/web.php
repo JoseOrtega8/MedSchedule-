@@ -16,16 +16,29 @@ Route::get('/', function () {
 	return view('welcome');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', function () {
+	$user = Auth::user();
+
+	if ($user->hasRole('admin')) {
+		return redirect()->route('admin.dashboard');
+	} elseif ($user->hasRole('doctor')) {
+		return redirect()->route('doctor.dashboard');
+	} elseif ($user->hasRole('patient')) {
+		return redirect()->route('patient.dashboard');
+	}
+
+	abort(403, 'Tu cuenta no tiene un rol asignado. Contacta al administrador.');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
 	Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 	Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 	Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-	// Google Calendar — accesible para admin y doctor
 	Route::post('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'sync'])->name('appointments.calendar.sync');
 	Route::delete('/appointments/{appointment}/sync-calendar', [GoogleCalendarController::class, 'unsync'])->name('appointments.calendar.unsync');
+
+	Route::get('/doctor/{id}/availability', [AppointmentController::class, 'availability'])->name('doctor.availability');
 });
 
 Route::view('/about', 'about.about')->name('about');
@@ -47,7 +60,7 @@ Route::middleware(['auth', 'role:admin', 'throttle:60,1'])->group(function () {
 	Route::delete('/admin/especialidades/{specialty}', [SpecialtyController::class, 'destroy'])->name('admin.specialties.destroy');
 	Route::view('/admin/rbac', 'admin.rbac')->name('admin.rbac');
 	Route::get('/admin/rbac/data', function () {
-		$users = \App\Models\User::with('roles')->get()->map(function ($u) {
+		$users = User::with('roles')->get()->map(function ($u) {
 			return [
 				'id'       => $u->id,
 				'initials' => strtoupper(substr($u->name, 0, 1) . substr($u->last_name, 0, 1)),
@@ -111,6 +124,8 @@ Route::middleware(['auth', 'role:patient'])->group(function () {
 	Route::get('/patient/perfil/data', [PatientProfileController::class, 'show'])->name('patient.profile.data');
 	Route::patch('/patient/perfil', [PatientProfileController::class, 'update'])->name('patient.profile.update');
 	Route::post('/patient/perfil/photo', [PatientProfileController::class, 'updatePhoto'])->name('patient.profile.photo');
+	Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
+	Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
 });
 
 require __DIR__ . '/auth.php';

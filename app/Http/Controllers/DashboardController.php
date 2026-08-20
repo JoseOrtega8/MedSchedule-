@@ -137,7 +137,7 @@ class DashboardController extends Controller
 
 	public function doctorData()
 	{
-		return $this->doctorDashboard();
+		return $this->agendaData();
 	}
 
 	public function patientData()
