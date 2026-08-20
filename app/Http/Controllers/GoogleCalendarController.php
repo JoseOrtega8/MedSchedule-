@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SyncAppointmentToCalendar;
 use App\Models\Appointment;
 use App\Services\GoogleCalendarService;
 use Illuminate\Http\Request;
@@ -12,12 +13,11 @@ class GoogleCalendarController extends Controller
 	public function __construct(private GoogleCalendarService $calendar) {}
 
 	/**
-	 * Sincronizar cita con Google Calendar
+	 * Sincronizar cita con Google Calendar (asíncrono, vía cola)
 	 */
 	public function sync(int $appointmentId)
 	{
-		$appointment = Appointment::with(['doctor', 'patient', 'specialty'])
-			->findOrFail($appointmentId);
+		$appointment = Appointment::findOrFail($appointmentId);
 
 		// Solo el doctor dueño o admin puede sincronizar
 		$user = Auth::user();
@@ -31,19 +31,11 @@ class GoogleCalendarController extends Controller
 			], 422);
 		}
 
-		$eventId = $this->calendar->createEvent($appointment);
-
-		if ($eventId) {
-			$appointment->update(['google_event_id' => $eventId]);
-			return response()->json([
-				'message'        => 'Cita sincronizada con Google Calendar.',
-				'google_event_id' => $eventId,
-			]);
-		}
+		SyncAppointmentToCalendar::dispatch($appointment->id);
 
 		return response()->json([
-			'message' => 'No se pudo sincronizar con Google Calendar.',
-		], 500);
+			'message' => 'Sincronización con Google Calendar en proceso.',
+		]);
 	}
 
 	/**
