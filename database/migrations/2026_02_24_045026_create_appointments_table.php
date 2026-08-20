@@ -23,12 +23,15 @@ return new class extends Migration
 			$table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
 			$table->text('reason')->nullable();
 			$table->string('google_event_id', 255)->nullable();
+			$table->text('observaciones')->nullable(); // nuevo campo
 			$table->timestamps();
+
 			$table->index('patient_id');
 			$table->index(['doctor_id', 'appointment_date']);
 			$table->index('status');
 			$table->index('specialty_id');
 		});
+
 	}
 
 	/**
