@@ -9,6 +9,7 @@ use App\Http\Controllers\DoctorProfileController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\SpecialtyController;
+use App\Http\Controllers\PatientProfileController;
 use App\Models\User;
 
 Route::get('/', function () {
@@ -106,11 +107,15 @@ Route::middleware(['auth', 'role:doctor'])->group(function () {
 	Route::get('/doctor/perfil/data', [DoctorProfileController::class, 'indexData'])->name('doctor.profile.data');
 	Route::patch('/doctor/perfil', [DoctorProfileController::class, 'update'])->name('doctor.profile.update');
 	Route::post('/doctor/perfil/photo', [DoctorProfileController::class, 'updatePhoto'])->name('doctor.profile.photo');
+	Route::get('/doctor/pacientes/{id}/perfil', [PatientProfileController::class, 'showForDoctor'])->name('doctor.patient.profile');
 });
 
 Route::middleware(['auth', 'role:patient'])->group(function () {
 	Route::get('/patient/dashboard', [DashboardController::class, 'index'])->name('patient.dashboard');
 	Route::get('/patient/dashboard/data', [DashboardController::class, 'patientData'])->name('patient.dashboard.data');
+	Route::get('/patient/perfil/data', [PatientProfileController::class, 'show'])->name('patient.profile.data');
+	Route::patch('/patient/perfil', [PatientProfileController::class, 'update'])->name('patient.profile.update');
+	Route::post('/patient/perfil/photo', [PatientProfileController::class, 'updatePhoto'])->name('patient.profile.photo');
 });
 
 require __DIR__ . '/auth.php';
