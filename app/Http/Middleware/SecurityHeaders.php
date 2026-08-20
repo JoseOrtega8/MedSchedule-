@@ -27,7 +27,7 @@ class SecurityHeaders
 		// assets ya están compilados y se sirven desde el mismo dominio,
 		// por lo que esa excepción no aplica ni hace falta.
 		$viteDevServer = app()->environment('local')
-			? '127.0.0.1:5173 localhost:5173 ws://127.0.0.1:5173 ws://localhost:5173'
+			? 'http://127.0.0.1:5173 http://localhost:5173 ws://127.0.0.1:5173 ws://localhost:5173'
 			: '';
 
 		$response->headers->set(
