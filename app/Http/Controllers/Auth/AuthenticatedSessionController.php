@@ -42,11 +42,11 @@ class AuthenticatedSessionController extends Controller
 		]);
 
 		// Redirección por rol con Spatie
-		if ($user->hasRole('Admin')) {
+		if ($user->hasRole('admin')) {
 			return redirect()->route('admin.dashboard');
 		}
 
-		if ($user->hasRole('Doctor')) {
+		if ($user->hasRole('doctor')) {
 			return redirect()->route('doctor.dashboard');
 		}
 
@@ -77,17 +77,4 @@ class AuthenticatedSessionController extends Controller
 
 		return redirect('/');
 	}
-
-protected function authenticated(Request $request, $user)
-{
-    if ($user->hasRole('Admin')) {
-        return redirect()->route('admin.dashboard');
-    } elseif ($user->hasRole('Doctor')) {
-        return redirect()->route('doctor.dashboard');
-    } elseif ($user->hasRole('Patient')) {
-        return redirect()->route('patient.dashboard');
-    }
-}
-
-
 }

@@ -13,7 +13,7 @@ class PatientDashboardController extends Controller
 {
 public function index()
 {
-    $doctors = User::role('Doctor')->with('specialty')->get();
+    $doctors = User::role('doctor')->with('specialty')->get();
     return view('patient.dashboard', compact('doctors'));
 }
 

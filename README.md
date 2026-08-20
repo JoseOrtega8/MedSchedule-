@@ -215,11 +215,11 @@ medschedule/
 
 ### Credenciales del seeder (desarrollo)
 
-| Rol           | Email                    | Contraseña    |
-| ------------- | ------------------------ | ------------- |
-| Administrador | admin@medschedule.com    | Admin1234!    |
-| Doctor        | doctor@medschedule.com   | Doctor1234!   |
-| Paciente      | paciente@medschedule.com | Paciente1234! |
+| Rol           | Email                    | Contraseña |
+| ------------- | ------------------------ | ---------- |
+| Administrador | admin@medschedule.com    | password   |
+| Doctor        | doctor@medschedule.com   | password   |
+| Paciente      | paciente@medschedule.com | password   |
 
 ---
 
