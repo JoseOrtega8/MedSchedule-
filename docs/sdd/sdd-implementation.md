@@ -277,11 +277,13 @@ navegación completa por teclado—, Fases 3 a 5 una por tour de rol (US1 a US3,
 propio archivo JS, sus atributos de anclaje sobre las vistas existentes sin alterar lógica de
 negocio, y su prueba E2E), Fase 6 para el botón de ayuda y la resiliencia (US4), y Fase 7 de
 consolidación (revisión de textos en español, ausencia de overlays residuales, comportamiento ante
-cambio de rol). Las tareas T009, T013 y T017 dejan explícito que los atributos de anclaje se
-agregan "sin alterar su lógica de negocio ni los endpoints JSON" de las vistas ya existentes
-(`resources/views/admin/rbac.blade.php`, `resources/views/doctor/agenda.blade.php`,
-`resources/views/patient/dashboard.blade.php`), coherente con que esta entrega no corrige ni toca
-código de producto.
+cambio de rol). Las tareas T009 y T013 dejan explícito que los atributos de anclaje se agregan a
+las vistas ya existentes (`resources/views/admin/rbac.blade.php`,
+`resources/views/admin/especialidades.blade.php`, `resources/views/doctor/agenda.blade.php`,
+`resources/views/doctor/perfil.blade.php`) "sin alterar su lógica de negocio" —texto literal de
+ambas tareas—. T017 va más allá sobre `resources/views/patient/dashboard.blade.php`: exige hacerlo
+"sin crear una vista nueva ni alterar la lógica de negocio ni los endpoints JSON de
+`AppointmentController`", coherente con que esta entrega no corrige ni toca código de producto.
 
 ## 6. Skills de IA que apoyan el flujo
 
