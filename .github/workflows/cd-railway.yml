@@ -50,7 +50,10 @@ jobs:
             - name: Desplegar
               env:
                   RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-              run: railway up --service medschedule-app --detach
+              # Sin --detach a proposito: railway up debe bloquear hasta que el
+              # despliegue termine. Con --detach el comando retorna de inmediato y
+              # el paso de migraciones correria contra el servicio aun en transicion.
+              run: railway up --service medschedule-app
 
             - name: Ejecutar migraciones en el entorno desplegado
               env:
