@@ -81,9 +81,8 @@ ingreso.
       `resources/js/tours/tour-admin.js`, cubriendo como mínimo gestión de usuarios y gestión de
       especialidades (cumple FR-002).
 - [ ] T009 [US1] Agregar los atributos de anclaje necesarios a las vistas de gestión de usuarios
-      (`resources/views/admin/rbac.blade.php` o equivalente) y de especialidades
-      (`resources/views/admin/especialidades.blade.php` o equivalente), sin alterar su lógica de
-      negocio.
+      (`resources/views/admin/rbac.blade.php`) y de especialidades
+      (`resources/views/admin/especialidades.blade.php`), sin alterar su lógica de negocio.
 - [ ] T010 [P] [US1] Prueba E2E: el tour de administrador arranca solo en el primer ingreso y
       recorre gestión de usuarios y especialidades, en
       `tests/playwright_tours_guiados/tour-admin.spec.js` (cumple FR-001, FR-002).
@@ -105,8 +104,8 @@ ingreso; no depende de que el tour de administrador exista.
 - [ ] T012 [US2] Definir los pasos del tour de doctor en `resources/js/tours/tour-doctor.js`,
       cubriendo como mínimo agenda y perfil (cumple FR-003).
 - [ ] T013 [US2] Agregar los atributos de anclaje necesarios a las vistas de agenda
-      (`resources/views/doctor/agenda.blade.php` o equivalente) y de perfil
-      (`resources/views/doctor/perfil.blade.php` o equivalente), sin alterar su lógica de negocio.
+      (`resources/views/doctor/agenda.blade.php`) y de perfil
+      (`resources/views/doctor/perfil.blade.php`), sin alterar su lógica de negocio.
 - [ ] T014 [P] [US2] Prueba E2E: el tour de doctor arranca solo en el primer ingreso y recorre
       agenda y perfil, en `tests/playwright_tours_guiados/tour-doctor.spec.js` (cumple FR-001,
       FR-003).
@@ -119,16 +118,24 @@ ingreso; no depende de que el tour de administrador exista.
 
 ## Phase 5: User Story 3 - Tour de primera vez para el paciente (Priority: P3)
 
-**Goal**: El paciente recibe, en su primer ingreso, un tour que cubre cómo agendar una cita.
+**Goal**: El paciente recibe, en su primer ingreso, un tour que cubre cómo agendar una cita. El
+paciente no tiene una vista dedicada de agendado: todo el flujo (listar doctores, elegir horario,
+agendar, cancelar) vive dentro de `resources/views/patient/dashboard.blade.php`, orquestado por
+AJAX desde `resources/js/patient-dashboard.js` contra endpoints que devuelven JSON
+(`appointments.store`, `appointments.cancel`, `patient.dashboard.data`), no por navegación entre
+páginas HTML. El tour ancla sus pasos sobre los elementos de ese dashboard.
 
 **Independent Test**: Iniciar sesión por primera vez con una cuenta `patient` sin tour visto y
-verificar el arranque automático, la cobertura del flujo de agendado y la no repetición en un
-segundo ingreso.
+verificar el arranque automático, la cobertura del bloque de agendado dentro del dashboard y la no
+repetición en un segundo ingreso.
 
 - [ ] T016 [US3] Definir los pasos del tour de paciente en `resources/js/tours/tour-patient.js`,
-      cubriendo como mínimo el flujo de agendado de cita (cumple FR-004).
-- [ ] T017 [US3] Agregar los atributos de anclaje necesarios a la vista de agendado de cita del
-      paciente, sin alterar su lógica de negocio.
+      cubriendo como mínimo los elementos del dashboard que permiten agendar una cita (selección
+      de doctor/especialidad, horario y botón de confirmación) (cumple FR-004).
+- [ ] T017 [US3] Agregar los atributos de anclaje necesarios dentro de
+      `resources/views/patient/dashboard.blade.php`, sobre el bloque de agendado que ya renderiza
+      esa vista (sin crear una vista nueva ni alterar la lógica de negocio ni los endpoints JSON
+      de `AppointmentController`).
 - [ ] T018 [P] [US3] Prueba E2E: el tour de paciente arranca solo en el primer ingreso y recorre
       el flujo de agendado, en `tests/playwright_tours_guiados/tour-patient.spec.js` (cumple
       FR-001, FR-004).

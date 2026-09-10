@@ -113,20 +113,29 @@ de login.
 ## Phase 5: User Story 3 - Agendado y cancelación de cita del paciente (Priority: P3)
 
 **Goal**: Verificar que un paciente puede agendar una cita disponible y cancelar una cita propia,
-y que el sistema rechaza los casos inválidos (horario ocupado, cancelación ajena).
+y que el sistema rechaza los casos inválidos (horario ocupado, cancelación ajena). El flujo se
+ejercita íntegramente sobre `resources/views/patient/dashboard.blade.php` (no existe una vista
+separada de agendado): las pruebas interactúan con los controles de ese dashboard y esperan las
+respuestas JSON de `POST /appointments` (`appointments.store`) y `POST /appointments/{id}/cancel`
+(`appointments.cancel`), orquestadas por `resources/js/patient-dashboard.js`.
 
 **Independent Test**: Ejecutar únicamente `tests/playwright_citas_paciente/` con el paciente,
-doctor, especialidad y horario sembrados en T001/T002.
+doctor, especialidad y horario sembrados en T001/T002, operando siempre desde el dashboard del
+paciente.
 
-- [ ] T014 [P] [US3] Prueba E2E: el paciente agenda una cita en un horario disponible y esta
-      aparece con estado agendada, en `tests/playwright_citas_paciente/citas-paciente.spec.js`
-      (cumple FR-006).
-- [ ] T015 [US3] Prueba E2E: el paciente no puede agendar una cita en un horario ya ocupado, en el
-      mismo archivo (cumple FR-007).
-- [ ] T016 [US3] Prueba E2E: el paciente cancela una cita propia agendada y el horario vuelve a
-      quedar disponible, en el mismo archivo (cumple FR-008).
-- [ ] T017 [US3] Prueba E2E: el paciente no puede cancelar una cita que pertenece a otro paciente,
-      en el mismo archivo (cumple FR-009).
+- [ ] T014 [P] [US3] Prueba E2E: desde el dashboard del paciente, agendar una cita en un horario
+      disponible, esperar la respuesta JSON exitosa de `appointments.store` y verificar que la
+      cita aparece con estado agendada en el propio dashboard, en
+      `tests/playwright_citas_paciente/citas-paciente.spec.js` (cumple FR-006).
+- [ ] T015 [US3] Prueba E2E: desde el dashboard del paciente, intentar agendar una cita en un
+      horario ya ocupado y verificar que la respuesta JSON de `appointments.store` rechaza la
+      operación, en el mismo archivo (cumple FR-007).
+- [ ] T016 [US3] Prueba E2E: desde el dashboard del paciente, cancelar una cita propia agendada,
+      esperar la respuesta JSON exitosa de `appointments.cancel` y verificar que el horario vuelve
+      a quedar disponible, en el mismo archivo (cumple FR-008).
+- [ ] T017 [US3] Prueba E2E: intentar cancelar, vía `appointments.cancel`, una cita que pertenece a
+      otro paciente y verificar que la respuesta JSON rechaza la operación, en el mismo archivo
+      (cumple FR-009).
 
 **Checkpoint**: User Stories 1, 2 y 3 funcionan de forma independiente entre sí.
 

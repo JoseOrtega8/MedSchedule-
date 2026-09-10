@@ -76,7 +76,12 @@ fallos de PHPUnit documentados ni instrumentar cobertura de código.
 - **Principio IV (Validación de entrada)**: PASA. Los escenarios de rechazo (horario ocupado,
   especialidad duplicada, cancelación ajena) verifican que el sistema ya validado por la
   aplicación se comporta como se espera; esta funcionalidad no agrega validación nueva, la
-  verifica.
+  verifica. Nota de cobertura conocida, no bloqueante para este gate: `tests/Feature/Auth/RegistrationTest.php`
+  existe como stub vacío (`class RegistrationTest extends TestCase {}`, sin métodos), por lo que
+  hoy no hay ninguna prueba automática (ni E2E ni PHPUnit) que valide el input del formulario de
+  registro. Esta especificación no lo cubre (el registro de cuentas no es uno de los 4 flujos en
+  alcance); se documenta aquí como brecha de cobertura conocida para una futura especificación,
+  distinta de los 15 fallos de PHPUnit ya documentados en `hallazgos-fallos-pruebas.md`.
 - **Principio V (Exposición de errores al cliente)**: PASA. Los escenarios de acceso denegado
   verifican un código de estado 403 genérico, no un mensaje que exponga detalles internos.
 - **Principio VII (Convenciones de control de versiones)**: PASA. El trabajo de esta

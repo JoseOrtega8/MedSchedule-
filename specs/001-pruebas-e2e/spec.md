@@ -72,15 +72,21 @@ agendado de citas del paciente (los datos de prueba se preparan directamente par
 ### User Story 3 - Agendado y cancelación de cita del paciente (Priority: P3)
 
 Como responsable de calidad, necesito una prueba automática que confirme que un paciente puede
-agendar una cita disponible con un doctor y especialidad, y cancelar una cita propia.
+agendar una cita disponible con un doctor y especialidad, y cancelar una cita propia. El paciente
+no tiene una pantalla dedicada de agendado: el flujo completo se ejercita sobre su panel principal
+(el dashboard del paciente), donde la selección de doctor/especialidad/horario, el agendado y la
+cancelación se disparan por AJAX contra endpoints que responden JSON, no HTML; la prueba debe
+esperar y verificar esas respuestas y el refresco resultante de la interfaz, no una navegación
+entre páginas distintas.
 
 **Why this priority**: Es el flujo de negocio central de MedSchedule desde la perspectiva del
 paciente; requiere que el flujo de autenticación (US1) ya esté cubierto y añade la primera prueba
 de escritura de datos de negocio (no solo de usuarios administrativos).
 
 **Independent Test**: Puede probarse de forma aislada con un paciente, un doctor y un horario
-disponible ya sembrados: agendar la cita, verificar que aparece en el historial del paciente, y
-cancelarla, verificando que su estado cambia y libera el horario.
+disponible ya sembrados: desde el dashboard del paciente, agendar la cita y verificar la respuesta
+JSON exitosa y su reflejo en el listado de citas de esa misma pantalla, verificar que aparece en el
+historial del paciente, y cancelarla, verificando que su estado cambia y libera el horario.
 
 **Acceptance Scenarios**:
 
@@ -211,6 +217,14 @@ de que existan doctores o pacientes de prueba.
 - Los datos de prueba para las User Stories 2, 3 y 4 (doctor con horarios, especialidad,
   paciente) se preparan de forma independiente entre sí y no reutilizan el usuario ni los datos
   creados por la prueba de gestión de usuarios ya existente.
+- El paciente no tiene una vista dedicada de agendado de cita: el flujo completo (listar doctores,
+  elegir especialidad/horario, agendar, cancelar) vive dentro del dashboard del paciente
+  (`resources/views/patient/dashboard.blade.php`), y se ejecuta por AJAX contra endpoints que
+  devuelven JSON — `POST /appointments` (ruta `appointments.store`), `POST
+  /appointments/{id}/cancel` (ruta `appointments.cancel`) y `GET /patient/dashboard/data` (ruta
+  `patient.dashboard.data`) — orquestados por `resources/js/patient-dashboard.js`. La User Story 3
+  y sus pruebas deben ejercitar ese dashboard y esperar las respuestas JSON correspondientes, no
+  una pantalla separada.
 - La versión de `@playwright/test` usada para las pruebas nuevas es `^1.62.1`, conforme a las
   versiones fijadas para esta entrega.
 - El ajuste necesario en el pipeline de integración continua para ejecutar Playwright y dejar de

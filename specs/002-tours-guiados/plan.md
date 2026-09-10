@@ -121,7 +121,12 @@ resources/views/
 │                             # anclaje para los pasos del tour y el botón de ayuda; sin cambios
 │                             # a su lógica de negocio
 ├── doctor/                   # Vistas existentes (agenda, perfil) reciben atributos de anclaje
-└── patient/                  # Vista existente de agendado de cita recibe atributos de anclaje
+└── patient/dashboard.blade.php  # Única vista del paciente (confirmada en el código: no existe
+                              # una vista dedicada de agendado); recibe atributos de anclaje sobre
+                              # los elementos del dashboard, incluido el bloque de agendado que
+                              # vive ahí mismo y que se orquesta por AJAX desde
+                              # resources/js/patient-dashboard.js contra endpoints JSON
+                              # (appointments.store, appointments.cancel, patient.dashboard.data)
 
 tests/
 └── playwright_tours_guiados/
