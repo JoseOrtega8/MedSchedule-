@@ -1,5 +1,8 @@
 *.log
 .DS_Store
+
+# Configuración local del agente: puede contener ajustes de máquina, no se versiona.
+.claude/settings.local.json
 # Cualquier variante de .env queda fuera del repositorio; solo se versiona el ejemplo.
 .env*
 !.env.example
