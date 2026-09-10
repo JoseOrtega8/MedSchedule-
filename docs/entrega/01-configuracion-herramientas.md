@@ -197,15 +197,51 @@ npm run build
 ```
 
 ```bash
+# Prerrequisito: arrancar el MySQL de MAMP y confirmar que quedó escuchando —
+# [EJECUTADO] (preparación manual del autor, antes de despachar la Tarea 2)
+# MAMP usa el puerto 8889, no el 3306 por defecto de MySQL. Esa diferencia de puerto es la razón
+# por la que el bloque de PHPUnit de abajo recibe DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD
+# explícitos en vez de depender de config/database.php (ver el bloque "Intento de reproducir..."
+# más abajo y el §2.2 de este documento).
+/Applications/MAMP/bin/startMysql.sh
+nc -z 127.0.0.1 8889 && echo "MySQL de MAMP escuchando en 8889"
+```
+
+```bash
+# Prerrequisito: crear la base de pruebas — [EJECUTADO] (preparación manual del autor, antes de
+# despachar la Tarea 2). No documentado en su momento; se reconstruye aquí porque
+# `phpunit.xml:26-27` fuerza DB_CONNECTION=mysql / DB_DATABASE=medschedule_test y ningún artefacto
+# de la aplicación (migración o seeder) crea esa base — debe existir de antemano o el suite falla
+# con "Unknown database 'medschedule_test'". Se usa utf8mb4/utf8mb4_unicode_ci para igualar el
+# juego de caracteres esperado en producción y para que los acentos y la eñe de nombres de
+# pacientes y doctores se almacenen correctamente.
+/Applications/MAMP/Library/bin/mysql80/bin/mysql \
+  --socket=/Applications/MAMP/tmp/mysql/mysql.sock -u<usuario_mamp> -p<password_mamp> \
+  -e "CREATE DATABASE IF NOT EXISTS medschedule_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+```bash
 # Suite de PHPUnit contra el MySQL de MAMP — [EJECUTADO] (Tarea 2)
+# Requiere los dos bloques anteriores (servicio arrancado, base creada).
 # Puerto y usuario documentables; la contraseña nunca se imprime ni se commitea.
 DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=<usuario_mamp> DB_PASSWORD=<password_mamp> php artisan test
 ```
 
 ```bash
 # Intento de reproducir la línea base con la conexión por defecto — [EJECUTADO] (Tarea 9)
-# No reprodujo el 64/15 porque phpunit.xml fuerza el puerto 3306 y MAMP escucha en 8889.
+# No reprodujo el 64/15 porque phpunit.xml fuerza mysql/medschedule_test pero config/database.php
+# apunta por defecto al puerto 3306, mientras el MySQL de MAMP de los dos bloques anteriores
+# escucha en 8889 (§2.2).
 php artisan test
+```
+
+```bash
+# Prerrequisito: instalar el binario de Chromium que usa Playwright — [PREVISTO, NO EJECUTADO]
+# (esta máquina ya tenía binarios de Chromium en caché en ~/Library/Caches/ms-playwright desde
+# antes de la Tarea 1; `playwright install` nunca se corrió durante esta entrega. Desde un clon
+# limpio sin esa caché, `npx playwright test` fallaría con "browserType.launch: Executable doesn't
+# exist" si se omite este paso).
+npx playwright install chromium
 ```
 
 ```bash
