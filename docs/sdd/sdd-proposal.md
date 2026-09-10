@@ -18,7 +18,9 @@ ningún archivo con credenciales.
 
 ## 2. Modelo de datos reconstruido desde las migraciones
 
-Las quince migraciones crean o modifican dieciocho tablas. Se agrupan aquí por origen para que cada
+Las quince migraciones crean o modifican diecinueve tablas (con `Schema::create`; las tres migraciones
+que solo alteran tablas existentes —`2026_03_01_061322`, `2026_08_15_043158` y `2026_08_19_031109`— no
+suman tablas nuevas). Se agrupan aquí por origen para que cada
 fila sea trazable a su archivo.
 
 ### 2.1 Núcleo de autenticación y framework — `0001_01_01_000000_create_users_table.php`
@@ -244,7 +246,7 @@ de autenticación de Laravel (no generados por este equipo), expuestos por `rout
 | `DoctorDashboardController` | Igual que la anterior: clase vacía sin referencias en rutas (`app/Http/Controllers/DoctorDashboardController.php:9`). | ninguna |
 | `DashboardController` | Enruta por rol hacia la vista o el JSON del dashboard correspondiente; expone los datos cacheados vía `DashboardStatsService`. | `web.php:47,48,49,50,51,104,105,122,123` |
 | `ActivityLogController` | Listado, detalle y filtrado de `activity_logs` para el panel de administración. | `web.php:52-55` |
-| `AppointmentController` | Agenda del doctor (JSON), alta/cancelación/actualización de citas, disponibilidad de horario. | `web.php:38-41,107,108,127,128` |
+| `AppointmentController` | Agenda del doctor (JSON), alta/cancelación/actualización de citas, disponibilidad de horario. | `web.php:41,107,108,127,128` |
 | `DoctorProfileController` | Lectura/actualización del perfil de doctor y su foto. | `web.php:115-117` |
 | `PatientProfileController` | Lectura/actualización del perfil de paciente y su foto; lectura del perfil por parte del doctor. | `web.php:118,124-126` |
 | `ScheduleController` | CRUD de horarios del doctor (en arreglo/JSON, no persistido vía Eloquent en `store`/`update`/`destroy`, ver `app/Http/Controllers/ScheduleController.php:147-220`). | `web.php:110-113` |
@@ -320,7 +322,7 @@ Los ocho hallazgos siguientes se documentan con su evidencia; ninguno se corrige
    como el motor del proyecto. Tres configuraciones activas y coherentes entre sí en su propio
    contexto, pero sin una única fuente de verdad documentada.
 
-5. **Cobertura E2E de un solo flujo.** `playwright.config.js:8` fija `testDir` en
+5. **Cobertura E2E de un solo flujo.** `playwright.config.js:6` fija `testDir` en
    `./tests/playwright_gestion_usuarios`, y ese directorio contiene un único archivo de prueba
    (`gestion-usuarios.spec.js`). Los flujos de autenticación por rol, agenda del doctor, agendado del
    paciente y CRUD de especialidades no tienen cobertura E2E, solo Feature (PHPUnit) parcial.
