@@ -57,18 +57,18 @@ gitGraph
     commit id: "trabajo-backend"
     checkout develop
     merge backend
-    branch feat/7-auth-breeze
-    checkout feat/7-auth-breeze
+    branch "feat/7-auth-breeze"
+    checkout "feat/7-auth-breeze"
     commit id: "issue-7"
     checkout develop
-    merge feat/7-auth-breeze
-    branch feat/61-e2e-gestion-usuarios
-    checkout feat/61-e2e-gestion-usuarios
+    merge "feat/7-auth-breeze"
+    branch "feat/61-e2e-gestion-usuarios"
+    checkout "feat/61-e2e-gestion-usuarios"
     commit id: "issue-61"
     checkout develop
-    merge feat/61-e2e-gestion-usuarios
-    branch feat/unidad-docs-sdd
-    checkout feat/unidad-docs-sdd
+    merge "feat/61-e2e-gestion-usuarios"
+    branch "feat/unidad-docs-sdd"
+    checkout "feat/unidad-docs-sdd"
     commit id: "docs-sdd-cicd"
     checkout develop
     checkout main
@@ -203,10 +203,13 @@ Pasos:
    `medschedule_test`, usuario `root`, contraseña `password` (la misma credencial efímera del
    servicio, no un secreto real).
 10. `php artisan test --filter="AuthTest|ActivityLogControllerTest|ExampleTest|EnsureAdminRoleTest" || true`
-    (**línea 92**) — ejecuta **solo** las cuatro clases de prueba nombradas en el filtro, de las
-    **veinte** clases de prueba que existen en el repositorio. El `|| true` final hace que este paso
-    —el único que ejecuta lógica de negocio— nunca falle el job, sin importar cuántas aserciones
-    fallen dentro de esas cuatro clases.
+    (**línea 92**) — el filtro casa por subcadena, no por nombre exacto de clase, y el patrón
+    `ExampleTest` coincide con **dos** archivos (`tests/Unit/ExampleTest.php` y
+    `tests/Feature/ExampleTest.php`, las pruebas de ejemplo que trae Laravel de fábrica, que no
+    prueban nada del dominio). El paso ejecuta entonces **cinco** clases de prueba —no cuatro—, de
+    las **veinte** clases de prueba que existen en el repositorio. El `|| true` final hace que este
+    paso —el único que ejecuta lógica de negocio— nunca falle el job, sin importar cuántas
+    aserciones fallen dentro de esas cinco clases.
 
 ### 3.4 Lo que el pipeline no hace
 
@@ -224,11 +227,15 @@ Actions en un PR **no es evidencia de que el código funcione**.
   del comando que los precede en un código de salida 0. En Bash, `comando || true` significa
   "si `comando` falla, ejecuta `true` en su lugar", y el código de salida del paso es el de `true`
   (siempre 0). El resultado práctico: ESLint puede reportar cientos de errores, Prettier puede
-  encontrar todo el código mal formateado, y PHPUnit puede fallar sus cuatro clases filtradas por
+  encontrar todo el código mal formateado, y PHPUnit puede fallar sus cinco clases filtradas por
   completo — el job termina en verde en los tres casos, porque el paso nunca propaga el fallo al
   runner.
 - **El filtro de la línea 92** (`--filter="AuthTest|ActivityLogControllerTest|ExampleTest|EnsureAdminRoleTest"`)
-  reduce la ejecución a 4 de las 20 clases de prueba del repositorio. Las 16 restantes —incluidas
+  reduce la ejecución a 5 de las 20 clases de prueba del repositorio: el patrón `ExampleTest` casa
+  por subcadena con dos archivos distintos (`tests/Unit/ExampleTest.php` y
+  `tests/Feature/ExampleTest.php`), así que el filtro arrastra sin querer las dos pruebas de ejemplo
+  de fábrica de Laravel además de las tres clases del dominio que sí se pretendía cubrir
+  (`AuthTest`, `ActivityLogControllerTest`, `EnsureAdminRoleTest`). Las 15 restantes —incluidas
   `AdminRbacAccessTest`, `AppointmentControllerTest`, `DoctorProfileControllerTest`,
   `ScheduleControllerTest`, `SpecialtyControllerTest` (con 2 fallos verificados cada una),
   `DashboardControllerTest` (3 fallos) y `GoogleCalendarControllerTest` (2 fallos) — **nunca se
@@ -236,7 +243,7 @@ Actions en un PR **no es evidencia de que el código funcione**.
   6) documenta la taxonomía completa de esos 15 fallos verificados al correr la suite completa fuera
   del pipeline: 10 son tests obsoletos que nunca autentican (no usan `actingAs()` ni
   `RefreshDatabase`, y las rutas que golpean ya están protegidas por
-  `Route::middleware(['auth','role:admin'|'role:doctor'])` de Spatie, `routes/web.php:46,103,121`),
+  `Route::middleware(['auth','role:admin'|'role:doctor'])` de Spatie, `routes/web.php:46,103`),
   3 son drift real entre `/dashboard` y lo que el test espera, y 2 apuntan a un defecto de
   integración con `GoogleCalendarService`. Ninguno de los 15 se corrige en esta entrega (regla: no
   arreglar nada existente); quedan documentados como trabajo de la unidad siguiente.
@@ -244,7 +251,8 @@ Actions en un PR **no es evidencia de que el código funcione**.
   dashboard del paciente— se verifica en CI. Esto tiene una consecuencia concreta ya identificada:
   `resources/views/patient/dashboard.blade.php` (línea 18) referencia
   `resources/js/patient-dashboard.js` vía `@vite(...)`, pero ese archivo no está en el arreglo
-  `input` de `vite.config.js` (que sí lista los otros doce entrypoints). Con `npm run dev` esto pasa
+  `input` de `vite.config.js` (que sí lista los otros diecisiete entrypoints: 7 hojas CSS y 10
+  módulos JS). Con `npm run dev` esto pasa
   desapercibido porque el servidor de desarrollo de Vite sirve cualquier ruta; con `npm run build`
   —el comando que el propio `ci.yml:63` ejecuta— el archivo queda fuera del manifiesto, y al
   renderizar esa vista en producción Laravel lanza "Unable to locate file in Vite manifest". El
@@ -375,7 +383,7 @@ flowchart TD
     E --> F["Job lint-format\nESLint + Prettier"]
     E --> G["Job php-tests\nMySQL 8.0 + PHPUnit filtrado"]
     F -.->|"|| true en ambos pasos\nNO bloquea"| H["Check de GitHub\nsiempre en verde"]
-    G -.->|"|| true + filtro a 4/20 clases\nNO bloquea"| H
+    G -.->|"|| true + filtro a 5/20 clases\nNO bloquea"| H
     H --> I{"Revisión humana del PR\nchecklist de la plantilla"}
     I -->|aprobado| J["Merge a develop / main"]
     I -->|cambios solicitados| C

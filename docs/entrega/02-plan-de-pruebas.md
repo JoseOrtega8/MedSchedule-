@@ -365,15 +365,17 @@ anterior se descarte y el paso reporte éxito sin importar el resultado real. Co
   reportaría en verde igual.
 
 **Efecto adicional de la línea 92: el filtro.** `--filter="AuthTest|ActivityLogControllerTest|
-ExampleTest|EnsureAdminRoleTest"` limita la ejecución a exactamente cuatro nombres de clase. El
-repositorio tiene 20 clases de prueba en total (verificado con `find tests -name "*.php" -exec
-grep -l "^class " {} \; | wc -l` → `20`). Las cuatro que sí corren en CI —coincidentemente— son
-todas clases en `PASS` en la corrida real de esta entrega (sección 6.2); las 16 restantes,
-incluidas las que hoy tienen fallos reales (`AdminRbacAccessTest`, `AppointmentControllerTest`,
-`DashboardControllerTest`, `DoctorProfileControllerTest`, `GoogleCalendarControllerTest`,
-`ScheduleControllerTest`, `SpecialtyControllerTest`), **nunca se ejecutan en el pipeline**. El CI
-de este repositorio jamás ha visto los 15 fallos documentados en este plan, porque nunca corrió
-las clases donde viven.
+ExampleTest|EnsureAdminRoleTest"` nombra cuatro patrones, pero casa por subcadena: `ExampleTest`
+coincide con dos archivos distintos (`tests/Unit/ExampleTest.php` y `tests/Feature/ExampleTest.php`,
+las pruebas de ejemplo de fábrica de Laravel, que no prueban nada del dominio), así que en realidad
+se ejecutan cinco clases. El repositorio tiene 20 clases de prueba en total (verificado con
+`find tests -name "*.php" -exec grep -l "^class " {} \; | wc -l` → `20`). Las cinco que sí corren en
+CI —coincidentemente— son todas clases en `PASS` en la corrida real de esta entrega (sección 6.2);
+las 15 restantes, incluidas las que hoy tienen fallos reales (`AdminRbacAccessTest`,
+`AppointmentControllerTest`, `DashboardControllerTest`, `DoctorProfileControllerTest`,
+`GoogleCalendarControllerTest`, `ScheduleControllerTest`, `SpecialtyControllerTest`), **nunca se
+ejecutan en el pipeline**. El CI de este repositorio jamás ha visto los 15 fallos documentados en
+este plan, porque nunca corrió las clases donde viven.
 
 **Playwright no se ejecuta en el pipeline en absoluto.** `.github/workflows/ci.yml` no contiene
 ningún paso que invoque `npx playwright test`, `playwright install` ni referencia alguna al

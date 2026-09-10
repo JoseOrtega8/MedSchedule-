@@ -306,14 +306,18 @@ Los ocho hallazgos siguientes se documentan con su evidencia; ninguno se corrige
    y línea 92 (`php artisan test --filter=... || true`), el sufijo `|| true` fuerza que el paso
    termine en éxito sin importar el resultado real del comando.
 
-3. **El paso de tests del CI ejecuta solo cuatro de las veinte clases de prueba reales.**
+3. **El paso de tests del CI ejecuta solo cinco de las veinte clases de prueba reales.**
    `.github/workflows/ci.yml:92` usa `--filter="AuthTest|ActivityLogControllerTest|ExampleTest|EnsureAdminRoleTest"`.
-   El repositorio tiene 20 clases de prueba (17 en `tests/Feature/`, incluidas las 6 de
-   `tests/Feature/Auth/`, y 3 en `tests/Unit/`) — se corrige aquí el número de la estimación previa
-   ("veintidós"), que no resistió el conteo directo (`find tests -name "*.php" -exec grep -l "^class " {} \;`
-   devuelve 20 archivos con clase). Las 16 clases restantes, incluidas las que sí se ejecutan hoy con
-   fallos reales (`AppointmentControllerTest`, `DashboardControllerTest`, `GoogleCalendarControllerTest`,
-   etc.), no corren nunca en el pipeline.
+   El filtro nombra cuatro patrones, pero casa por subcadena y `ExampleTest` coincide con dos
+   archivos distintos (`tests/Unit/ExampleTest.php` y `tests/Feature/ExampleTest.php`, las pruebas
+   de ejemplo de fábrica de Laravel, que no prueban nada del dominio), así que en realidad se
+   ejecutan cinco clases. El repositorio tiene 20 clases de prueba (17 en `tests/Feature/`,
+   incluidas las 6 de `tests/Feature/Auth/`, y 3 en `tests/Unit/`) — se corrige aquí el número de la
+   estimación previa ("veintidós"), que no resistió el conteo directo
+   (`find tests -name "*.php" -exec grep -l "^class " {} \;` devuelve 20 archivos con clase). Las 15
+   clases restantes, incluidas las que sí se ejecutan hoy con fallos reales
+   (`AppointmentControllerTest`, `DashboardControllerTest`, `GoogleCalendarControllerTest`, etc.), no
+   corren nunca en el pipeline.
 
 4. **Tres afirmaciones distintas sobre el motor de base de datos.** `phpunit.xml` fuerza
    `DB_CONNECTION=mysql` con base `medschedule_test` para pruebas; `config/database.php:19` usa
@@ -349,9 +353,11 @@ Los ocho hallazgos siguientes se documentan con su evidencia; ninguno se corrige
 
 `resources/views/patient/dashboard.blade.php:18` invoca `@vite(['resources/js/patient-dashboard.js'])`,
 pero `resources/js/patient-dashboard.js` no aparece en el arreglo `input` de `vite.config.js` (que sí
-lista los otros doce entrypoints: `app.js`, `about.js`, `topbar-date.js`, `dashboard.js`, `agenda.js`,
-`especialidades.js`, `horarios.js`, `doctor-profile.js`, `admin-logs.js`, `admin-rbac.js` y tres hojas
-de estilo). Con `npm run dev` el servidor de Vite sirve cualquier ruta y el problema no se manifiesta;
+lista los otros diecisiete entrypoints: 10 módulos JS —`app.js`, `about.js`, `topbar-date.js`,
+`dashboard.js`, `agenda.js`, `especialidades.js`, `horarios.js`, `doctor-profile.js`,
+`admin-logs.js`, `admin-rbac.js`— y 7 hojas de estilo —`app.css`, `agenda.css`,
+`especialidades.css`, `horarios.css`, `doctor-profile.css`, `admin-logs.css`, `admin-rbac.css`—).
+Con `npm run dev` el servidor de Vite sirve cualquier ruta y el problema no se manifiesta;
 con `npm run build` (el que ejecuta `ci.yml:63`) el archivo queda fuera del manifiesto y Laravel lanza
 `Unable to locate file in Vite manifest` al renderizar la vista. El dashboard del paciente queda roto
 en cualquier entorno que sirva assets compilados. Nada lo detecta hoy porque el paso de tests del CI
