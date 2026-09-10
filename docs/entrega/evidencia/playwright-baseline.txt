@@ -1,0 +1,9 @@
+# Evidencia de ejecución — Playwright (línea base)
+# Servidor levantado con: php artisan serve --port=8000 (PID capturado, sin usar kill %1 — ruling 2).
+---
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/playwright_gestion_usuarios/gestion-usuarios.spec.js:23:1 › gestion de usuarios: crear un usuario y editar su rol (3.3s)
+
+  1 passed (4.8s)
