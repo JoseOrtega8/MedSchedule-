@@ -31,3 +31,16 @@ Thumbs.db
 /tests/playwright-report
 /tests/playwright_gestion_usuarios/evidencia
 /playwright/.cache
+
+# Documentación entregable de la unidad. La regla /docs/* de arriba ignora las
+# subcarpetas de docs/, así que hay que reincluirlas de forma explícita.
+!/docs/entrega/
+!/docs/sdd/
+
+# Terraform: el state y las variables suelen contener credenciales.
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
