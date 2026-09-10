@@ -227,8 +227,10 @@ Archivos: `AdminRbacAccessTest` (2 fallos), `AppointmentControllerTest` (2), `Do
 Ninguno de estos tests usa `actingAs()` ni `RefreshDatabase`. `AdminRbacAccessTest` en particular
 inyecta `withSession(['mock_current_user' => [...]])`, el mecanismo del middleware legado
 `App\Http\Middleware\EnsureAdminRole`. Pero las rutas que golpean ya están protegidas por
-`Route::middleware(['auth', 'role:admin'|'role:doctor'])` de Spatie (`routes/web.php` líneas 43-100
-y 96-118, según `sdd-proposal.md` §5.2). Son tests que no se actualizaron cuando el proyecto migró
+`Route::middleware(['auth', 'role:admin'|'role:doctor'])` de Spatie (`routes/web.php:46`, bloque de
+administrador que cierra en la línea 101, y `routes/web.php:103`, bloque de doctor que cierra en la
+línea 119, según `sdd-proposal.md` §5.2, verificado también con `grep -n 'Route::middleware'
+routes/web.php`). Son tests que no se actualizaron cuando el proyecto migró
 de autenticación simulada a autenticación real basada en roles: **sembrar roles en la base de
 datos no los arreglaría, porque estos tests nunca inician sesión real** — la petición HTTP llega
 sin usuario autenticado y el middleware `auth` la redirige (302) o la rechaza (401) antes de que
@@ -242,7 +244,7 @@ petición sin sesión.
 Archivo: `DashboardControllerTest`. A diferencia del grupo A, **este archivo sí autentica
 correctamente** (`RefreshDatabase` + `setupRoles()` + `assignRole()`, sin depender de seeds
 externos — ver `tests/Feature/DashboardControllerTest.php` líneas 17-29). La ruta `/dashboard`
-(`routes/web.php` líneas 18-29) siempre devuelve una redirección 302 según el rol, incluso para
+(`routes/web.php:19-31`) siempre devuelve una redirección 302 según el rol, incluso para
 `admin` y `patient`, cuando el test espera `200 OK`; y redirige al doctor hacia `doctor.dashboard`
 en vez de `doctor.agenda`, como espera `test_doctor_dashboard_redirects_to_agenda`. La evidencia
 real confirma exactamente esa divergencia:
