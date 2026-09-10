@@ -19,7 +19,7 @@ ocultar fallos con `|| true`.
 ## Technical Context
 
 **Language/Version**: JavaScript (Node.js 20, la misma versión ya usada en el job de CI) para las
-pruebas Playwright; PHP 8.2 / Laravel 11 para la aplicación bajo prueba (sin cambios de código de
+pruebas Playwright; PHP 8.2 / Laravel 12 para la aplicación bajo prueba (sin cambios de código de
 aplicación en esta funcionalidad).
 
 **Primary Dependencies**: `@playwright/test` `^1.62.1` (versión fijada, ya presente en el flujo

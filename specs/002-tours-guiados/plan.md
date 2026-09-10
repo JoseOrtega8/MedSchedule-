@@ -18,7 +18,7 @@ DOM sin romper la página.
 ## Technical Context
 
 **Language/Version**: JavaScript (ES2020+) ejecutado en el navegador, integrado con las vistas
-Blade de Laravel 11 mediante el pipeline de assets ya usado por el proyecto (Vite).
+Blade de Laravel 12 mediante el pipeline de assets ya usado por el proyecto (Vite).
 
 **Primary Dependencies**: `driver.js` `@1.8.0` (versión fijada por las restricciones globales de
 esta entrega; su instalación real es trabajo de la Tarea 6, no de esta especificación ni de este
