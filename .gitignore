@@ -47,3 +47,9 @@ Thumbs.db
 *.tfvars.json
 .terraform/
 .terraform.lock.hcl
+
+# Checklists historicos de la infraestructura IONOS ya desaparecida. Contienen
+# host, usuario y password en claro; el repositorio es publico y no deben
+# versionarse nunca. Se conservan solo en local como registro del equipo.
+/docs/IONOS_Deploy_Checklist.md
+/docs/MedSchedule_Estructura_DB_IONOS.md
