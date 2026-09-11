@@ -265,11 +265,11 @@ identifican una clave de aplicación o un valor sensible de configuración).
 Resultado real: 58 filas de caso (`CP-001` a `CP-058`, sin huecos en la numeración), y ningún
 patrón de clave, token ni contraseña con aspecto verosímil encontrado en el archivo. La suma de
 métodos declarados como cubiertos en las filas de la sección 3.1 a 3.11 es
-79 (78 métodos reales de PHPUnit repartidos en las 37 filas correspondientes, más el stub vacío de
-`RegistrationTest` contado como 0), que coincide con el total verificado en la sección 0 y con
-`docs/entrega/evidencia/phpunit-baseline.txt`; a esos 79 se suma 1 spec de Playwright (CP-038),
-para 80 artefactos de prueba ya existentes documentados, y 20 casos propuestos sin implementar
-(CP-039 a CP-058).
+79 métodos reales de PHPUnit, repartidos en las 37 filas que sí cubren métodos (la fila de
+`RegistrationTest`, CP-017, no suma ninguno porque es un stub vacío), que coincide con el total
+verificado en la sección 0 y con `docs/entrega/evidencia/phpunit-baseline.txt`; a esos 79 se suma
+1 spec de Playwright (CP-038), para 80 artefactos de prueba ya existentes documentados, y 20 casos
+propuestos sin implementar (CP-039 a CP-058).
 
 ## 7. Conclusión
 

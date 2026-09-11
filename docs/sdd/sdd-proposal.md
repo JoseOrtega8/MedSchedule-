@@ -331,10 +331,14 @@ Los ocho hallazgos siguientes se documentan con su evidencia; ninguno se corrige
    (`gestion-usuarios.spec.js`). Los flujos de autenticación por rol, agenda del doctor, agendado del
    paciente y CRUD de especialidades no tienen cobertura E2E, solo Feature (PHPUnit) parcial.
 
-6. **`docs/IONOS_Deploy_Checklist.md` describe una infraestructura que ya no existe.** El documento
-   asume despliegue manual por FTP/SSH a un hosting IONOS con una carpeta raíz `MedSchedule/public`;
-   el pipeline vigente (`.github/workflows/cd-railway.yml`) despliega a Railway. El checklist de IONOS
-   queda como documentación histórica no actualizada, no como procedimiento operativo real.
+6. **La documentación operativa heredada de IONOS describe una infraestructura que ya no existe.**
+   Un checklist de despliegue manual por FTP/SSH a un hosting IONOS con una carpeta raíz
+   `MedSchedule/public`, y un documento de estructura de base de datos para ese mismo hosting,
+   quedan obsoletos porque el pipeline vigente (`.github/workflows/cd-railway.yml`) despliega a
+   Railway. Ninguno de los dos se referencia aquí por ruta ni se versiona en este repositorio
+   público: contienen credenciales en claro de esa infraestructura y se conservan, por decisión del
+   autor, únicamente en la máquina local (detalle completo y ya resuelto en
+   `docs/entrega/05-estrategia-despliegue.md` §8.5 y §9).
 
 7. **La regla `/docs/*` de `.gitignore` impedía versionar documentación en subcarpetas.** Antes del
    commit `2b0dd57` (`docs(feat): desbloquear rutas entregables en .gitignore`, ver
