@@ -128,8 +128,8 @@ pasos de calidad terminan en `|| true` y nunca reportan fallo.
 
 ## 3. El pipeline actual: `.github/workflows/ci.yml`, job por job
 
-Este archivo es preexistente y **no se modifica en esta entrega** (restricción vinculante de
-`global-constraints.md`). Se describe y se critica a continuación, verificado línea por línea con
+Este archivo es preexistente y **no se modifica en esta entrega** (restricción vinculante del
+proyecto). Se describe y se critica a continuación, verificado línea por línea con
 `grep -n`.
 
 ### 3.1 Disparadores (líneas 3-7)

@@ -34,8 +34,8 @@ esta entrega.
 | 02 | [Plan de pruebas](02-plan-de-pruebas.md) | Plan formal, ejecución real con evidencia, taxonomía de los 15 fallos de PHPUnit, y descripción del PR mínimo (skills + specs) |
 | 03 | [Casos de prueba](03-casos-de-prueba.md) | Matriz de 58 casos: 38 existentes (79 métodos de PHPUnit + 1 spec de Playwright) y 20 propuestos |
 | 04 | [Flujo de trabajo CI/CD](04-flujo-cicd.md) | Modelo de ramas, convenciones de commit/issue/PR, y análisis línea por línea de `ci.yml` y `cd-railway.yml` |
-| 05 | [Estrategia de despliegue](05-estrategia-despliegue.md) | Entornos, elección de Railway, diseño del pipeline de despliegue, manejo de secretos, y cinco defectos verificados |
-| 06 | [Guión del video demo](06-guion-video-demo.md) | Guión completo con tiempos, comandos en vivo y plan de contingencia (criterio SA) |
+| 05 | [Estrategia de despliegue](05-estrategia-despliegue.md) | Entornos, elección de Railway, diseño del pipeline de despliegue, manejo de secretos, y cuatro defectos de despliegue verificados más un incidente de seguridad ya resuelto |
+| 06 | [Guión del video demo](06-guion-video-demo.md) | Guión de explicación narrada de cinco minutos, sin demo en vivo, con checklist previo y plan de contingencia (criterio SA) |
 | — | [Propuesta de SDD](../sdd/sdd-proposal.md) | Diagnóstico del sistema por ingeniería inversa y propuesta de adopción de Spec-Driven Development |
 | — | [Guía de implementación de SDD](../sdd/sdd-implementation.md) | Qué es SDD, instalación de spec-kit ya realizada, flujo de trabajo, y las dos specs piloto |
 
@@ -54,7 +54,7 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 | **Liga b)** Tours guiados — driver.js | [01-configuracion-herramientas.md](01-configuracion-herramientas.md) §1 (fila 12, versión `1.8.0` exacta); [`resources/js/tours/tour-ejemplo.js`](../../resources/js/tours/tour-ejemplo.js); spec piloto [`specs/002-tours-guiados/`](../../specs/002-tours-guiados/) | — |
 | **Liga c)** Software como infraestructura | [`terraform/`](../../terraform/) — esqueleto declarativo sin aplicar (`init`/`plan`/`apply` no ejecutados). **Sin Codespaces**, porque el autor no dispone de él | [01-configuracion-herramientas.md](01-configuracion-herramientas.md) §2.11, §4; [05-estrategia-despliegue.md](05-estrategia-despliegue.md) §7 |
 | **Liga d)** Spec Driven Development con spec-kit | [sdd-proposal.md](../sdd/sdd-proposal.md) y [sdd-implementation.md](../sdd/sdd-implementation.md); [`.specify/`](../../.specify/); specs piloto [`specs/001-pruebas-e2e/`](../../specs/001-pruebas-e2e/) y [`specs/002-tours-guiados/`](../../specs/002-tours-guiados/) | — |
-| **Criterio SA** — todos los puntos anteriores más video explicativo | [06-guion-video-demo.md](06-guion-video-demo.md) | Guión completo, §2 (tiempos), §3 (secuencia en vivo), §4 (contingencia) |
+| **Criterio SA** — todos los puntos anteriores más video explicativo | [06-guion-video-demo.md](06-guion-video-demo.md) | Guión completo, §1 (checklist previo), §2 (tiempos y contenido de cada tramo), §3 (contingencia) |
 | **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-12 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
 | **Criterio AU** — módulo adicional | **No se entrega.** Decisión expresa del autor: esta unidad se enfoca en documentación, pruebas y CI/CD sobre el sistema ya construido, no en agregar un módulo funcional nuevo | — |
 
@@ -66,8 +66,8 @@ numerados de la rúbrica, las cuatro ligas de apoyo y el criterio SA con su vide
 de código existente se corrigió al escribir esta entrega —ningún archivo preexistente de `app/`,
 `routes/`, `config/`, `database/`, `tests/`, `resources/` ni `.github/` se modificó; esta entrega
 solo agrega archivos nuevos en dos de esas carpetas (`resources/js/tours/tour-ejemplo.js` y su
-`README.md`, y `.github/workflows/cd-railway.yml`)—; cada defecto real del sistema (15 fallos de
-PHPUnit taxonomizados, cuatro defectos de despliegue y un incidente de seguridad ya resuelto, un
-pipeline sin compuertas reales) queda documentado con su fix propuesto para la unidad siguiente. El
-único módulo que esta entrega decide no construir es el del criterio AU, declarado aquí sin
-disimularlo.
+`README.md`, y `.github/workflows/cd-railway.yml`)—; cada defecto real del sistema queda
+documentado: 15 fallos de PHPUnit taxonomizados y un pipeline sin compuertas reales, junto con
+cuatro defectos de despliegue, quedan con su fix propuesto para la unidad siguiente; el incidente
+de seguridad detectado ya se resolvió en esta misma entrega. El único módulo que esta entrega
+decide no construir es el del criterio AU, declarado aquí sin disimularlo.

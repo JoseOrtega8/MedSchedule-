@@ -48,9 +48,8 @@ que la unidad siguiente los corrija con criterio, no a ciegas.
   unidad siguiente, ligado a la spec `specs/001-pruebas-e2e/`.
 - **Llenar `tests/Feature/Auth/RegistrationTest.php`.** Se documenta como brecha de cobertura
   (sección 6.4), no se implementa.
-- **Modificar `.github/workflows/ci.yml`.** Restricción vinculante de esta entrega (ver
-  `global-constraints.md`); los hallazgos del pipeline (sección 8) se documentan con su fix
-  propuesto, sin tocar el archivo.
+- **Modificar `.github/workflows/ci.yml`.** Restricción vinculante de esta entrega; los hallazgos
+  del pipeline (sección 8) se documentan con su fix propuesto, sin tocar el archivo.
 - **Ampliar la cobertura E2E más allá del único flujo existente.** Es exactamente el contenido de
   la spec piloto `specs/001-pruebas-e2e/spec.md` (24 tareas en 7 fases), que es trabajo de
   implementación futura, no de esta entrega.
@@ -345,8 +344,8 @@ fuera de esta máquina.
 ## 8. Hallazgos del pipeline de CI
 
 Verificado con `grep -n` contra `.github/workflows/ci.yml` en esta máquina, sin modificar el
-archivo (restricción vinculante de esta entrega — ver `global-constraints.md`, regla "No se
-modifica `.github/workflows/ci.yml` bajo ninguna circunstancia").
+archivo (restricción vinculante de esta entrega: no se modifica `.github/workflows/ci.yml` bajo
+ninguna circunstancia).
 
 ```
 26:              run: npx eslint resources/js --ext .js --max-warnings=50 || true
@@ -509,8 +508,8 @@ real para quien retome el trabajo.
      el test no la ejercita.
    - **Brecha de cobertura** (no es un defecto de comportamiento, es ausencia de verificación):
      `RegistrationTest` vacío.
-3. **No corrección en esta entrega.** Por regla explícita de esta unidad (`global-constraints.md`
-   y el encargo original), ningún defecto de las categorías anteriores se corrige aquí. Cada uno
+3. **No corrección en esta entrega.** Por decisión explícita de esta unidad y el encargo original,
+   ningún defecto de las categorías anteriores se corrige aquí. Cada uno
    queda anotado como pendiente, con dueño ("unidad siguiente", sección 10) y con la spec a la que
    se liga cuando aplica (`specs/001-pruebas-e2e/` para las correcciones del suite de pruebas).
 4. **Verificación de cierre, cuando se corrija.** Un defecto de esta lista se considera cerrado

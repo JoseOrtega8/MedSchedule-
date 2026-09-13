@@ -11,7 +11,7 @@ La infraestructura se despliega en **Railway**, una plataforma que construye aut
 **Este esqueleto NO está aplicado.** Los recursos se dejan comentados porque:
 - La unidad presente (entrega SDD-CI/CD) es fundamentalmente de documentación y andamiaje.
 - La aplicación de esta configuración a un proyecto real en Railway es responsabilidad de la unidad siguiente.
-- La estrategia de despliegue completa se documenta en `docs/entrega/05-estrategia-despliegue.md` (pendiente de redacción en la Tarea 15).
+- La estrategia de despliegue completa se documenta en `docs/entrega/05-estrategia-despliegue.md`.
 
 Por lo tanto, no ejecutes `terraform apply` hasta que:
 1. Exista un proyecto confirmado en Railway.
@@ -104,4 +104,4 @@ El proveedor `terraform-community-providers/railway` es mantenido por la comunid
 
 - Documentación oficial de Terraform: https://www.terraform.io/docs/
 - Proveedor comunitario de Railway: https://registry.terraform.io/providers/terraform-community-providers/railway/
-- Estrategia de despliegue completa: `docs/entrega/05-estrategia-despliegue.md` (Tarea 15)
+- Estrategia de despliegue completa: `docs/entrega/05-estrategia-despliegue.md`

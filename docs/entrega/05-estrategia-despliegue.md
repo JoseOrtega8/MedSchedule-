@@ -5,8 +5,9 @@ los entornos reales de `MedSchedule-`, la elección de Railway como destino de d
 del pipeline con sus etapas y compuertas, el manejo de secretos, el procedimiento de migraciones, la
 estrategia de reversión y el rol de Terraform como capa declarativa sin aplicar. Cierra con la
 sección más valiosa del documento: cuatro defectos de despliegue verificados hoy en el repositorio,
-que impedirían un despliegue exitoso, y que **no se corrigen en esta entrega** (regla vinculante de
-`global-constraints.md`) porque su fix es trabajo de la unidad siguiente.
+que impedirían un despliegue exitoso, más un incidente de seguridad ya resuelto en esta entrega, y
+que **no se corrigen en esta entrega** (decisión del proyecto), porque el fix de los cuatro
+defectos es trabajo de la unidad siguiente.
 
 ## 0. Método de verificación
 
