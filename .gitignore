@@ -57,3 +57,7 @@ Thumbs.db
 # versionarse nunca. Se conservan solo en local como registro del equipo.
 /docs/IONOS_Deploy_Checklist.md
 /docs/MedSchedule_Estructura_DB_IONOS.md
+
+# Guion de trabajo del video: material de preparacion del autor, no un
+# entregable del repositorio. Se conserva solo en local.
+/docs/entrega/06-guion-video-demo.md

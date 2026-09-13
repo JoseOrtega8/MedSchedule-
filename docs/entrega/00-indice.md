@@ -35,7 +35,6 @@ esta entrega.
 | 03 | [Casos de prueba](03-casos-de-prueba.md) | Matriz de 58 casos: 38 existentes (79 métodos de PHPUnit + 1 spec de Playwright) y 20 propuestos |
 | 04 | [Flujo de trabajo CI/CD](04-flujo-cicd.md) | Modelo de ramas, convenciones de commit/issue/PR, y análisis línea por línea de `ci.yml` y `cd-railway.yml` |
 | 05 | [Estrategia de despliegue](05-estrategia-despliegue.md) | Entornos, elección de Railway, diseño del pipeline de despliegue, manejo de secretos, y cuatro defectos de despliegue verificados más un incidente de seguridad ya resuelto |
-| 06 | [Guión del video demo](06-guion-video-demo.md) | Guión de explicación narrada de cinco minutos, sin demo en vivo, con checklist previo y plan de contingencia (criterio SA) |
 | — | [Propuesta de SDD](../sdd/sdd-proposal.md) | Diagnóstico del sistema por ingeniería inversa y propuesta de adopción de Spec-Driven Development |
 | — | [Guía de implementación de SDD](../sdd/sdd-implementation.md) | Qué es SDD, instalación de spec-kit ya realizada, flujo de trabajo, y las dos specs piloto |
 
@@ -54,7 +53,7 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 | **Liga b)** Tours guiados — driver.js | [01-configuracion-herramientas.md](01-configuracion-herramientas.md) §1 (fila 12, versión `1.8.0` exacta); [`resources/js/tours/tour-ejemplo.js`](../../resources/js/tours/tour-ejemplo.js); spec piloto [`specs/002-tours-guiados/`](../../specs/002-tours-guiados/) | — |
 | **Liga c)** Software como infraestructura | [`terraform/`](../../terraform/) — esqueleto declarativo sin aplicar (`init`/`plan`/`apply` no ejecutados). **Sin Codespaces**, porque el autor no dispone de él | [01-configuracion-herramientas.md](01-configuracion-herramientas.md) §2.11, §4; [05-estrategia-despliegue.md](05-estrategia-despliegue.md) §7 |
 | **Liga d)** Spec Driven Development con spec-kit | [sdd-proposal.md](../sdd/sdd-proposal.md) y [sdd-implementation.md](../sdd/sdd-implementation.md); [`.specify/`](../../.specify/); specs piloto [`specs/001-pruebas-e2e/`](../../specs/001-pruebas-e2e/) y [`specs/002-tours-guiados/`](../../specs/002-tours-guiados/) | — |
-| **Criterio SA** — todos los puntos anteriores más video explicativo | [06-guion-video-demo.md](06-guion-video-demo.md) | Guión completo, §1 (checklist previo), §2 (tiempos y contenido de cada tramo), §3 (contingencia) |
+| **Criterio SA** — todos los puntos anteriores más video explicativo | Video explicativo de cinco minutos, entregado por separado | El guión de trabajo con el que se grabó no se versiona: es material de preparación del autor, no un entregable |
 | **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-12 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
 | **Criterio AU** — módulo adicional | **No se entrega.** Decisión expresa del autor: esta unidad se enfoca en documentación, pruebas y CI/CD sobre el sistema ya construido, no en agregar un módulo funcional nuevo | — |
 
@@ -125,7 +124,7 @@ Derivadas de la spec `specs/002-tours-guiados/`, una por fase, sin asignar todav
 
 ## 5. Conclusión
 
-Esta entrega documenta el estado real y verificado de MedSchedule: nueve documentos (los seis
+Esta entrega documenta el estado real y verificado de MedSchedule: ocho documentos (los cinco
 numerados de `docs/entrega/`, los dos de `docs/sdd/`, y este índice) que cubren los cinco puntos
 numerados de la rúbrica, las cuatro ligas de apoyo y el criterio SA con su video. Ningún hallazgo
 de código existente se corrigió al escribir esta entrega —ningún archivo preexistente de `app/`,
