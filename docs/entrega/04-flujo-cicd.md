@@ -408,6 +408,10 @@ del pull request contra el checklist de `.github/pull_request_template.md`. El p
 `RAILWAY_TOKEN` con `exit 1`— pero ocurre después de todo lo anterior, y solo protege contra la
 ausencia del secreto, no contra la calidad del código que se está desplegando.
 
+El trabajo de la unidad siguiente ya está planificado sobre este mismo flujo: quince tarjetas en
+estado `To do` en el tablero del equipo, derivadas de las dos specs piloto. El detalle de cada
+tarjeta (enlace, título y origen) está en [00-indice.md](00-indice.md), sección 3.
+
 ## 7. Verificación
 
 Toda cita de línea de este documento contra `.github/workflows/ci.yml` se verificó con:

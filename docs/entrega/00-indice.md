@@ -58,7 +58,59 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 | **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-12 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
 | **Criterio AU** — módulo adicional | **No se entrega.** Decisión expresa del autor: esta unidad se enfoca en documentación, pruebas y CI/CD sobre el sistema ya construido, no en agregar un módulo funcional nuevo | — |
 
-## 3. Conclusión
+## 3. Planificación de la unidad siguiente en el tablero de kanban
+
+El trabajo de la unidad siguiente ya está planificado en el tablero del equipo,
+[MedSchedule Project Board](https://github.com/users/JoseOrtega8/projects/2), derivado de las dos
+specs piloto (`specs/001-pruebas-e2e/` y `specs/002-tours-guiados/`); las quince tarjetas listadas a
+continuación están en la columna `To do`, listas para moverse conforme avance la implementación.
+
+### 3.1 Tarjetas asignadas al autor
+
+Derivadas de la spec `specs/001-pruebas-e2e/` más dos hallazgos de esta misma entrega, asignadas al
+autor (`ramonibr`):
+
+| Issue | Título | Origen |
+|---|---|---|
+| [#80](https://github.com/JoseOrtega8/MedSchedule-/issues/80) | R5 test: preparar la infraestructura de pruebas E2E por rol | Spec 001, fase 1 (Setup) |
+| [#81](https://github.com/JoseOrtega8/MedSchedule-/issues/81) | R6 test: sembrar datos y utilidades base para las pruebas E2E | Spec 001, fase 2 (Foundational) |
+| [#82](https://github.com/JoseOrtega8/MedSchedule-/issues/82) | R7 test: prueba E2E de autenticación y control de acceso por rol | Spec 001, fase 3, prioridad P1 |
+| [#83](https://github.com/JoseOrtega8/MedSchedule-/issues/83) | R8 test: prueba E2E de la agenda del doctor | Spec 001, fase 4, prioridad P2 |
+| [#84](https://github.com/JoseOrtega8/MedSchedule-/issues/84) | R9 test: prueba E2E del CRUD de especialidades del administrador | Spec 001, fase 6, prioridad P4 |
+| [#85](https://github.com/JoseOrtega8/MedSchedule-/issues/85) | R10 test: pulido y transversales de la suite E2E | Spec 001, fase 7 (Polish y transversales) |
+| [#86](https://github.com/JoseOrtega8/MedSchedule-/issues/86) | R11 ci: hacer que el pipeline falle cuando fallan las pruebas | Hallazgo de [04-flujo-cicd.md](04-flujo-cicd.md) |
+| [#87](https://github.com/JoseOrtega8/MedSchedule-/issues/87) | R12 fix: corregir los cuatro defectos que impiden el despliegue | Hallazgos de [05-estrategia-despliegue.md](05-estrategia-despliegue.md) |
+
+### 3.2 Tarjetas de tours guiados
+
+Derivadas de la spec `specs/002-tours-guiados/`, una por fase, sin asignar todavía:
+
+| Issue | Título |
+|---|---|
+| [#88](https://github.com/JoseOrtega8/MedSchedule-/issues/88) | feat: preparar la infraestructura de tours guiados con driver.js |
+| [#89](https://github.com/JoseOrtega8/MedSchedule-/issues/89) | feat: base compartida de tours y persistencia de tour visto |
+| [#90](https://github.com/JoseOrtega8/MedSchedule-/issues/90) | feat: tour de primera vez para el administrador |
+| [#91](https://github.com/JoseOrtega8/MedSchedule-/issues/91) | feat: tour de primera vez para el doctor |
+| [#92](https://github.com/JoseOrtega8/MedSchedule-/issues/92) | feat: tour de primera vez para el paciente |
+| [#93](https://github.com/JoseOrtega8/MedSchedule-/issues/93) | feat: relanzar el tour desde un botón de ayuda |
+| [#94](https://github.com/JoseOrtega8/MedSchedule-/issues/94) | feat: pulido y accesibilidad de los tours guiados |
+
+### 3.3 Notas sobre dos tarjetas que no siguen el patrón
+
+- **Fase 5 de `specs/001-pruebas-e2e/` sin tarjeta propia, a propósito.** Esa fase corresponde al
+  agendado y cancelación de cita del paciente, y ya existe el issue
+  [#63](https://github.com/JoseOrtega8/MedSchedule-/issues/63), "E4 test: prueba automática del
+  flujo de agendar cita", asignado a otro integrante del equipo. No se duplicó la tarjeta para no
+  pisar trabajo ajeno; la spec sigue especificando ese flujo, solo que su ejecución corresponde a
+  esa tarjeta preexistente.
+- **Issue #61 cerrado y movido a `Done`, como ejemplo real del flujo aplicado.** El issue
+  [#61](https://github.com/JoseOrtega8/MedSchedule-/issues/61), "R4 test: prueba automática del
+  flujo de gestión de usuarios", quedó cerrado porque su trabajo ya estaba mergeado: es la prueba
+  `tests/playwright_gestion_usuarios/gestion-usuarios.spec.js` que aparece en la línea base con 1
+  prueba aprobada. Es evidencia de que el flujo de kanban documentado en
+  [04-flujo-cicd.md](04-flujo-cicd.md) no es solo teoría, sino que ya se aplicó sobre trabajo real.
+
+## 4. Conclusión
 
 Esta entrega documenta el estado real y verificado de MedSchedule: nueve documentos (los seis
 numerados de `docs/entrega/`, los dos de `docs/sdd/`, y este índice) que cubren los cinco puntos
