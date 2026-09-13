@@ -40,6 +40,10 @@ Thumbs.db
 !/docs/entrega/
 !/docs/sdd/
 
+# Artefacto generado con pandoc a partir de los .md de docs/entrega y docs/sdd.
+# No se versiona: se regenera localmente cuando haga falta.
+/docs/entrega/*.docx
+
 # Terraform: el state y las variables suelen contener credenciales.
 *.tfstate
 *.tfstate.*
