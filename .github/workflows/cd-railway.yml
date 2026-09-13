@@ -1,0 +1,61 @@
+name: CD Railway (manual)
+
+# Disparo exclusivamente manual. El despliegue automático al hacer merge a main
+# se habilita en la unidad siguiente, cuando el proyecto de Railway exista y el
+# pipeline de integración continua deje de usar "|| true".
+on:
+    workflow_dispatch:
+        inputs:
+            entorno:
+                description: 'Entorno destino del despliegue'
+                required: true
+                default: 'staging'
+                type: choice
+                options:
+                    - staging
+                    - production
+
+concurrency:
+    group: cd-railway-${{ github.event.inputs.entorno }}
+    cancel-in-progress: false
+
+jobs:
+    desplegar:
+        name: Desplegar a Railway
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.entorno }}
+
+        steps:
+            - name: Descargar el código
+              uses: actions/checkout@v4
+
+            - name: Verificar que el token está configurado
+              env:
+                  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+              run: |
+                  if [ -z "$RAILWAY_TOKEN" ]; then
+                    echo "::error::Falta el secreto RAILWAY_TOKEN en la configuración del repositorio."
+                    exit 1
+                  fi
+                  echo "Secreto presente. No se imprime su valor."
+
+            - name: Preparar Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - name: Instalar el CLI de Railway
+              run: npm install -g @railway/cli
+
+            - name: Desplegar
+              env:
+                  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+              # Sin --detach a propósito: railway up debe bloquear hasta que el
+              # despliegue termine. Con --detach el comando retorna de inmediato y
+              # el paso de migraciones correría contra el servicio aún en transición.
+              run: railway up --service medschedule-app
+
+            - name: Ejecutar migraciones en el entorno desplegado
+              env:
+                  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+              run: railway run --service medschedule-app php artisan migrate --force

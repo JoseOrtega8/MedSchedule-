@@ -1,0 +1,359 @@
+# Evidencia de ejecución — PHPUnit (línea base)
+# Nota de entorno: phpunit.xml fuerza DB_CONNECTION=mysql y DB_DATABASE=medschedule_test.
+# La config config/database.php apunta por defecto a 127.0.0.1:3306 sin contraseña, lo cual
+# es incorrecto para este entorno (MAMP corre MySQL en el puerto 8889 con credenciales
+# default públicas de MAMP, redactadas aquí por política de seguridad del repo público).
+# Por eso la corrida se invocó pasando las variables de conexión por línea de comando (host,
+# puerto y credenciales de MAMP, redactadas), igual que hace el CI, sin tocar archivos versionados.
+# No se editó .env, phpunit.xml ni config/database.php.
+---
+
+   PASS  Tests\Unit\EnsureAdminRoleTest
+  ✓ handle allows admin user                                             0.08s  
+  ✓ handle throws for non admin user                                     0.01s  
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.02s  
+
+   PASS  Tests\Unit\Services\DashboardStatsServiceTest
+  ✓ admin stats uses cache remember with correct key and ttl             0.02s  
+  ✓ users chart cache key differs by date range                          0.01s  
+  ✓ appointments chart uses cache remember with ttl of five minutes      0.01s  
+
+   PASS  Tests\Feature\ActivityLogControllerTest
+  ✓ logs index returns view for admin                                    0.40s  
+  ✓ logs index rejects non admin                                         0.02s  
+  ✓ logs index requires auth                                             0.01s  
+  ✓ logs show returns view for admin                                     0.02s  
+  ✓ logs show rejects non admin                                          0.02s  
+  ✓ logs show returns 404 for missing log                                0.01s  
+  ✓ logs data returns json structure                                     0.02s  
+  ✓ logs data filters by action                                          0.01s  
+  ✓ logs data filters by model type                                      0.01s  
+  ✓ logs data filters by date range                                      0.01s  
+  ✓ logs data rejects non admin                                          0.01s  
+  ✓ logs data requires auth                                              0.01s  
+  ✓ get by user returns logs for admin                                   0.02s  
+  ✓ get by user rejects non admin                                        0.01s  
+
+   FAIL  Tests\Feature\AdminRbacAccessTest
+  ⨯ admin rbac screen returns success for admin session                  0.02s  
+  ⨯ admin rbac screen returns forbidden for non admin session            0.01s  
+
+   FAIL  Tests\Feature\AppointmentControllerTest
+  ⨯ agenda data returns doctor and items                                 0.01s  
+  ⨯ pending appointment can be confirmed                                 0.01s  
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.01s  
+  ✓ users can authenticate using the login screen                        0.02s  
+  ✓ users can not authenticate with invalid password                     0.22s  
+  ✓ users can logout                                                     0.02s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.03s  
+  ✓ email can be verified                                                0.02s  
+  ✓ email is not verified with invalid hash                              0.01s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.01s  
+  ✓ password can be confirmed                                            0.01s  
+  ✓ password is not confirmed with invalid password                      0.22s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.02s  
+  ✓ reset password link can be requested                                 0.23s  
+  ✓ reset password screen can be rendered                                0.24s  
+  ✓ password can be reset with valid token                               0.26s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                              0.03s  
+  ✓ correct password must be provided to update password                 0.02s  
+
+   PASS  Tests\Feature\AuthTest
+  ✓ login muestra formulario                                             0.02s  
+  ✓ login exitoso admin redirige a dashboard                             0.02s  
+  ✓ login fallido con credenciales incorrectas                           0.23s  
+  ✓ logout destruye sesion                                               0.04s  
+  ✓ ruta protegida redirige a login sin autenticar                       0.02s  
+
+   FAIL  Tests\Feature\DashboardControllerTest
+  ⨯ admin dashboard returns ok                                           0.02s  
+  ⨯ doctor dashboard redirects to agenda                                 0.02s  
+  ⨯ patient dashboard returns ok                                         0.02s  
+  ✓ admin data endpoint returns json                                     0.02s  
+  ✓ admin data stats contain required keys                               0.02s  
+  ✓ users chart returns json for admin                                   0.01s  
+  ✓ users chart rejects non admin                                        0.01s  
+  ✓ users chart filters by date range                                    0.01s  
+  ✓ appointments chart returns json for admin                            0.01s  
+  ✓ appointments chart rejects non admin                                 0.01s  
+  ✓ appointments chart filters by date range                             0.01s  
+  ✓ recent activity returns json for admin                               0.01s  
+  ✓ recent activity rejects non admin                                    0.01s  
+  ✓ patient data returns json                                            0.02s  
+
+   FAIL  Tests\Feature\DoctorProfileControllerTest
+  ⨯ update rejects duplicate license number                              0.01s  
+  ⨯ profile photo update accepts data url                                0.01s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.01s  
+
+   FAIL  Tests\Feature\GoogleCalendarControllerTest
+  ✓ sync requires authentication                                         0.01s  
+  ✓ unsync requires authentication                                       0.01s  
+  ✓ sync returns 404 for nonexistent appointment                         0.02s  
+  ✓ sync rejects non confirmed appointment                               0.01s  
+  ⨯ sync confirmed appointment creates event                             0.02s  
+  ✓ sync handles calendar failure                                        0.02s  
+  ✓ unsync returns 404 for nonexistent appointment                       0.01s  
+  ⨯ unsync clears google event id                                        0.02s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                            0.03s  
+  ✓ profile information can be updated                                   0.01s  
+  ✓ email verification status is unchanged when the email address is un… 0.01s  
+  ✓ user can delete their account                                        0.01s  
+  ✓ correct password must be provided to delete account                  0.01s  
+
+   FAIL  Tests\Feature\ScheduleControllerTest
+  ⨯ store calculates end time using consultation duration                0.01s  
+  ⨯ blocked schedule cannot be deleted                                   0.01s  
+
+   FAIL  Tests\Feature\SpecialtyControllerTest
+  ⨯ create rejects duplicate specialty name                              0.01s  
+  ⨯ delete rejects specialty with assigned doctors                       0.01s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AdminRbacAccessTest > admin rbac screen returns suc…   
+  Expected response status code [200] but received 302.
+Failed asserting that 302 is identical to 200.
+
+  at tests/Feature/AdminRbacAccessTest.php:19
+     15▕                 'role' => 'admin',
+     16▕             ],
+     17▕         ])->get(route('admin.rbac'));
+     18▕ 
+  ➜  19▕         $response->assertOk();
+     20▕     }
+     21▕ 
+     22▕     public function test_admin_rbac_screen_returns_forbidden_for_non_admin_session(): void
+     23▕     {
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AdminRbacAccessTest > admin rbac screen returns for…   
+  Expected response status code [403] but received 302.
+Failed asserting that 302 is identical to 403.
+
+  at tests/Feature/AdminRbacAccessTest.php:32
+     28▕                 'role' => 'doctor',
+     29▕             ],
+     30▕         ])->get(route('admin.rbac'));
+     31▕ 
+  ➜  32▕         $response->assertForbidden();
+     33▕     }
+     34▕ }
+     35▕
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AppointmentControllerTest > agenda data returns doc…   
+  Expected response status code [200] but received 401.
+Failed asserting that 401 is identical to 200.
+
+  at tests/Feature/AppointmentControllerTest.php:13
+      9▕     public function test_agenda_data_returns_doctor_and_items(): void
+     10▕     {
+     11▕         $response = $this->getJson(route('doctor.agenda.data'));
+     12▕ 
+  ➜  13▕         $response->assertOk()
+     14▕             ->assertJsonStructure([
+     15▕                 'doctor' => ['name', 'initials', 'role'],
+     16▕                 'reference_date',
+     17▕                 'agenda_items' => [
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AppointmentControllerTest > pending appointment can…   
+  Expected response status code [200] but received 401.
+Failed asserting that 401 is identical to 200.
+
+  at tests/Feature/AppointmentControllerTest.php:29
+     25▕         $response = $this->patchJson(route('appointments.update', 2), [
+     26▕             'status' => 'confirmed',
+     27▕         ]);
+     28▕ 
+  ➜  29▕         $response->assertOk()
+     30▕             ->assertJsonPath('appointment.id', 2)
+     31▕             ->assertJsonPath('appointment.status', 'confirmed');
+     32▕     }
+     33▕ }
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\DashboardControllerTest > admin dashboard returns o…   
+  Expected response status code [200] but received 302.
+Failed asserting that 302 is identical to 200.
+
+  at tests/Feature/DashboardControllerTest.php:38
+     34▕ 	public function test_admin_dashboard_returns_ok(): void
+     35▕ 	{
+     36▕ 		$admin = $this->makeUser('admin');
+     37▕ 		$response = $this->actingAs($admin)->get(route('dashboard'));
+  ➜  38▕ 		$response->assertOk();
+     39▕ 	}
+     40▕ 
+     41▕ 	public function test_doctor_dashboard_redirects_to_agenda(): void
+     42▕ 	{
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\DashboardControllerTest > doctor dashboard redirect…   
+  Failed asserting that two strings are equal.
+  -'http://127.0.0.1:8000/doctor/agenda'
+  +'http://127.0.0.1:8000/doctor/dashboard'
+  
+
+  at tests/Feature/DashboardControllerTest.php:45
+     41▕ 	public function test_doctor_dashboard_redirects_to_agenda(): void
+     42▕ 	{
+     43▕ 		$doctor = $this->makeUser('doctor');
+     44▕ 		$response = $this->actingAs($doctor)->get(route('dashboard'));
+  ➜  45▕ 		$response->assertRedirect(route('doctor.agenda'));
+     46▕ 	}
+     47▕ 
+     48▕ 	public function test_patient_dashboard_returns_ok(): void
+     49▕ 	{
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\DashboardControllerTest > patient dashboard returns…   
+  Expected response status code [200] but received 302.
+Failed asserting that 302 is identical to 200.
+
+  at tests/Feature/DashboardControllerTest.php:52
+     48▕ 	public function test_patient_dashboard_returns_ok(): void
+     49▕ 	{
+     50▕ 		$patient = $this->makeUser('patient');
+     51▕ 		$response = $this->actingAs($patient)->get(route('dashboard'));
+  ➜  52▕ 		$response->assertOk();
+     53▕ 	}
+     54▕ 
+     55▕ 	// ── adminData ──────────────────────────────────────────────────────────
+     56▕
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\DoctorProfileControllerTest > update rejects duplic…   
+  Expected response status code [422] but received 401.
+Failed asserting that 401 is identical to 422.
+
+  at tests/Feature/DoctorProfileControllerTest.php:21
+     17▕             'consultation_duration' => 30,
+     18▕             'bio' => 'Cardiologo con 10 anos de experiencia en el IMSS.',
+     19▕         ]);
+     20▕ 
+  ➜  21▕         $response->assertStatus(422)
+     22▕             ->assertJsonValidationErrors(['license_number']);
+     23▕     }
+     24▕ 
+     25▕     public function test_profile_photo_update_accepts_data_url(): void
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\DoctorProfileControllerTest > profile photo update…    
+  Expected response status code [200] but received 401.
+Failed asserting that 401 is identical to 200.
+
+  at tests/Feature/DoctorProfileControllerTest.php:31
+     27▕         $response = $this->postJson(route('doctor.profile.photo'), [
+     28▕             'photo_data_url' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB',
+     29▕         ]);
+     30▕ 
+  ➜  31▕         $response->assertOk()
+     32▕             ->assertJsonPath('doctor.photo_data_url', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB');
+     33▕     }
+     34▕ }
+     35▕
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\GoogleCalendarControllerTest > sync confirmed appoi…   
+  Failed asserting that null is identical to 'fake-event-id-123'.
+
+  at tests/Feature/GoogleCalendarControllerTest.php:89
+     85▕ 		});
+     86▕ 
+     87▕ 		$response = $this->actingAs($admin)->postJson(route('appointments.calendar.sync', $appointment->id));
+     88▕ 		$response->assertOk()
+  ➜  89▕ 			->assertJsonPath('google_event_id', 'fake-event-id-123');
+     90▕ 	}
+     91▕ 
+     92▕ 	public function test_sync_handles_calendar_failure(): void
+     93▕ 	{
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\GoogleCalendarControllerTest…  InvalidCountException   
+  Method deleteEvent('existing-event-id') from Mockery_3_App_Services_GoogleCalendarService should be called
+ exactly 1 times but called 0 times.
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ScheduleControllerTest > store calculates end time…    
+  Expected response status code [200] but received 401.
+Failed asserting that 401 is identical to 200.
+
+  at tests/Feature/ScheduleControllerTest.php:20
+     16▕             'date' => '2026-03-12',
+     17▕             'start_time' => '14:00',
+     18▕         ]);
+     19▕ 
+  ➜  20▕         $response->assertOk()
+     21▕             ->assertJsonPath('schedule.start_time', '14:00')
+     22▕             ->assertJsonPath('schedule.end_time', '14:45')
+     23▕             ->assertJsonPath('schedule.status', 'available');
+     24▕     }
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ScheduleControllerTest > blocked schedule cannot be…   
+  Expected response status code [422] but received 401.
+Failed asserting that 401 is identical to 422.
+
+  at tests/Feature/ScheduleControllerTest.php:30
+     26▕     public function test_blocked_schedule_cannot_be_deleted(): void
+     27▕     {
+     28▕         $response = $this->deleteJson(route('doctor.schedules.destroy', 2));
+     29▕ 
+  ➜  30▕         $response->assertStatus(422)
+     31▕             ->assertJsonPath('message', 'No puedes eliminar un horario con cita agendada.');
+     32▕     }
+     33▕ }
+     34▕
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\SpecialtyControllerTest > create rejects duplicate…    
+  Expected response status code [422] but received 401.
+Failed asserting that 401 is identical to 422.
+
+  at tests/Feature/SpecialtyControllerTest.php:17
+     13▕             'description' => 'Duplicada',
+     14▕             'status' => 1,
+     15▕         ]);
+     16▕ 
+  ➜  17▕         $response->assertStatus(422)
+     18▕             ->assertJsonValidationErrors(['name']);
+     19▕     }
+     20▕ 
+     21▕     public function test_delete_rejects_specialty_with_assigned_doctors(): void
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\SpecialtyControllerTest > delete rejects specialty…    
+  Expected response status code [422] but received 401.
+Failed asserting that 401 is identical to 422.
+
+  at tests/Feature/SpecialtyControllerTest.php:25
+     21▕     public function test_delete_rejects_specialty_with_assigned_doctors(): void
+     22▕     {
+     23▕         $response = $this->deleteJson(route('admin.specialties.destroy', 1));
+     24▕ 
+  ➜  25▕         $response->assertStatus(422)
+     26▕             ->assertJsonPath('message', 'No puedes eliminar una especialidad con doctores asignados.');
+     27▕     }
+     28▕ }
+     29▕
+
+
+  Tests:    15 failed, 64 passed (149 assertions)
+  Duration: 3.04s
+

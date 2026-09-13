@@ -1,0 +1,5 @@
+# Copiar a terraform.tfvars, que está ignorado por git.
+# NUNCA commitear terraform.tfvars con valores reales.
+railway_token   = "COLOCAR_TOKEN_AQUI"
+nombre_proyecto = "medschedule"
+nombre_entorno  = "production"

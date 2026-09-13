@@ -1,0 +1,28 @@
+# Entorno de ejecución — 2026-09-09 19:26
+PHP:      PHP 8.4.1 (cli) (built: Nov 21 2024 08:58:37) (NTS)
+Composer: Composer version 2.8.12 2025-09-19 13:41:59
+Node:     v25.9.0
+npm:      11.12.1
+Laravel:  Laravel Framework 12.53.0
+Conexión BD por defecto: sqlite
+
+## Estado de migraciones (SQLite de desarrollo, conexión por defecto)
+$ php artisan migrate:status
+
+  Migration name .............................................. Batch / Status  
+  0001_01_01_000000_create_users_table ............................... [1] Ran  
+  2026_02_24_039999_create_cache_table ............................... [1] Ran  
+  2026_02_24_040000_create_specialties_table ......................... [1] Ran  
+  2026_02_24_044713_create_doctor_profiles_table ..................... [1] Ran  
+  2026_02_24_044754_create_patient_profiles_table .................... [1] Ran  
+  2026_02_24_044945_create_schedules_table ........................... [1] Ran  
+  2026_02_24_045026_create_appointments_table ........................ [1] Ran  
+  2026_02_24_045200_create_appointment_history_table ................. [1] Ran  
+  2026_02_24_045227_create_activity_logs_table ....................... [1] Ran  
+  2026_02_25_030516_create_permission_tables ......................... [1] Ran  
+  2026_03_01_061322_add_updated_at_to_activity_logs_table ............ [1] Ran  
+  2026_08_15_043158_add_performance_indexes .......................... Pending  
+  2026_08_19_031109_add_photo_path_to_patient_profiles_table ......... Pending  
+  2026_08_19_045433_create_failed_jobs_table ......................... Pending  
+  2026_08_19_045433_create_jobs_table ................................ Pending  
+
