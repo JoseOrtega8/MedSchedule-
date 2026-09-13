@@ -1,8 +1,11 @@
 *.log
 .DS_Store
-.env
-.env.backup
-.env.production
+
+# Configuración local del agente: puede contener ajustes de máquina, no se versiona.
+.claude/settings.local.json
+# Cualquier variante de .env queda fuera del repositorio; solo se versiona el ejemplo.
+.env*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -25,3 +28,36 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Artefactos de pruebas E2E Playwright
+/test-results
+/tests/playwright-report
+/tests/playwright_gestion_usuarios/evidencia
+/playwright/.cache
+
+# Documentación entregable de la unidad. La regla /docs/* de arriba ignora las
+# subcarpetas de docs/, así que hay que reincluirlas de forma explícita.
+!/docs/entrega/
+!/docs/sdd/
+
+# Artefacto generado con pandoc a partir de los .md de docs/entrega y docs/sdd.
+# No se versiona: se regenera localmente cuando haga falta.
+/docs/entrega/*.docx
+
+# Terraform: el state y las variables suelen contener credenciales.
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+
+# Checklists históricos de la infraestructura IONOS ya desaparecida. Contienen
+# host, usuario y password en claro; el repositorio es público y no deben
+# versionarse nunca. Se conservan solo en local como registro del equipo.
+/docs/IONOS_Deploy_Checklist.md
+/docs/MedSchedule_Estructura_DB_IONOS.md
+
+# Guion de trabajo del video: material de preparacion del autor, no un
+# entregable del repositorio. Se conserva solo en local.
+/docs/entrega/06-guion-video-demo.md
