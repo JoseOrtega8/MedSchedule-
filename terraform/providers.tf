@@ -1,5 +1,5 @@
-# Declaracion de proveedores. El proveedor de Railway es de la comunidad;
-# se fija la version para que la infraestructura sea reproducible.
+# Declaración de proveedores. El proveedor de Railway es de la comunidad;
+# se fija la versión para que la infraestructura sea reproducible.
 terraform {
   required_version = ">= 1.6.0"
 
@@ -11,7 +11,7 @@ terraform {
   }
 }
 
-# El token JAMAS se escribe aqui. Se inyecta por variable de entorno
+# El token JAMÁS se escribe aquí. Se inyecta por variable de entorno
 # TF_VAR_railway_token o por el gestor de secretos del pipeline.
 provider "railway" {
   token = var.railway_token

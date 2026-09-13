@@ -21,8 +21,8 @@ DOM sin romper la página.
 Blade de Laravel 12 mediante el pipeline de assets ya usado por el proyecto (Vite).
 
 **Primary Dependencies**: `driver.js` `@1.8.0` (versión fijada por las restricciones globales de
-esta entrega; su instalación real es trabajo de la Tarea 6, no de esta especificación ni de este
-plan). No se requieren dependencias de backend nuevas para el comportamiento del tour en sí.
+esta entrega; su instalación real es trabajo de implementación futura, no de esta especificación ni
+de este plan). No se requieren dependencias de backend nuevas para el comportamiento del tour en sí.
 
 **Storage**: Se requiere persistir, por usuario y por rol, si el tour de ese rol ya fue visto
 (FR-005). Se reutiliza la base de datos relacional ya existente del proyecto (MySQL vía Eloquent),

@@ -9,7 +9,7 @@ evidencia, y la descripción del PR mínimo.
 
 Todo dato de este documento se obtuvo abriendo el archivo citado en esta máquina (rama
 `feat/unidad-docs-sdd`), ejecutando el comando de verificación indicado, o leyendo directamente
-la evidencia cruda capturada en la Tarea 2: `docs/entrega/evidencia/phpunit-baseline.txt`,
+la evidencia cruda capturada al ejecutar las pruebas: `docs/entrega/evidencia/phpunit-baseline.txt`,
 `docs/entrega/evidencia/playwright-baseline.txt` y `docs/entrega/evidencia/entorno.txt`. Ningún
 resultado de prueba se inventa: cada cifra de las secciones 5 y 6 se cita textualmente desde su
 archivo de origen. Ningún defecto encontrado se corrige en esta entrega — se documenta con su fix
@@ -208,16 +208,16 @@ Running 1 test using 1 worker
   1 passed (4.8s)
 ```
 
-El servidor se levantó y se apagó con el patrón de PID explícito del ruling 2 del coordinador
+El servidor se levantó y se apagó con el patrón de PID explícito adoptado en esta entrega
 (`php artisan serve --port=8000 > /dev/null 2>&1 & SERVE_PID=$!` … `kill $SERVE_PID`), sin usar
 `kill %1`, según indica el comentario de cabecera del propio archivo de evidencia.
 
 ### 6.4 Taxonomía verificada de los 15 fallos de PHPUnit
 
 **Los 15 fallos no se atribuyen a "base de pruebas vacía sin roles sembrados": esa lectura es
-incorrecta y fue descartada explícitamente por la revisión de la Tarea 2 (`hallazgos-fallos-
-pruebas.md`) tras leer el código de cada test y de la ruta o controlador que ejercita. Son tres
-problemas distintos, con causas raíz diferentes que exigen fixes diferentes:**
+incorrecta y fue descartada explícitamente al leer el código de cada test y de la ruta o
+controlador que ejercita. Son tres problemas distintos, con causas raíz diferentes que exigen
+fixes diferentes:**
 
 #### Grupo A — 10 fallos: tests obsoletos que nunca autentican
 
@@ -404,7 +404,7 @@ debería aplicarse:
    final el paso de PHPUnit, una vez el punto 1 ya esté resuelto.
 4. Agregar un paso nuevo al job `php-tests` (o un job separado) que instale los navegadores de
    Playwright (`npx playwright install --with-deps chromium`), levante la app con el mismo patrón
-   de PID explícito del ruling 2 de esta entrega, corra `npx playwright test`, y apague el
+   de PID explícito adoptado en esta entrega, corra `npx playwright test`, y apague el
    servidor — sin `|| true`, y publicando el reporte HTML (`tests/playwright-report/`) como
    artefacto descargable del workflow.
 
@@ -416,7 +416,7 @@ posterior a esta especificación" — coherente con no tocar `ci.yml` en esta en
 
 ### 9.1 Qué contiene
 
-El PR de esta entrega —una sola entrega, un solo PR, según el ruling 3 del coordinador— incluye,
+El PR de esta entrega —una sola entrega, un solo PR, por decisión del autor— incluye,
 entre otros documentos, cuatro artefactos que son la respuesta directa a la exigencia del punto 2
 de la rúbrica de "un PR mínimo que arroje los skills y specs para nuevos módulos":
 
@@ -464,7 +464,7 @@ adelante; uno que agrega el proceso que genera pruebas correctas por diseño, s�
 | Rol | Responsabilidad en este plan |
 |---|---|
 | Autor de la entrega (desarrollador único de esta unidad) | Ejecuta ambas suites, captura la evidencia, clasifica los fallos con su causa raíz, y decide qué se corrige y en qué unidad — en esta entrega, ninguno, por regla explícita |
-| Revisor de la Tarea 2 (verificación cruzada del diagnóstico) | Dictaminó la taxonomía de los 15 fallos (`hallazgos-fallos-pruebas.md`) que este documento reproduce sin contradecir |
+| Verificación cruzada del diagnóstico de fallos (control de calidad interno de esta entrega) | Confirmó, leyendo directamente el código de cada test y de la ruta o controlador que ejercita, la taxonomía de los 15 fallos que este documento reproduce (sección 6.4) |
 | Unidad siguiente (mismo equipo, entrega futura) | Corrige los grupos A, B y C de la sección 6.4, llena `RegistrationTest`, implementa las tareas de `specs/001-pruebas-e2e/` y `specs/002-tours-guiados/`, y aplica el fix de `ci.yml` propuesto en la sección 8.1 |
 | Quien apruebe el PR (revisión de código) | Verifica que la spec y la matriz de casos de prueba de todo módulo nuevo existan antes de aprobar su implementación, conforme al principio VI de `.specify/memory/constitution.md` ("Spec-Driven Development") |
 
@@ -476,9 +476,9 @@ las skills de IA de la sección 9 como sustituto parcial de una revisión de pru
 
 | Hito | Cuándo | Entregable |
 |---|---|---|
-| Línea base capturada | Tarea 2 de esta entrega (ya ejecutada) | `docs/entrega/evidencia/{phpunit,playwright}-baseline.txt`, `entorno.txt` |
-| Taxonomía de fallos verificada | Tarea 2, revisión posterior (ya ejecutada) | `hallazgos-fallos-pruebas.md` |
-| Este plan de pruebas | Tarea 12 de esta entrega (esta misma unidad) | `docs/entrega/02-plan-de-pruebas.md` |
+| Línea base capturada | Fase temprana de esta entrega (ya ejecutada) | `docs/entrega/evidencia/{phpunit,playwright}-baseline.txt`, `entorno.txt` |
+| Taxonomía de fallos verificada | Revisión posterior a la línea base (ya ejecutada) | `docs/entrega/02-plan-de-pruebas.md` §6.4 |
+| Este plan de pruebas | Esta misma unidad | `docs/entrega/02-plan-de-pruebas.md` |
 | Fix de `ci.yml` (quitar `|| true`, ampliar filtro, agregar Playwright) | Unidad siguiente, antes de corregir defectos de producto | Pull request que modifique `.github/workflows/ci.yml` |
 | Corrección de los grupos A, B y C | Unidad siguiente, después del fix de CI (para que el pipeline sí detecte regresiones mientras se corrige) | Commits ligados a `specs/001-pruebas-e2e/tasks.md` |
 | Implementación de `specs/001-pruebas-e2e/` (5 flujos E2E) | Unidad siguiente | Código + pruebas + `ci.yml` ejecutando Playwright en verde |

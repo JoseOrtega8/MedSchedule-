@@ -298,7 +298,7 @@ Los ocho hallazgos siguientes se documentan con su evidencia; ninguno se corrige
    viven en issues de GitHub, no en documentos de especificación versionados. Las únicas
    especificaciones que existen en el repositorio (`specs/001-pruebas-e2e/spec.md` y
    `specs/002-tours-guiados/spec.md`) se redactaron *después* del código, como parte de esta misma
-   entrega (Tarea 5), y explícitamente para funcionalidad que todavía no se implementa — no como
+   entrega, y explícitamente para funcionalidad que todavía no se implementa — no como
    práctica retroactiva sobre el sistema existente.
 
 2. **Los pasos de lint y de tests del CI no pueden fallar el build.** En
@@ -373,7 +373,7 @@ propuesto para la unidad siguiente: añadir `'resources/js/patient-dashboard.js'
 
 El repositorio tiene 79 métodos de prueba en total (verificado con
 `grep -rE "public function test_" tests --include="*.php" | wc -l`), repartidos en las 20 clases de
-la sección 3. Sobre esa base, la corrida de referencia de la revisión de la Tarea 2 registra 64
+la sección 3. Sobre esa base, la corrida de referencia registra 64
 pruebas que pasan y 15 que fallan. Al intentar reproducir esa corrida en esta máquina,
 `php artisan test` no pudo replicar ese resultado exacto: `phpunit.xml` fuerza `DB_CONNECTION=mysql`
 contra una base `medschedule_test` en el puerto por defecto (3306), mientras que el MySQL de MAMP en
@@ -399,12 +399,12 @@ preexistente sin cobertura real sobre el registro de usuarios.
 
 | Criterio | Kiro (AWS) | Spec Kit (GitHub, ya instalado en esta rama) |
 |---|---|---|
-| Costo y licencia | Producto de AWS con capas gratuita y de pago; no se verificó en esta entrega el detalle vigente de precios ni límites de uso — se deja como **incertidumbre explícita** en vez de citar una cifra no comprobada. | Código abierto (repositorio público `github/spec-kit`), sin costo de licencia. Instalado vía `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` (Tarea 3), versión `1.0.6.dev0`. |
-| Dependencia de un IDE concreto | Es un IDE agéntico propio (fork de Code OSS): el flujo de specs vive dentro de Kiro como aplicación. Migrar de editor implica migrar de herramienta de trabajo completa. | Es un CLI (`specify`) que coloca plantillas y scripts dentro del propio repositorio (`.specify/`) e integra comandos como skills del agente (`.claude/skills/speckit-*/SKILL.md`, verificado en la Tarea 3). No sustituye el editor: el equipo sigue usando el que ya tiene. |
+| Costo y licencia | Producto de AWS con capas gratuita y de pago; no se verificó en esta entrega el detalle vigente de precios ni límites de uso — se deja como **incertidumbre explícita** en vez de citar una cifra no comprobada. | Código abierto (repositorio público `github/spec-kit`), sin costo de licencia. Instalado vía `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`, versión `1.0.6.dev0`. |
+| Dependencia de un IDE concreto | Es un IDE agéntico propio (fork de Code OSS): el flujo de specs vive dentro de Kiro como aplicación. Migrar de editor implica migrar de herramienta de trabajo completa. | Es un CLI (`specify`) que coloca plantillas y scripts dentro del propio repositorio (`.specify/`) e integra comandos como skills del agente (`.claude/skills/speckit-*/SKILL.md`, verificado en el propio repositorio). No sustituye el editor: el equipo sigue usando el que ya tiene. |
 | Agentes soportados | No se verificó en esta entrega si Kiro admite agentes de terceros más allá de su propio asistente integrado; se deja como incertidumbre en vez de afirmar una lista de agentes soportados sin comprobarla. | Multi-agente por diseño: la CLI acepta `--integration claude` (usado en esta instalación) y documenta soporte para otros agentes de código; los artefactos (`.specify/templates/`, `.specify/memory/constitution.md`) son texto plano, independiente del agente que los consuma. |
-| Integración con el flujo de git existente | Al ser un IDE, el flujo de git pasa por su propia interfaz; no se verificó si permite operar igual que la CLI de git que ya usa el equipo (`gh`, hooks, `git worktree`). | Total: `.specify/` es una carpeta más del repositorio, los commits de sus artefactos son commits normales (verificado: commit `e9eb433` de la Tarea 3 los incluyó junto al resto del historial), y el flujo `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` no reemplaza ningún paso de `git`/`gh` ya en uso. |
+| Integración con el flujo de git existente | Al ser un IDE, el flujo de git pasa por su propia interfaz; no se verificó si permite operar igual que la CLI de git que ya usa el equipo (`gh`, hooks, `git worktree`). | Total: `.specify/` es una carpeta más del repositorio, los commits de sus artefactos son commits normales (verificado: commit `e9eb433` los incluyó junto al resto del historial), y el flujo `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` no reemplaza ningún paso de `git`/`gh` ya en uso. |
 | Curva de aprendizaje para el equipo | Requiere aprender un IDE nuevo completo (atajos, paneles, flujo de specs propio) además de la metodología SDD en sí. | El equipo ya usa Claude Code como agente de trabajo; Spec Kit se aprende como un puñado de comandos nuevos (`/speckit-*`) sobre la misma herramienta, sin curva de editor. |
-| Madurez del proyecto | Producto de AWS lanzado y mantenido activamente, pero de historia más corta como categoría de producto que Spec Kit; no se verificó aquí su cadencia de versiones ni estabilidad de API — incertidumbre reconocida. | Repositorio público con historial de commits verificable, versión instalada `1.0.6.dev0` (aún pre-1.0 en su propio versionado, ver Tarea 3), en desarrollo activo. Es "menos maduro" en número de versión, pero su superficie (plantillas Markdown + scripts bash) es lo bastante simple como para que la inmadurez del proyecto no bloquee su adopción. |
+| Madurez del proyecto | Producto de AWS lanzado y mantenido activamente, pero de historia más corta como categoría de producto que Spec Kit; no se verificó aquí su cadencia de versiones ni estabilidad de API — incertidumbre reconocida. | Repositorio público con historial de commits verificable, versión instalada `1.0.6.dev0` (aún pre-1.0 en su propio versionado), en desarrollo activo. Es "menos maduro" en número de versión, pero su superficie (plantillas Markdown + scripts bash) es lo bastante simple como para que la inmadurez del proyecto no bloquee su adopción. |
 
 **Recomendación: Spec Kit.** Es de código abierto (sin costo ni dependencia de licencia comercial),
 agnóstico del agente (funciona con el flujo de Claude Code que el equipo ya usa, y en principio con
@@ -417,7 +417,7 @@ se deja anotado como incertidumbre en vez de afirmarse.
 
 | Fase | Entregable | Criterio de salida |
 |---|---|---|
-| 1. Adopción de la constitución | `.specify/memory/constitution.md` con los siete principios del proyecto (ya redactado en la Tarea 3: estilo de código, manejo de errores, gestión de secretos, validación de entrada, no exposición de errores internos, SDD obligatorio para funcionalidad nueva, convenciones de control de versiones). | La constitución existe, está versionada en el repositorio y el equipo la referencia en la descripción de cada PR nuevo. |
+| 1. Adopción de la constitución | `.specify/memory/constitution.md` con los siete principios del proyecto (ya redactado: estilo de código, manejo de errores, gestión de secretos, validación de entrada, no exposición de errores internos, SDD obligatorio para funcionalidad nueva, convenciones de control de versiones). | La constitución existe, está versionada en el repositorio y el equipo la referencia en la descripción de cada PR nuevo. |
 | 2. Especificación de los módulos pendientes | Una spec por módulo bajo `specs/<NNN>-<slug>/spec.md`, siguiendo `.specify/templates/spec-template.md`, para la funcionalidad que aún no se construye — empezando por las dos ya redactadas como piloto (`specs/001-pruebas-e2e`, `specs/002-tours-guiados`). | Cada spec tiene historias de usuario priorizadas, escenarios de aceptación en formato Given/When/Then y una sección de supuestos explícitos, revisada por al menos otra persona del equipo antes de pasar a plan. |
 | 3. Plan y tareas por spec | `plan.md` y `tasks.md` generados con `/speckit-plan` y `/speckit-tasks` para cada spec aprobada, con las tareas agrupadas por historia de usuario y marcadas como independientes cuando sea posible. | El plan referencia archivos y componentes reales del código (no genéricos), y cada tarea del `tasks.md` tiene un criterio de aceptación verificable heredado de la spec. |
 | 4. Implementación guiada por spec con verificación | Código y pruebas construidos contra las tareas de la fase 3, con `/speckit-implement` o implementación manual equivalente, cerrando cada tarea solo cuando su criterio de aceptación pasa en la suite de pruebas real (sin el filtro reducido ni el `|| true` de `ci.yml`, cuya corrección queda fuera de esta entrega y es trabajo de la unidad siguiente). | El PR de la funcionalidad enlaza su spec y su issue de origen; la suite de pruebas que cubre esa funcionalidad pasa en verde de forma reproducible antes de mergear. |
@@ -430,6 +430,6 @@ build del dashboard del paciente (sección 5.1) y la taxonomía real de los quin
 (sección 5.2), son síntomas de ese mismo origen — el código antecede siempre a la definición de qué
 debía construirse y de cómo se sabría que estaba bien construido. La propuesta de la sección 7 no
 pretende reescribir el sistema existente; usa Spec Kit, ya instalado y funcionando dentro del propio
-repositorio (Tarea 3), para que la funcionalidad que falta por construir sí nazca de una especificación
+repositorio, para que la funcionalidad que falta por construir sí nazca de una especificación
 con criterios de aceptación verificables, sin exigirle al equipo cambiar de editor ni de flujo de
 trabajo.

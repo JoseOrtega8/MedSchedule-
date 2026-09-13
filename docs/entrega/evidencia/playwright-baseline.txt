@@ -1,5 +1,5 @@
 # Evidencia de ejecución — Playwright (línea base)
-# Servidor levantado con: php artisan serve --port=8000 (PID capturado, sin usar kill %1 — ruling 2).
+# Servidor levantado con: php artisan serve --port=8000 (PID capturado, sin usar kill %1).
 ---
 
 Running 1 test using 1 worker

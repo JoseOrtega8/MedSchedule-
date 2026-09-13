@@ -34,8 +34,8 @@ verificación independiente de cada una.
 tour.
 
 - [ ] T001 Agregar `driver.js` en su versión fijada `1.8.0` como dependencia del proyecto
-      (instalación real a cargo de la Tarea 6; esta tarea deja registrada la versión exacta a
-      usar).
+      (instalación real a cargo de la implementación futura; esta tarea deja registrada la versión
+      exacta a usar).
 - [ ] T002 [P] Crear la carpeta `resources/js/tours/` como ubicación de los archivos de esta
       funcionalidad.
 - [ ] T003 [P] Crear la carpeta `tests/playwright_tours_guiados/` como ubicación de las pruebas

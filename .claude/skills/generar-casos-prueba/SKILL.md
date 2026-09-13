@@ -2,10 +2,10 @@
 name: "generar-casos-prueba"
 description: "A partir de una spec de MedSchedule, deriva la matriz de casos de prueba y emite el esqueleto de test PHPUnit o Playwright correspondiente, siguiendo el estilo de tests/playwright_gestion_usuarios/gestion-usuarios.spec.js. Usar después de tener una spec.md aprobada (de /speckit-specify o de generar-spec-modulo) y antes de implementar."
 argument-hint: "Ruta al spec.md del módulo (por ejemplo: specs/003-recordatorios-citas/spec.md)"
-compatibility: "Requiere la estructura de spec-kit instalada en .specify/ (Tarea 3)"
+compatibility: "Requiere la estructura de spec-kit instalada en .specify/"
 metadata:
   author: "equipo-medschedule"
-  source: "tarea-4-sdd"
+  source: "spec-driven-development"
 user-invocable: true
 disable-model-invocation: false
 ---

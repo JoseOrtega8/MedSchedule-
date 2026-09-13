@@ -2,10 +2,10 @@
 name: "generar-spec-modulo"
 description: "Genera una especificación funcional (spec.md) en el formato de .specify/templates/spec-template.md para un módulo o requerimiento nuevo de MedSchedule, a partir de las migraciones y modelos existentes. Usar al definir un módulo o requerimiento nuevo, antes de escribir código."
 argument-hint: "Describe el módulo o requerimiento nuevo (por ejemplo: 'recordatorios de citas por correo')"
-compatibility: "Requiere la estructura de spec-kit instalada en .specify/ (Tarea 3)"
+compatibility: "Requiere la estructura de spec-kit instalada en .specify/"
 metadata:
   author: "equipo-medschedule"
-  source: "tarea-4-sdd"
+  source: "spec-driven-development"
 user-invocable: true
 disable-model-invocation: false
 ---

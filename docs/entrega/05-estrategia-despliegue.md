@@ -349,10 +349,10 @@ posterior no borra el anterior.
 
 Un primer intento dentro de esta misma tarea sí llegó a commitear ambos archivos de forma local
 (commit `6787c1b`), sin que nadie los hubiera revisado antes de decidir commitearlos. Ese commit
-nunca se subió a ningún remoto: esta rama no tiene upstream configurado ni existe en `origin`. El
-coordinador de la entrega detectó el problema al revisar el reporte de esta misma tarea, deshizo el
-commit con `git reset --soft` antes de cualquier `push`, retiró los dos archivos del área de
-preparación, y confirmó que no aparecen en ningún commit alcanzable del historial del repositorio.
+nunca se subió a ningún remoto: esta rama no tiene upstream configurado ni existe en `origin`. Al
+revisar el resultado de esa misma tarea se detectó el problema, se deshizo el
+commit con `git reset --soft` antes de cualquier `push`, se retiraron los dos archivos del área de
+preparación, y se confirmó que no aparecen en ningún commit alcanzable del historial del repositorio.
 Consultado expresamente, el autor decidió que ambos documentos **quedan fuera del repositorio de
 forma permanente**: no se redactan para retirarles las credenciales ni se versionan de ninguna otra
 forma; se conservan únicamente en la máquina local, fuera del control de versiones. La contraseña

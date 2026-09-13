@@ -10,7 +10,7 @@ Todo dato de este documento se obtuvo abriendo el archivo citado en esta máquin
 entre el entorno local y el de integración continua (GitHub Actions), se documentan ambos por
 separado. No se cita ninguna versión ni parámetro sin su archivo y línea de origen.
 
-Evidencia cruda de entorno capturada en la Tarea 2: `docs/entrega/evidencia/entorno.txt` y
+Evidencia cruda de entorno capturada al preparar esta entrega: `docs/entrega/evidencia/entorno.txt` y
 `docs/entrega/evidencia/phpunit-baseline.txt`.
 
 ## 1. Inventario de herramientas
@@ -64,7 +64,7 @@ Evidencia cruda de entorno capturada en la Tarea 2: `docs/entrega/evidencia/ento
 | 30 | `SESSION_DRIVER` | `array` | Sesión en memoria, no persiste entre procesos |
 
 Las líneas 26-27 fuerzan **toda** ejecución de `php artisan test` a conectarse a MySQL —
-`medschedule_test`— sin importar qué diga `.env`. Esto es lo que obligó, en la Tarea 2, a invocar
+`medschedule_test`— sin importar qué diga `.env`. Esto es lo que obligó a invocar
 PHPUnit con variables de entorno explícitas (`DB_HOST`, `DB_PORT`) apuntando al MySQL de MAMP en el
 puerto `8889`, en vez de un `php artisan test` plano.
 
@@ -102,15 +102,17 @@ cmd = "php artisan migrate --force && SERVER_NAME=:$PORT frankenphp run --config
 ```
 
 Es lo que consume el constructor de Railway para arrancar el contenedor. Tiene **tres defectos ya
-verificados**, documentados aquí como hallazgos de configuración y **sin corregir** en esta unidad:
+verificados**, numerados aquí igual que en `docs/entrega/05-estrategia-despliegue.md` §8 (donde se
+documentan junto al resto de los defectos de despliegue de esta entrega), documentados aquí como
+hallazgos de configuración y **sin corregir** en esta unidad:
 
-- **D1 — `/Caddyfile` inexistente**: el comando invoca `frankenphp run --config /Caddyfile`, pero
+- **Defecto 2 — `/Caddyfile` inexistente**: el comando invoca `frankenphp run --config /Caddyfile`, pero
   no hay ningún archivo `Caddyfile` en el repositorio (verificado con `ls` y `find` en la raíz y
   primer nivel). El proceso de arranque fallaría y el contenedor no llegaría a servir la app.
-- **D2 — FrankenPHP no declarado como dependencia**: `composer.json` no menciona `frankenphp` ni
+- **Defecto 3 — FrankenPHP no declarado como dependencia**: `composer.json` no menciona `frankenphp` ni
   `laravel/octane` (verificado con `grep -iE`). El comando asume un binario que el builder no
   garantiza proveer.
-- **D3 — migraciones duplicadas**: este `cmd` ya ejecuta `php artisan migrate --force`; el paso
+- **Defecto 4 — migraciones duplicadas**: este `cmd` ya ejecuta `php artisan migrate --force`; el paso
   "Ejecutar migraciones en el entorno desplegado" de `.github/workflows/cd-railway.yml:58-61`
   ejecuta el mismo comando después. No es destructivo (las migraciones de Laravel son idempotentes
   por su tabla de control), pero es redundante y ambiguo sobre cuál de los dos lugares es el
@@ -145,7 +147,7 @@ todavía en transición.
 ### 2.10 `.specify/integration.json`
 
 `{"version": "1.0.6.dev0", ...}` (línea 2) — versión instalada del CLI de spec-kit, confirma el
-dato de la Tarea 3 y el de la tabla del punto 1.
+dato de la instalación inicial de spec-kit y el de la tabla del punto 1.
 
 ### 2.11 `terraform/*.tf`
 
@@ -176,7 +178,7 @@ aplicarlos provisionaría infraestructura de pago; solo queda un `output` inform
 ## 4. Instalación
 
 Comandos verificados desde el estado real de esta máquina. Cada uno está marcado
-`[EJECUTADO]` (se corrió literalmente en las Tareas 2 a 8 de esta entrega, con evidencia en
+`[EJECUTADO]` (se corrió literalmente en fases tempranas de esta entrega, con evidencia en
 `.superpowers/sdd/2026-09-08-entrega-sdd-cicd/tarea-*-report.md`) o `[PREVISTO, NO EJECUTADO]`
 (comando reproducible desde un clon limpio, pero no se ejecutó en esta entrega porque el estado
 correspondiente ya existía en la máquina antes de empezar, o porque requiere un recurso —proyecto
@@ -184,7 +186,7 @@ de Railway, token— que aún no existe).
 
 ```bash
 # Clonado e instalación de dependencias — [PREVISTO, NO EJECUTADO]
-# (vendor/ y node_modules/ ya existían en esta máquina antes de la Tarea 1)
+# (vendor/ y node_modules/ ya existían en esta máquina antes de empezar esta unidad)
 git clone <url-del-repositorio>
 cd MedSchedule-
 composer install
@@ -198,7 +200,7 @@ npm run build
 
 ```bash
 # Prerrequisito: arrancar el MySQL de MAMP y confirmar que quedó escuchando —
-# [EJECUTADO] (preparación manual del autor, antes de despachar la Tarea 2)
+# [EJECUTADO] (preparación manual del autor, antes de la primera ejecución de pruebas)
 # MAMP usa el puerto 8889, no el 3306 por defecto de MySQL. Esa diferencia de puerto es la razón
 # por la que el bloque de PHPUnit de abajo recibe DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD
 # explícitos en vez de depender de config/database.php (ver el bloque "Intento de reproducir..."
@@ -209,7 +211,7 @@ nc -z 127.0.0.1 8889 && echo "MySQL de MAMP escuchando en 8889"
 
 ```bash
 # Prerrequisito: crear la base de pruebas — [EJECUTADO] (preparación manual del autor, antes de
-# despachar la Tarea 2). No documentado en su momento; se reconstruye aquí porque
+# la primera ejecución de pruebas). No documentado en su momento; se reconstruye aquí porque
 # `phpunit.xml:26-27` fuerza DB_CONNECTION=mysql / DB_DATABASE=medschedule_test y ningún artefacto
 # de la aplicación (migración o seeder) crea esa base — debe existir de antemano o el suite falla
 # con "Unknown database 'medschedule_test'". Se usa utf8mb4/utf8mb4_unicode_ci para igualar el
@@ -221,14 +223,14 @@ nc -z 127.0.0.1 8889 && echo "MySQL de MAMP escuchando en 8889"
 ```
 
 ```bash
-# Suite de PHPUnit contra el MySQL de MAMP — [EJECUTADO] (Tarea 2)
+# Suite de PHPUnit contra el MySQL de MAMP — [EJECUTADO]
 # Requiere los dos bloques anteriores (servicio arrancado, base creada).
 # Puerto y usuario documentables; la contraseña nunca se imprime ni se commitea.
 DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=<usuario_mamp> DB_PASSWORD=<password_mamp> php artisan test
 ```
 
 ```bash
-# Intento de reproducir la línea base con la conexión por defecto — [EJECUTADO] (Tarea 9)
+# Intento de reproducir la línea base con la conexión por defecto — [EJECUTADO]
 # No reprodujo el 64/15 porque phpunit.xml fuerza mysql/medschedule_test pero config/database.php
 # apunta por defecto al puerto 3306, mientras el MySQL de MAMP de los dos bloques anteriores
 # escucha en 8889 (§2.2).
@@ -238,14 +240,15 @@ php artisan test
 ```bash
 # Prerrequisito: instalar el binario de Chromium que usa Playwright — [PREVISTO, NO EJECUTADO]
 # (esta máquina ya tenía binarios de Chromium en caché en ~/Library/Caches/ms-playwright desde
-# antes de la Tarea 1; `playwright install` nunca se corrió durante esta entrega. Desde un clon
+# antes de empezar esta unidad; `playwright install` nunca se corrió durante esta entrega. Desde un clon
 # limpio sin esa caché, `npx playwright test` fallaría con "browserType.launch: Executable doesn't
 # exist" si se omite este paso).
 npx playwright install chromium
 ```
 
 ```bash
-# Playwright end-to-end, arranque y apagado explícitos del servidor — [EJECUTADO] (Tarea 2, ruling 2)
+# Playwright end-to-end, arranque y apagado explícitos del servidor — [EJECUTADO]
+# (arranque y apagado con PID explícito, sin usar "kill %1")
 php artisan serve --port=8000 > /dev/null 2>&1 & SERVE_PID=$!
 sleep 3
 npx playwright test
@@ -253,13 +256,13 @@ kill $SERVE_PID
 ```
 
 ```bash
-# Instalación de spec-kit — [EJECUTADO] (Tarea 3)
+# Instalación de spec-kit — [EJECUTADO]
 uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
 specify init --here --force --non-interactive --integration claude
 ```
 
 ```bash
-# Instalación de driver.js con versión exacta — [EJECUTADO] (Tarea 6)
+# Instalación de driver.js con versión exacta — [EJECUTADO]
 npm install --save-dev driver.js@1.8.0
 npx vite build --logLevel warn
 npx esbuild resources/js/tours/tour-ejemplo.js --bundle --format=esm --loader:.css=text --outfile=/tmp/tour-ejemplo-check.js
@@ -284,27 +287,29 @@ railway run --service medschedule-app php artisan migrate --force
 ```
 
 ```bash
-# Generación del DOCX de entrega — [PREVISTO, NO EJECUTADO]
-# pandoc no está instalado todavía en esta máquina; se instala en la Tarea 18.
+# Generación del DOCX de entrega — [EJECUTADO]
+# pandoc 3.11 está instalado en /opt/homebrew/bin/pandoc. docs/entrega/MedSchedule_Entrega.docx
+# ya existe (555 KB), generado con los cinco diagramas Mermaid de esta entrega renderizados a
+# imagen con mermaid-cli antes de la conversión con pandoc.
 brew install pandoc
 ```
 
 CI (`ci.yml`) se dispara automáticamente en GitHub Actions con cada `push`/`pull_request` a
 `main`/`develop`/`backend`/`frontend`; como esta entrega no hace `git push` (regla de la unidad),
 sus jobs **no se han ejecutado** para los commits de esta rama — quedan `[PREVISTO, NO EJECUTADO]`
-hasta que se abra el PR final (Tarea 19).
+hasta que se abra el PR final de esta entrega.
 
 ## 5. Implementación: qué queda instalado y qué construye la unidad siguiente
 
 | Herramienta / archivo | Estado al cierre de esta unidad | Qué construye la unidad siguiente |
 |---|---|---|
 | spec-kit | Instalado (`specify-cli 1.0.6.dev0`), inicializado, con specs piloto y skills funcionando | Specs adicionales por feature, uso continuo de `/speckit-*` en el desarrollo normal |
-| PHPUnit | Suite corriendo, línea base 64/15 capturada y taxonomizada (grupos A/B/C + `RegistrationTest` vacío) | Corregir los 15 fallos según la taxonomía (Tarea 12), llenar `RegistrationTest` |
+| PHPUnit | Suite corriendo, línea base 64/15 capturada y taxonomizada (grupos A/B/C + `RegistrationTest` vacío) | Corregir los 15 fallos según la taxonomía, llenar `RegistrationTest` |
 | Playwright | Un spec E2E pasando (`gestion-usuarios.spec.js`), config con evidencia automática | Ampliar cobertura E2E (rutas por rol, y una prueba que cargue `patient/dashboard.blade.php` para atrapar el hallazgo de Vite) |
 | driver.js | Instalado en versión exacta, con un módulo de tour de ejemplo verificado con `esbuild` | Tours reales integrados en las vistas de producción |
 | Vite / `vite.config.js` | Build funcional para los 10 módulos JS declarados; hallazgo documentado de `patient-dashboard.js` faltante en `input` | Agregar `patient-dashboard.js` al `input` y cubrir esa vista con la prueba E2E mencionada arriba |
 | GitHub Actions (`ci.yml`) | Preexistente, sin modificar (regla explícita de esta unidad); documentado con sus `|| true` como compuerta ausente | Retirar los `|| true` una vez que las 15 pruebas y el manifiesto de Vite estén resueltos, para que el pipeline realmente pueda fallar |
 | GitHub Actions (`cd-railway.yml`) | Creado, con disparo manual y orden correcto (`railway up` bloqueante antes de migrar) | Automatizar el disparo al hacer merge a `main`, una vez el proyecto de Railway y el secreto `RAILWAY_TOKEN` existan |
-| `nixpacks.toml` | Sin modificar; tres defectos (D1, D2, D3) verificados y documentados | Corregir D1 (agregar `Caddyfile` o quitar la bandera `--config`), D2 (declarar `frankenphp` u `octane` en `composer.json`) y D3 (dejar las migraciones en un solo lugar) antes de intentar un despliegue real |
+| `nixpacks.toml` | Sin modificar; tres defectos (numerados como Defecto 2, 3 y 4 en `docs/entrega/05-estrategia-despliegue.md` §8) verificados y documentados | Corregir el Defecto 2 (agregar `Caddyfile` o quitar la bandera `--config`), el Defecto 3 (declarar `frankenphp` u `octane` en `composer.json`) y el Defecto 4 (dejar las migraciones en un solo lugar) antes de intentar un despliegue real |
 | Terraform | Esqueleto escrito (`main.tf`, `providers.tf`, `variables.tf`, `README.md`), sin `init`/`apply`; recursos comentados a propósito | Instalar Terraform, ejecutar `init`/`plan`, y descomentar los recursos solo cuando el proyecto de Railway deba crearse por código |
-| pandoc | No instalado | Instalación y generación del DOCX de entrega final (Tarea 18) |
+| pandoc | Instalado (`3.11`, `/opt/homebrew/bin/pandoc`); DOCX de entrega ya generado (`docs/entrega/MedSchedule_Entrega.docx`, 555 KB) | Regenerar el DOCX si el contenido de esta entrega cambia |

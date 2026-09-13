@@ -1,7 +1,7 @@
 # Token de API de Railway. Marcado como sensible para que Terraform no lo
 # imprima en los planes ni en los logs. Nunca tiene valor por defecto.
 variable "railway_token" {
-  description = "Token de API de Railway. Se inyecta via TF_VAR_railway_token."
+  description = "Token de API de Railway. Se inyecta vía TF_VAR_railway_token."
   type        = string
   sensitive   = true
 }

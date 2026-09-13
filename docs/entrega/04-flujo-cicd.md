@@ -85,8 +85,8 @@ patrón verificado — ramas de equipo (`backend`) y ramas por issue (`feat/<n>-
 ### 2.1 Commits
 
 Formato de commit convencional: `tipo(alcance): descripción`. Tipos usados en este proyecto (y en
-esta misma entrega, según `global-constraints.md`): `feat`, `fix`, `docs`, `chore`, `refactor`,
-`test`, `style`, `ci`, `perf`. Sin líneas de atribución (`Co-Authored-By` u otras) en el mensaje.
+esta misma entrega): `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`, `ci`, `perf`.
+Sin líneas de atribución (`Co-Authored-By` u otras) en el mensaje.
 
 ### 2.2 Plantillas de issue
 
@@ -281,7 +281,7 @@ Por orden de impacto, sin tocar `ci.yml` en esta entrega (restricción vinculant
 
 ## 5. El workflow de despliegue agregado en esta entrega: `.github/workflows/cd-railway.yml`
 
-Este archivo se creó en la Tarea 8 de esta misma unidad (no preexistía). A diferencia de `ci.yml`,
+Este archivo se creó como parte de esta misma unidad (no preexistía). A diferencia de `ci.yml`,
 sí es material de esta entrega y puede describirse como andamiaje construido, no solo observado.
 
 ### 5.1 Por qué el disparo es manual

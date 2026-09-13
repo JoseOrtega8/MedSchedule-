@@ -81,7 +81,7 @@ fallos de PHPUnit documentados ni instrumentar cobertura de código.
   hoy no hay ninguna prueba automática (ni E2E ni PHPUnit) que valide el input del formulario de
   registro. Esta especificación no lo cubre (el registro de cuentas no es uno de los 4 flujos en
   alcance); se documenta aquí como brecha de cobertura conocida para una futura especificación,
-  distinta de los 15 fallos de PHPUnit ya documentados en `hallazgos-fallos-pruebas.md`.
+  distinta de los 15 fallos de PHPUnit ya documentados en `docs/entrega/02-plan-de-pruebas.md` §6.4.
 - **Principio V (Exposición de errores al cliente)**: PASA. Los escenarios de acceso denegado
   verifican un código de estado 403 genérico, no un mensaje que exponga detalles internos.
 - **Principio VII (Convenciones de control de versiones)**: PASA. El trabajo de esta

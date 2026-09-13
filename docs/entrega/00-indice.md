@@ -5,7 +5,7 @@
 **Repositorio:** [`github.com/JoseOrtega8/MedSchedule-`](https://github.com/JoseOrtega8/MedSchedule-) (público).
 **Materia:** Desarrollo Web Profesional — Grupo TIDSM8-2, Universidad Tecnológica de Hermosillo.
 **Profesor:** Iván Rogelio Chenoweth.
-**Fecha de entrega:** 2026-09-10.
+**Fecha de entrega:** 2026-09-12.
 
 ## 0. Método de verificación
 
@@ -55,7 +55,7 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 | **Liga c)** Software como infraestructura | [`terraform/`](../../terraform/) — esqueleto declarativo sin aplicar (`init`/`plan`/`apply` no ejecutados). **Sin Codespaces**, porque el autor no dispone de él | [01-configuracion-herramientas.md](01-configuracion-herramientas.md) §2.11, §4; [05-estrategia-despliegue.md](05-estrategia-despliegue.md) §7 |
 | **Liga d)** Spec Driven Development con spec-kit | [sdd-proposal.md](../sdd/sdd-proposal.md) y [sdd-implementation.md](../sdd/sdd-implementation.md); [`.specify/`](../../.specify/); specs piloto [`specs/001-pruebas-e2e/`](../../specs/001-pruebas-e2e/) y [`specs/002-tours-guiados/`](../../specs/002-tours-guiados/) | — |
 | **Criterio SA** — todos los puntos anteriores más video explicativo | [06-guion-video-demo.md](06-guion-video-demo.md) | Guión completo, §2 (tiempos), §3 (secuencia en vivo), §4 (contingencia) |
-| **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-10 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
+| **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-12 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
 | **Criterio AU** — módulo adicional | **No se entrega.** Decisión expresa del autor: esta unidad se enfoca en documentación, pruebas y CI/CD sobre el sistema ya construido, no en agregar un módulo funcional nuevo | — |
 
 ## 3. Conclusión
@@ -63,8 +63,11 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 Esta entrega documenta el estado real y verificado de MedSchedule: nueve documentos (los seis
 numerados de `docs/entrega/`, los dos de `docs/sdd/`, y este índice) que cubren los cinco puntos
 numerados de la rúbrica, las cuatro ligas de apoyo y el criterio SA con su video. Ningún hallazgo
-de código se corrigió al escribir esta entrega —árbol de trabajo limpio en `app/`, `routes/`,
-`config/`, `database/`, `tests/`, `resources/` y `.github/`—; cada defecto real del sistema
-(15 fallos de PHPUnit taxonomizados, cinco defectos de despliegue, un pipeline sin compuertas
-reales) queda documentado con su fix propuesto para la unidad siguiente. El único módulo que esta
-entrega decide no construir es el del criterio AU, declarado aquí sin disimularlo.
+de código existente se corrigió al escribir esta entrega —ningún archivo preexistente de `app/`,
+`routes/`, `config/`, `database/`, `tests/`, `resources/` ni `.github/` se modificó; esta entrega
+solo agrega archivos nuevos en dos de esas carpetas (`resources/js/tours/tour-ejemplo.js` y su
+`README.md`, y `.github/workflows/cd-railway.yml`)—; cada defecto real del sistema (15 fallos de
+PHPUnit taxonomizados, cuatro defectos de despliegue y un incidente de seguridad ya resuelto, un
+pipeline sin compuertas reales) queda documentado con su fix propuesto para la unidad siguiente. El
+único módulo que esta entrega decide no construir es el del criterio AU, declarado aquí sin
+disimularlo.

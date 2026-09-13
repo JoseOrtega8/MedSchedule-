@@ -2,7 +2,7 @@
 # Nota de entorno: phpunit.xml fuerza DB_CONNECTION=mysql y DB_DATABASE=medschedule_test.
 # La config config/database.php apunta por defecto a 127.0.0.1:3306 sin contraseña, lo cual
 # es incorrecto para este entorno (MAMP corre MySQL en el puerto 8889 con credenciales
-# default publicas de MAMP, redactadas aqui por politica de seguridad del repo publico).
+# default públicas de MAMP, redactadas aquí por política de seguridad del repo público).
 # Por eso la corrida se invocó pasando las variables de conexión por línea de comando (host,
 # puerto y credenciales de MAMP, redactadas), igual que hace el CI, sin tocar archivos versionados.
 # No se editó .env, phpunit.xml ni config/database.php.

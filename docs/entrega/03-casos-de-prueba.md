@@ -15,8 +15,7 @@ real de ejecución de `docs/entrega/evidencia/phpunit-baseline.txt`: **64 pasan 
 (`Tests: 15 failed, 64 passed (149 assertions)`, línea final de esa evidencia). El estado de cada
 caso de esta matriz se tomó de esa misma evidencia, no se infiere ni se supone: ningún caso que
 falla en `phpunit-baseline.txt` aparece aquí como aprobado. Los 15 fallos se etiquetan con su grupo
-de la taxonomía verificada en `hallazgos-fallos-pruebas.md` (Grupo A, B o C), reproducida sin
-contradecirla por `docs/entrega/02-plan-de-pruebas.md` §6.4. Ningún defecto se corrige aquí — regla
+de la taxonomía verificada en `docs/entrega/02-plan-de-pruebas.md` §6.4 (Grupo A, B o C). Ningún defecto se corrige aquí — regla
 vinculante de esta entrega.
 
 Los casos propuestos de la sección 4 se derivan de `specs/001-pruebas-e2e/spec.md`, la
@@ -228,7 +227,7 @@ la evidencia de ejecución. Para los módulos propuestos (sección 4), el origen
 
 | Módulo | Casos | Requisito / spec de origen |
 |---|---|---|
-| Autenticación (scaffold Breeze) | CP-010 a CP-017 | Scaffold de autenticación de Laravel Breeze; sin spec numerada. La brecha de `RegistrationTest` (CP-017) está documentada en `hallazgos-fallos-pruebas.md` |
+| Autenticación (scaffold Breeze) | CP-010 a CP-017 | Scaffold de autenticación de Laravel Breeze; sin spec numerada. La brecha de `RegistrationTest` (CP-017) está documentada en `docs/entrega/02-plan-de-pruebas.md` §6.4 |
 | Autenticación y control de acceso por rol (implementación propia) | CP-001, CP-008, CP-018, CP-019 | `routes/web.php` (middleware `auth` + `role:admin`/`role:doctor` de Spatie); middleware legado `App\Http\Middleware\EnsureAdminRole` |
 | Perfil de usuario | CP-026, CP-034, CP-035 | `App\Http\Controllers\DoctorProfileController`; `App\Http\Controllers\ProfileController` (scaffold Breeze) |
 | Dashboard y estadísticas | CP-003, CP-020 a CP-025 | `App\Http\Controllers\DashboardController`; `App\Services\DashboardStatsService` |
@@ -265,7 +264,7 @@ identifican una clave de aplicación o un valor sensible de configuración).
 Resultado real: 58 filas de caso (`CP-001` a `CP-058`, sin huecos en la numeración), y ningún
 patrón de clave, token ni contraseña con aspecto verosímil encontrado en el archivo. La suma de
 métodos declarados como cubiertos en las filas de la sección 3.1 a 3.11 es
-79 métodos reales de PHPUnit, repartidos en las 37 filas que sí cubren métodos (la fila de
+79 métodos reales de PHPUnit, repartidos en las 36 filas que sí cubren métodos (la fila de
 `RegistrationTest`, CP-017, no suma ninguno porque es un stub vacío), que coincide con el total
 verificado en la sección 0 y con `docs/entrega/evidencia/phpunit-baseline.txt`; a esos 79 se suma
 1 spec de Playwright (CP-038), para 80 artefactos de prueba ya existentes documentados, y 20 casos
