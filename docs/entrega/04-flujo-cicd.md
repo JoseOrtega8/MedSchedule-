@@ -410,7 +410,7 @@ ausencia del secreto, no contra la calidad del código que se está desplegando.
 
 El trabajo de la unidad siguiente ya está planificado sobre este mismo flujo: quince tarjetas en
 estado `To do` en el tablero del equipo, derivadas de las dos specs piloto. El detalle de cada
-tarjeta (enlace, título y origen) está en [00-indice.md](00-indice.md), sección 3.
+tarjeta (enlace, título y origen) está en [00-indice.md](00-indice.md), sección 4.
 
 ## 7. Verificación
 

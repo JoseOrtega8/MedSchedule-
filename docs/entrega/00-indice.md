@@ -58,14 +58,27 @@ Tabla que enlaza cada requisito del profesor con el archivo y la sección exacta
 | **Criterio DE** — entrega en tiempo | Esta entrega se fecha el 2026-09-12 (portada de este documento), en commit local sobre la rama `feat/unidad-docs-sdd` | — |
 | **Criterio AU** — módulo adicional | **No se entrega.** Decisión expresa del autor: esta unidad se enfoca en documentación, pruebas y CI/CD sobre el sistema ya construido, no en agregar un módulo funcional nuevo | — |
 
-## 3. Planificación de la unidad siguiente en el tablero de kanban
+## 3. Pull request de esta entrega
+
+Todo el contenido de este documento se integra mediante un solo pull request, que es el
+"PR mínimo" que solicita el punto 2 de la rúbrica: incluye las dos skills de inteligencia
+artificial y las dos specs piloto con las que se aborda un módulo o requerimiento nuevo.
+
+**Pull request:** https://github.com/JoseOrtega8/MedSchedule-/pull/95
+
+El pull request no modifica `.github/workflows/ci.yml` ni ningún archivo de código de la
+aplicación. Los defectos encontrados durante el trabajo se documentan con su corrección
+propuesta, pero no se corrigen aquí: su implementación corresponde a la unidad siguiente y
+está planificada en las tarjetas de la sección 4.
+
+## 4. Planificación de la unidad siguiente en el tablero de kanban
 
 El trabajo de la unidad siguiente ya está planificado en el tablero del equipo,
 [MedSchedule Project Board](https://github.com/users/JoseOrtega8/projects/2), derivado de las dos
 specs piloto (`specs/001-pruebas-e2e/` y `specs/002-tours-guiados/`); las quince tarjetas listadas a
 continuación están en la columna `To do`, listas para moverse conforme avance la implementación.
 
-### 3.1 Tarjetas asignadas al autor
+### 4.1 Tarjetas asignadas al autor
 
 Derivadas de la spec `specs/001-pruebas-e2e/` más dos hallazgos de esta misma entrega, asignadas al
 autor (`ramonibr`):
@@ -81,7 +94,7 @@ autor (`ramonibr`):
 | [#86](https://github.com/JoseOrtega8/MedSchedule-/issues/86) | R11 ci: hacer que el pipeline falle cuando fallan las pruebas | Hallazgo de [04-flujo-cicd.md](04-flujo-cicd.md) |
 | [#87](https://github.com/JoseOrtega8/MedSchedule-/issues/87) | R12 fix: corregir los cuatro defectos que impiden el despliegue | Hallazgos de [05-estrategia-despliegue.md](05-estrategia-despliegue.md) |
 
-### 3.2 Tarjetas de tours guiados
+### 4.2 Tarjetas de tours guiados
 
 Derivadas de la spec `specs/002-tours-guiados/`, una por fase, sin asignar todavía:
 
@@ -95,7 +108,7 @@ Derivadas de la spec `specs/002-tours-guiados/`, una por fase, sin asignar todav
 | [#93](https://github.com/JoseOrtega8/MedSchedule-/issues/93) | feat: relanzar el tour desde un botón de ayuda |
 | [#94](https://github.com/JoseOrtega8/MedSchedule-/issues/94) | feat: pulido y accesibilidad de los tours guiados |
 
-### 3.3 Notas sobre dos tarjetas que no siguen el patrón
+### 4.3 Notas sobre dos tarjetas que no siguen el patrón
 
 - **Fase 5 de `specs/001-pruebas-e2e/` sin tarjeta propia, a propósito.** Esa fase corresponde al
   agendado y cancelación de cita del paciente, y ya existe el issue
@@ -110,7 +123,7 @@ Derivadas de la spec `specs/002-tours-guiados/`, una por fase, sin asignar todav
   prueba aprobada. Es evidencia de que el flujo de kanban documentado en
   [04-flujo-cicd.md](04-flujo-cicd.md) no es solo teoría, sino que ya se aplicó sobre trabajo real.
 
-## 4. Conclusión
+## 5. Conclusión
 
 Esta entrega documenta el estado real y verificado de MedSchedule: nueve documentos (los seis
 numerados de `docs/entrega/`, los dos de `docs/sdd/`, y este índice) que cubren los cinco puntos
