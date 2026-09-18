@@ -1,0 +1,30 @@
+{
+    "name": "MedSchedule",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspaces/MedSchedule-",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+        // Sin sshd, "gh codespace ssh" no puede conectarse: la imagen base no lo
+        // trae y solo el contenedor de recuperacion de Codespaces lo incluye.
+        // Hace falta para ejecutar el pipeline desde la linea de comandos.
+        "ghcr.io/devcontainers/features/sshd:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "forwardPorts": [8000, 3306],
+    "portsAttributes": {
+        "8000": { "label": "Laravel", "visibility": "private" },
+        "3306": { "label": "MySQL", "visibility": "private" }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "onecentlin.laravel-blade",
+                "esbenp.prettier-vscode"
+            ]
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "remoteUser": "vscode"
+}
