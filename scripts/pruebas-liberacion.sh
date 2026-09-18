@@ -27,8 +27,17 @@ mkdir -p "${directorio_resultados}"
 script_carga="tests/carga/jri-prueba.js"
 seeder_carga="database/seeders/CargaSeeder.php"
 
-echo "==> Pruebas funcionales (PHPUnit)"
-php artisan test
+# phpunit.xml declara <env name="DB_DATABASE" value="medschedule_test"/>, pero sin
+# force="true" PHPUnit NO sobrescribe una variable que ya exista en el entorno. En
+# un runner que exporta DB_DATABASE para la aplicacion, las pruebas terminan
+# corriendo contra la base de la aplicacion y, con RefreshDatabase, se llevan por
+# delante los datos que la prueba de carga necesita despues. El sintoma es
+# desconcertante: PHPUnit pasa mas pruebas que de costumbre y k6 falla al
+# autenticarse.
+base_pruebas="${DB_DATABASE_PRUEBAS:-medschedule_test}"
+
+echo "==> Pruebas funcionales (PHPUnit), sobre la base ${base_pruebas}"
+DB_DATABASE="${base_pruebas}" php artisan test
 codigo_phpunit=$?
 
 # La suite arrastra fallos anteriores a esta unidad, documentados en el issue #86.
@@ -49,6 +58,10 @@ if [ -f "${script_carga}" ]; then
     # Las cuentas de carga se siembran aqui, junto a la prueba que las usa, y no
     # como un paso aparte del pipeline: asi el script funciona igual en local,
     # en el Codespace y en el runner, y no depende de que exista el seeder.
+    # Se resiembra la base de la aplicacion antes de medir. Los seeders son
+    # idempotentes y esto garantiza que la carga parte siempre del mismo estado,
+    # sin depender de lo que haya ocurrido en los pasos anteriores.
+    php artisan db:seed --force
     if [ -f "${seeder_carga}" ]; then
         php artisan db:seed --class=CargaSeeder --force
     fi
