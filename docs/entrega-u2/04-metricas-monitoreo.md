@@ -53,10 +53,15 @@ coste de un error no controlado bajo carga.
 
 | Métrica | Pregunta que responde | Fuente | Estado |
 |---|---|---|---|
-| Bugs y vulnerabilidades | ¿Hay defectos que las reglas detecten? | SonarQube | 0 y 0 |
-| Code smells y deuda técnica | ¿Cuánto cuesta mantener esto? | SonarQube | 95 y 467 min |
+| Incidencias de seguridad | ¿Hay riesgos que las reglas detecten? | SonarQube | 0, calificación A |
+| Incidencias de fiabilidad | ¿Hay código que pueda fallar en ejecución? | SonarQube | **2, calificación C** |
+| Incidencias de mantenibilidad | ¿Cuánto cuesta mantener esto? | SonarQube | 94, 447 min de deuda |
 | Duplicación | ¿Cuánto código repetido hay? | SonarQube | 2.8 % |
-| Cobertura | ¿Qué proporción del código ejercitan las pruebas? | PHPUnit vía SonarQube | Pendiente, ver 8.5 |
+| Cobertura | ¿Qué proporción del código ejercitan las pruebas? | PHPUnit vía SonarQube | Pendiente, ver §8.5 |
+
+Las métricas de SonarQube usan la taxonomía Clean Code de la versión 26. Las antiguas
+(`bugs`, `code_smells`, `reliability_rating`) están deprecadas y **contradicen a la
+interfaz**; el apartado §8.3 lo detalla.
 
 ## 4.2 Umbral contractual y umbral de vigilancia
 
