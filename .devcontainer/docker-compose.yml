@@ -35,6 +35,8 @@ services:
             MYSQL_PASSWORD: medschedule
         volumes:
             - datos_mysql:/var/lib/mysql
+            # Scripts que MySQL ejecuta al inicializar su directorio de datos.
+            - ./mysql-init:/docker-entrypoint-initdb.d:ro
         healthcheck:
             test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-proot']
             interval: 10s
