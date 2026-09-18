@@ -1,0 +1,765 @@
+{
+  "total": 95,
+  "issues": [
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/ActivityLogController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1172",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/ActivityLogController.php",
+      "linea": 14,
+      "mensaje": "Remove the unused function parameter \"$request\".",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1172",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/ActivityLogController.php",
+      "linea": 77,
+      "mensaje": "Remove the unused function parameter \"$index\".",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/AppointmentController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1172",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/AppointmentController.php",
+      "linea": 15,
+      "mensaje": "Remove the unused function parameter \"$request\".",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/Auth/AuthenticatedSessionController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S113",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/Auth/RegisteredUserController.php",
+      "linea": null,
+      "mensaje": "Add a new line at the end of this file.",
+      "esfuerzo": "1min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/DashboardController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1172",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/DashboardController.php",
+      "linea": 19,
+      "mensaje": "Remove the unused function parameter \"$request\".",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/GoogleCalendarController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/PatientProfileController.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1481",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Controllers/PatientProfileController.php",
+      "linea": 88,
+      "mensaje": "Remove this unused \"$validated\" local variable.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1172",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/PatientProfileController.php",
+      "linea": 123,
+      "mensaje": "Remove the unused function parameter \"$request\".",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "app/Http/Controllers/ScheduleController.php",
+      "linea": 88,
+      "mensaje": "Define a constant instead of duplicating this literal \"Cita agendada\" 3 times.",
+      "esfuerzo": "8min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "app/Http/Controllers/ScheduleController.php",
+      "linea": 155,
+      "mensaje": "Define a constant instead of duplicating this literal \"2026-03-10\" 4 times.",
+      "esfuerzo": "10min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "app/Http/Controllers/ScheduleController.php",
+      "linea": 244,
+      "mensaje": "Define a constant instead of duplicating this literal \"00:00\" 4 times.",
+      "esfuerzo": "10min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "app/Http/Controllers/SpecialtyController.php",
+      "linea": 31,
+      "mensaje": "Define a constant instead of duplicating this literal \"Ya existe una especialidad con ese nombre.\" 4 times.",
+      "esfuerzo": "10min"
+    },
+    {
+      "regla": "php:S1142",
+      "severidad": "MAJOR",
+      "archivo": "app/Http/Controllers/SpecialtyController.php",
+      "linea": 220,
+      "mensaje": "This method has 5 returns, which is more than the 3 allowed.",
+      "esfuerzo": "20min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Middleware/SecurityHeaders.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S113",
+      "severidad": "MINOR",
+      "archivo": "app/Http/Requests/Auth/RegisterRequest.php",
+      "linea": null,
+      "mensaje": "Add a new line at the end of this file.",
+      "esfuerzo": "1min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Jobs/SyncAppointmentToCalendar.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S112",
+      "severidad": "MAJOR",
+      "archivo": "app/Jobs/SyncAppointmentToCalendar.php",
+      "linea": 55,
+      "mensaje": "Define and throw a dedicated exception instead of using a generic one.",
+      "esfuerzo": "20min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/ActivityLog.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/Appointment.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/AppointmentHistory.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/DoctorProfile.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1109",
+      "severidad": "MINOR",
+      "archivo": "app/Models/DoctorProfile.php",
+      "linea": 19,
+      "mensaje": "Move this closing curly brace to the next line.",
+      "esfuerzo": "1min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/PatientProfile.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/Schedule.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/Specialty.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Models/User.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S116",
+      "severidad": "MINOR",
+      "archivo": "app/Models/User.php",
+      "linea": 14,
+      "mensaje": "Rename this field \"$guard_name\" to match the regular expression ^[a-z][a-zA-Z0-9]*$.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Providers/AppServiceProvider.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Services/DashboardStatsService.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "app/Services/GoogleCalendarService.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S121",
+      "severidad": "CRITICAL",
+      "archivo": "app/Services/GoogleCalendarService.php",
+      "linea": 80,
+      "mensaje": "Add curly braces around the nested statement(s).",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S121",
+      "severidad": "CRITICAL",
+      "archivo": "app/Services/GoogleCalendarService.php",
+      "linea": 92,
+      "mensaje": "Add curly braces around the nested statement(s).",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/factories/UserFactory.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/AppointmentSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/DatabaseSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/DoctorProfileSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S138",
+      "severidad": "MAJOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 13,
+      "mensaje": "This function \"run\" has 175 lines, which is greater than the 150 lines authorized. Split it into smaller functions.",
+      "esfuerzo": "20min"
+    },
+    {
+      "regla": "php:S1481",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 24,
+      "mensaje": "Remove this unused \"$oftalmo\" local variable.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1481",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 32,
+      "mensaje": "Remove this unused \"$neuro\" local variable.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 75,
+      "mensaje": "Define a constant instead of duplicating this literal \"09:30:00\" 4 times.",
+      "esfuerzo": "10min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 76,
+      "mensaje": "Define a constant instead of duplicating this literal \"10:00:00\" 4 times.",
+      "esfuerzo": "10min"
+    },
+    {
+      "regla": "php:S1481",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 110,
+      "mensaje": "Remove this unused \"$apt2\" local variable.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1481",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 165,
+      "mensaje": "Remove this unused \"$admin\" local variable.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 174,
+      "mensaje": "Define a constant instead of duplicating this literal \"127.0.0.1\" 3 times.",
+      "esfuerzo": "8min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "database/seeders/FullDataSeeder.php",
+      "linea": 175,
+      "mensaje": "Define a constant instead of duplicating this literal \"Mozilla/5.0\" 3 times.",
+      "esfuerzo": "8min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/PatientProfileSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "database/seeders/ScheduleSeeder.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "javascript:S6582",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-logs.js",
+      "linea": 89,
+      "mensaje": "Prefer using an optional chain expression instead, as it's more concise and easier to read.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-logs.js",
+      "linea": 435,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S8786",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 30,
+      "mensaje": "Simplify this regular expression to reduce its runtime, as it has super-linear performance due to backtracking.",
+      "esfuerzo": "20min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 352,
+      "mensaje": "'formData.get(\"name\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 353,
+      "mensaje": "'formData.get(\"email\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 354,
+      "mensaje": "'formData.get(\"roleId\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 355,
+      "mensaje": "'formData.get(\"status\") || \"activo\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 399,
+      "mensaje": "'formData.get(\"roleId\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 419,
+      "mensaje": "'formData.get(\"description\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 458,
+      "mensaje": "'formData.get(\"roleId\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 459,
+      "mensaje": "'formData.get(\"permissionId\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 506,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 513,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 516,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 517,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 523,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/admin-rbac.js",
+      "linea": 532,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7744",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 46,
+      "mensaje": "The empty object is useless.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 288,
+      "mensaje": "'formData.get(\"name\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 289,
+      "mensaje": "'formData.get(\"lastName\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 290,
+      "mensaje": "'formData.get(\"email\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 291,
+      "mensaje": "'formData.get(\"phone\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 292,
+      "mensaje": "'formData.get(\"specialtyId\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 293,
+      "mensaje": "'formData.get(\"licenseNumber\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 295,
+      "mensaje": "'formData.get(\"bio\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/doctor-profile.js",
+      "linea": 343,
+      "mensaje": "'reader.result || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7744",
+      "severidad": "MINOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 47,
+      "mensaje": "The empty object is useless.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7754",
+      "severidad": "MINOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 119,
+      "mensaje": "Prefer `.some(…)` over `.find(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 323,
+      "mensaje": "'formData.get(\"name\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 324,
+      "mensaje": "'formData.get(\"description\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 367,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/especialidades.js",
+      "linea": 375,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7744",
+      "severidad": "MINOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 40,
+      "mensaje": "The empty object is useless.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 322,
+      "mensaje": "'formData.get(\"date\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 323,
+      "mensaje": "'formData.get(\"start_time\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S6551",
+      "severidad": "MINOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 324,
+      "mensaje": "'formData.get(\"start_time\") || \"\"' may use Object's default stringification format ('[object Object]') when stringified.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 349,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7761",
+      "severidad": "MAJOR",
+      "archivo": "resources/js/horarios.js",
+      "linea": 350,
+      "mensaje": "Prefer `.dataset` over `getAttribute(…)`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "javascript:S7781",
+      "severidad": "MINOR",
+      "archivo": "resources/js/topbar-date.js",
+      "linea": 9,
+      "mensaje": "Prefer `String#replaceAll()` over `String#replace()`.",
+      "esfuerzo": "5min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "routes/auth.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S105",
+      "severidad": "MINOR",
+      "archivo": "routes/web.php",
+      "linea": null,
+      "mensaje": "Replace all tab characters in this file by sequences of white-spaces.",
+      "esfuerzo": "2min"
+    },
+    {
+      "regla": "php:S1192",
+      "severidad": "CRITICAL",
+      "archivo": "routes/web.php",
+      "linea": 34,
+      "mensaje": "Define a constant instead of duplicating this literal \"/profile\" 3 times.",
+      "esfuerzo": "8min"
+    }
+  ]
+}
