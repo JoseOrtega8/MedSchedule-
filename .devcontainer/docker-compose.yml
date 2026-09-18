@@ -1,0 +1,48 @@
+# Servicios del entorno de liberacion de MedSchedule.
+# Este archivo es la descripcion declarativa del entorno: cualquier integrante
+# obtiene la misma base de datos y la misma version de PHP sin instalar nada.
+services:
+    app:
+        # Imagen propia: corrige el repositorio apt de Yarn de la imagen oficial.
+        build:
+            context: .
+            dockerfile: Dockerfile
+        # El nombre de la imagen se fija a mano por el guion final del nombre del
+        # repositorio (MedSchedule-). Docker Compose deriva la etiqueta del nombre
+        # del proyecto, y en Codespaces eso produce "medschedule-_devcontainer-app",
+        # que Docker rechaza con "invalid reference format" y hace fallar la
+        # creacion del contenedor.
+        image: medschedule-devcontainer-app
+        volumes:
+            - ../..:/workspaces:cached
+        # El contenedor no arranca la aplicacion: la arranca el script del
+        # pipeline. Aqui solo se mantiene vivo para que el Codespace se conecte.
+        command: sleep infinity
+        depends_on:
+            mysql:
+                condition: service_healthy
+
+    mysql:
+        image: mysql:8.0
+        restart: unless-stopped
+        environment:
+            # Credenciales de un entorno efimero de pruebas que se destruye con
+            # el Codespace. No son secretos de produccion ni dan acceso a datos
+            # reales; los secretos de verdad viven en .env, fuera del repositorio.
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: medschedule
+            MYSQL_USER: medschedule
+            MYSQL_PASSWORD: medschedule
+        volumes:
+            - datos_mysql:/var/lib/mysql
+            # Scripts que MySQL ejecuta al inicializar su directorio de datos.
+            - ./mysql-init:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-proot']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 30s
+
+volumes:
+    datos_mysql:

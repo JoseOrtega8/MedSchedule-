@@ -1,0 +1,22 @@
+# Verificaciones locales antes de cada commit.
+# Se limitan a lo que el commit toca: el repositorio arrastra deuda de formato
+# anterior a esta unidad y un hook que la exigiera entera bloquearia todo commit.
+
+# Sintaxis de los archivos PHP en el indice.
+archivos_php="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.php$' || true)"
+if [ -n "${archivos_php}" ]; then
+    echo "${archivos_php}" | while IFS= read -r archivo; do
+        [ -f "${archivo}" ] && php -l "${archivo}" > /dev/null || exit 1
+    done
+fi
+
+# Formato de los archivos JavaScript y CSS en el indice.
+bash scripts/verificar-formato.sh --staged || exit 1
+
+# Prueba de humo de carga: solo si hay un entorno escuchando. No todo commit
+# toca codigo que afecte al rendimiento, asi que la ausencia de servidor no
+# bloquea el commit.
+if command -v k6 > /dev/null 2>&1 && curl -sf "${URL_BASE:-http://127.0.0.1:8000}" > /dev/null 2>&1; then
+    echo "==> Prueba de humo de carga"
+    K6_PASSWORD="${K6_PASSWORD:-password}" npm run carga:humo || exit 1
+fi

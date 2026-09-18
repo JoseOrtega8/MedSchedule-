@@ -31,3 +31,21 @@ Thumbs.db
 /tests/playwright-report
 /tests/playwright_gestion_usuarios/evidencia
 /playwright/.cache
+
+# Documentacion entregable de la unidad 2. La regla /docs/* de arriba ignora las
+# subcarpetas de docs/, asi que hay que reincluirla de forma explicita.
+!/docs/entrega-u2/
+
+# Artefacto generado con pandoc a partir de los .md de docs/entrega-u2.
+# No se versiona: se regenera localmente cuando haga falta.
+/docs/entrega-u2/*.docx
+
+# Resultados crudos de las pruebas de carga. El resumen se versiona en markdown
+# y en docs/entrega-u2/evidencia; el JSON completo de k6 pesa decenas de MB.
+/tests/carga/resultados/*.json
+
+# Checklists historicos de la infraestructura IONOS ya desaparecida. Contienen
+# host, usuario y password en claro; el repositorio es publico y no deben
+# versionarse nunca. Se conservan solo en local como registro del equipo.
+/docs/IONOS_Deploy_Checklist.md
+/docs/MedSchedule_Estructura_DB_IONOS.md
