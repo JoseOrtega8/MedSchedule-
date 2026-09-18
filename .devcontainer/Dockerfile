@@ -22,3 +22,8 @@ RUN rm -f /etc/apt/sources.list.d/*yarn* \
 # Se apaga con un archivo que se carga despues del de la imagen. Quien necesite
 # depurar puede reactivarlo cambiando este valor a "debug".
 RUN echo "xdebug.mode=off" > /usr/local/etc/php/conf.d/zz-xdebug-apagado.ini
+
+# La imagen oficial no compila el controlador pdo_mysql. Sin el, cualquier orden
+# de artisan contra la base del compose termina en
+# "PDOException: could not find driver", aunque MySQL este levantado y accesible.
+RUN docker-php-ext-install pdo_mysql
