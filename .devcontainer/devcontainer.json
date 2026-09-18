@@ -5,6 +5,10 @@
     "workspaceFolder": "/workspaces/MedSchedule-",
     "features": {
         "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+        // Sin sshd, "gh codespace ssh" no puede conectarse: la imagen base no lo
+        // trae y solo el contenedor de recuperacion de Codespaces lo incluye.
+        // Hace falta para ejecutar el pipeline desde la linea de comandos.
+        "ghcr.io/devcontainers/features/sshd:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "forwardPorts": [8000, 3306],
