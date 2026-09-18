@@ -71,10 +71,9 @@ Archivo: `.devcontainer/devcontainer.json`
 
 | Parámetro | Valor | Por qué |
 |---|---|---|
-| Imagen base | `mcr.microsoft.com/devcontainers/php:1-8.2-bookworm` | PHP 8.2, el mínimo que declara `composer.json` |
+| Imagen base | Construida desde `.devcontainer/Dockerfile` sobre `mcr.microsoft.com/devcontainers/php:1-8.2-bookworm` | PHP 8.2, el mínimo que declara `composer.json`. Se construye en vez de usarse tal cual por el defecto de apt que documenta §5.3.1 |
 | `features` node | versión `20` | La misma que usan los workflows |
-| `features` docker-in-docker | activado | Permite levantar el stack de SonarQube dentro del Codespace |
-| `forwardPorts` | `8000`, `3306`, `9000` | Aplicación, base de datos y SonarQube |
+| `forwardPorts` | `8000`, `3306` | Aplicación y base de datos. SonarQube no va aquí: corre en un stack local |
 | `portsAttributes.visibility` | `private` en los tres | **Decisión de seguridad.** Un puerto público deja la aplicación accesible a cualquiera con la URL |
 | `postCreateCommand` | `bash .devcontainer/post-create.sh` | Toda la preparación en un script versionado, no en el JSON |
 
@@ -85,6 +84,49 @@ Archivo: `.devcontainer/docker-compose.yml`
 | Imagen de base de datos | `mysql:8.0` | La misma versión que usan los workflows, para que un fallo de SQL aparezca igual en los dos sitios |
 | `healthcheck` | `mysqladmin ping`, 10 s, 10 reintentos, 30 s de gracia | El contenedor de la aplicación no arranca hasta que la base acepta conexiones |
 | `volumes` | `datos_mysql` | Sobrevive a reinicios del contenedor, no a borrar el Codespace |
+| `image` del servicio `app` | `medschedule-devcontainer-app` | Se fija a mano. Ver §5.3.2 |
+
+### 5.3.1 Por qué se construye la imagen en lugar de usarla directa
+
+La imagen oficial `devcontainers/php` trae configurado el repositorio apt de Yarn con
+una **clave GPG caducada**. `apt-get update` termina con error dentro del contenedor y
+cualquier feature del devcontainer que instale paquetes falla con código 100:
+
+```
+W: GPG error: https://dl.yarnpkg.com/debian stable InRelease: The following signatures
+   couldn't be verified because the public key is not available: NO_PUBKEY 62D54FD4003F6525
+ERROR: Feature "Docker (Docker-in-Docker)" failed to install!
+```
+
+El síntoma en Codespaces es desconcertante: la creación del contenedor falla y el
+servicio cae a un **contenedor de recuperación** basado en `base:alpine`, sin PHP ni
+Node. La sesión entra con normalidad y `php` no existe.
+
+`.devcontainer/Dockerfile` retira ese repositorio y comprueba que los índices se
+actualizan:
+
+```dockerfile
+RUN rm -f /etc/apt/sources.list.d/*yarn* \
+    && apt-get update \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+### 5.3.2 Por qué el nombre de la imagen se fija a mano
+
+El repositorio se llama **`MedSchedule-`**, con guion final. Docker Compose deriva la
+etiqueta de la imagen del nombre del proyecto, y en Codespaces el nombre de proyecto es
+`medschedule-_devcontainer`. La etiqueta resultante sería:
+
+```
+invalid tag "medschedule-_devcontainer-app": invalid reference format
+```
+
+Docker rechaza esa referencia y la creación del contenedor vuelve a fallar, otra vez
+hacia un contenedor de recuperación. Declarar `image: medschedule-devcontainer-app`
+junto a `build:` evita que Compose derive el nombre.
+
+El caso se reprodujo en local ejecutando `docker compose --project-name
+medschedule-_devcontainer build app`, que falla antes del arreglo y construye después.
 
 ## 5.4 GitHub Actions
 
