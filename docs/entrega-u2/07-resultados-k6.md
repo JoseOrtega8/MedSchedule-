@@ -178,6 +178,33 @@ y, sobre todo, que la rampa local se pasó esperando al limitador de intentos. E
 importa para la unidad es que **la medición es reproducible**: cualquier integrante que
 abra un Codespace desde esta rama obtiene este mismo entorno.
 
+### Evidencia visual
+
+El propio k6 genera un informe HTML con la evolución de cada métrica en el tiempo,
+activable con `K6_WEB_DASHBOARD=true` y exportable con `K6_WEB_DASHBOARD_EXPORT`:
+
+```bash
+K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=informe.html \
+    K6_PASSWORD='<contrasena>' k6 run --env URL_BASE=http://127.0.0.1:8000 \
+    tests/carga/jri-prueba.js
+```
+
+| Archivo | Contenido |
+|---|---|
+| `evidencia/k6-informe-codespace.html` | Informe interactivo con todas las gráficas |
+| `evidencia/k6-01-informe-general.png` | Captura del informe completo |
+| `evidencia/k6-jri-codespace-resumen.txt` | Salida de la terminal |
+| `evidencia/k6-jri-codespace-resumen.json` | Resumen agregado en JSON |
+
+Se prefiere el informe de la herramienta a una fotografía de la terminal: muestra la
+evolución de la latencia durante la rampa, que un resumen agregado no puede mostrar. En
+las gráficas se ve con claridad que el pico de latencia está al principio, cuando el
+framework aún no tiene nada cacheado, y que a partir del segundo 20 la curva se aplana.
+
+Las cifras del informe corresponden a una segunda corrida equivalente a la oficial: 650
+iteraciones, p95 de 71 ms, 100 % de aserciones correctas, 16.53 peticiones por segundo.
+La repetición confirma que la medición es estable, no un resultado afortunado.
+
 ### Estado de las dos compuertas
 
 ```
