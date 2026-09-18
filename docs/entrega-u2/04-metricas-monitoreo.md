@@ -60,16 +60,16 @@ coste de un error no controlado bajo carga.
 
 ## 4.2 Umbral contractual y umbral de vigilancia
 
-El acuerdo de la unidad fija el p95 en 5 s. La medición real ronda los 600 ms. Un
-umbral catorce veces mayor que la medición no detecta degradaciones: el rendimiento
-podría empeorar un 700 % sin que nadie se entere.
+El acuerdo de la unidad fija el p95 en 5 s. La medición real en el entorno de liberación
+es de 76 ms. Un umbral sesenta y seis veces mayor que la medición no detecta
+degradaciones: el rendimiento podría empeorar un 6 000 % sin que nadie se entere.
 
 Por eso se proponen dos niveles:
 
 | Nivel | Umbral | Qué provoca |
 |---|---|---|
 | **Contractual** | p95 < 5000 ms | Detiene la liberación. Es el acuerdo del apartado 3 |
-| **De vigilancia** | p95 < 1500 ms | No detiene nada; avisa de que algo cambió |
+| **De vigilancia** | p95 < 300 ms | No detiene nada; avisa de que algo cambió |
 
 El segundo nivel es el que detectaría una consulta N+1 recién introducida. El primero
 solo se enteraría cuando el sistema ya fuera inusable.
@@ -107,17 +107,18 @@ Conviene ser explícito sobre los huecos, que son los que da la cara la unidad s
 
 | Métrica | Valor | Lectura |
 |---|---|---|
-| `http_req_duration` p95 | 625.17 ms | Ocho veces por debajo del acuerdo |
-| `http_req_duration` mediana | 34.28 ms | La mayoría de peticiones son inmediatas |
-| `http_req_duration` p99 | 1.52 s | La cola está dominada por el login |
-| `duracion_panel` p95 | 59.47 ms | El endpoint más costoso es, en realidad, muy rápido |
-| `duracion_login_post` p95 | 826.73 ms | Aquí vive el coste: `BCRYPT_ROUNDS=12` |
+| `http_req_duration` p95 | 75.92 ms | Sesenta y seis veces por debajo del acuerdo |
+| `http_req_duration` mediana | 20.19 ms | La mayoría de peticiones son inmediatas |
+| `http_req_duration` p99 | 277.40 ms | La cola la marcan las autenticaciones |
+| `duracion_panel` p95 | 67.51 ms | El endpoint más costoso es, en realidad, muy rápido |
+| `duracion_login_post` p95 | 290.89 ms | Aquí vive el coste: `BCRYPT_ROUNDS=12` |
 | `http_req_failed` | 0 % | Ninguna respuesta inesperada |
-| `respuestas_limitadas` | 40 | El limitador actuó 40 veces en 60 s |
+| `checks` | 100 % (2586 de 2586) | Todas las aserciones funcionales correctas |
+| `respuestas_limitadas` | 14 | El limitador actuó 14 veces en dos minutos |
 
 La conclusión operativa es clara: **el cuello de botella no es la base de datos, es el
-hash de contraseñas**. El panel, que consulta tres veces la base, responde en 59 ms;
-autenticar cuesta catorce veces más. Es el comportamiento correcto — `bcrypt` está
+hash de contraseñas**. El panel, que consulta tres veces la base, responde en 67 ms;
+autenticar cuesta más de cuatro veces eso. Es el comportamiento correcto — `bcrypt` está
 diseñado para ser caro — pero conviene saberlo antes de optimizar consultas que no lo
 necesitan.
 

@@ -7,6 +7,7 @@
 | Script | `tests/carga/jri-prueba.js` |
 | Autor | `ramonibr` |
 | Herramienta | k6 v2.2.0 |
+| Entorno oficial | Codespace de 2 núcleos, MySQL 8.0.46, Xdebug apagado |
 | Usuarios virtuales | 10 (el requisito pide más de 5) |
 | Perfil | 30 s de rampa, 60 s sostenidos, 30 s de bajada |
 | Endpoints | `/`, `/about`, `GET /login`, `POST /login`, `/patient/dashboard/data` |
@@ -116,54 +117,99 @@ correcta. Un error no controlado no solo falla: multiplica por doce el tráfico.
 Reportado como [issue #97](https://github.com/JoseOrtega8/MedSchedule-/issues/97), sin
 asignar, porque la vista es trabajo de otro integrante y no había issue que la cubriera.
 
-## 7.4 Resultados de la corrida válida
+## 7.4 Resultados de la corrida oficial
 
-Entorno: máquina local del autor, `php artisan serve`, SQLite. 10 usuarios virtuales,
-60 s. Salida cruda en `evidencia/`.
+Entorno: **Codespace de 2 núcleos y 8 GB**, generado desde `.devcontainer/`, con MySQL
+8.0.46 y Xdebug apagado. 10 usuarios virtuales, 2 minutos. Evidencia cruda en
+`evidencia/k6-jri-codespace-resumen.txt` y `k6-jri-codespace-resumen.json`.
 
 ### Umbrales
 
 | Umbral | Objetivo | Medido | Resultado |
 |---|---|---|---|
-| `http_req_duration` p95 | < 5000 ms | **625.17 ms** | Cumple, 8 veces por debajo |
-| `http_req_failed` | < 1 % | **0.00 %** | Cumple |
-| `tasa_login_exitoso` | > 99 % | **100.00 %** | Cumple |
-| `duracion_panel` p95 | < 5000 ms | **59.47 ms** | Cumple, 84 veces por debajo |
+| `http_req_duration` p95 | < 5000 ms | **75.92 ms** | Cumple, 66 veces por debajo |
+| `http_req_failed` | < 1 % | **0.00 %** (0 de 1981) | Cumple |
+| `tasa_login_exitoso` | > 99 % | **100.00 %** (10 de 10) | Cumple |
+| `duracion_panel` p95 | < 5000 ms | **67.51 ms** | Cumple, 74 veces por debajo |
+
+**Aserciones funcionales: 2586 de 2586 correctas (100 %).**
 
 ### Latencia por endpoint
 
 | Endpoint | avg | mediana | p90 | p95 | p99 | máx |
 |---|---|---|---|---|---|---|
-| Portada `/` | 36.63 ms | 37.42 ms | 47.41 ms | 50.68 ms | 58.39 ms | 63.26 ms |
-| `/about` | 122.12 ms | 35.50 ms | 58.17 ms | 736.22 ms | 1.80 s | 2.06 s |
-| `GET /login` | 274.63 ms | 41.57 ms | 1.00 s | 1.43 s | 1.77 s | 1.86 s |
-| `POST /login` | 183.51 ms | 41.26 ms | 743.03 ms | 826.73 ms | 1.01 s | 1.01 s |
-| `/patient/dashboard/data` | 45.97 ms | 28.06 ms | 39.98 ms | 59.47 ms | 579.50 ms | 821.83 ms |
+| Portada `/` | 30.76 ms | 19.01 ms | 51.71 ms | 90.17 ms | 194.63 ms | 649.44 ms |
+| `/about` | 36.32 ms | 18.39 ms | 53.53 ms | 75.54 ms | 622.76 ms | 696.91 ms |
+| `GET /login` | 24.11 ms | 17.75 ms | 41.92 ms | 47.59 ms | 57.19 ms | 59.77 ms |
+| `POST /login` | 136.93 ms | 49.68 ms | 289.91 ms | 290.89 ms | 331.51 ms | 343.61 ms |
+| `/patient/dashboard/data` | 29.51 ms | 22.43 ms | 51.22 ms | 67.51 ms | 100.90 ms | 314.28 ms |
 
 ### Agregados
 
 | Métrica | Valor |
 |---|---|
-| `http_req_duration` avg / mediana / p90 / p95 / p99 | 98.76 ms / 34.28 ms / 61.01 ms / 625.17 ms / 1.52 s |
-| `http_req_failed` | 0.00 % (0 de 476) |
-| `http_reqs` | 476 (5.29 por segundo) |
-| `iterations` | 125 (1.39 por segundo) |
-| `iteration_duration` avg / p95 | 2.43 s / 1.17 s |
+| `http_req_duration` avg / mediana / p90 / p95 / p99 | 33.36 ms / 20.19 ms / 53.21 ms / 75.92 ms / 277.40 ms |
+| `http_req_failed` | 0.00 % (0 de 1981) |
+| `http_reqs` | 1981 (16.48 por segundo) |
+| `iterations` | 644 (5.36 por segundo) |
+| `iteration_duration` avg / p95 | 1.43 s / 1.29 s |
 | `vus_max` | 10 |
-| `data_received` / `data_sent` | 12 MB / 381 kB |
-| `respuestas_limitadas` | 40 |
-| `tasa_about_correcto` | 92.30 % |
-| `tasa_login_exitoso` | 100.00 % (10 de 10) |
+| `data_received` / `data_sent` | 22 MB / 1.6 MB |
+| `respuestas_limitadas` | 14 |
+| `tasa_about_correcto` | 98.44 % (634 de 644) |
+| `checks` | 100.00 % (2586 de 2586) |
+
+### Comparación con la corrida local
+
+La misma prueba, mismo script, dos entornos:
+
+| Métrica | Local (macOS, SQLite, `artisan serve`) | Codespace (2 núcleos, MySQL 8, Xdebug apagado) |
+|---|---|---|
+| `http_req_duration` p95 | 625.17 ms | **75.92 ms** |
+| `duracion_panel` p95 | 59.47 ms | 67.51 ms |
+| `duracion_login_post` p95 | 826.73 ms | 290.89 ms |
+| Peticiones totales | 476 | **1981** |
+| Iteraciones | 125 | **644** |
+| Rendimiento | 5.29 req/s | **16.48 req/s** |
+
+El entorno declarado rinde tres veces más que la máquina de desarrollo. La diferencia no
+es del hardware: es que `php artisan serve` en local competía con el resto del escritorio
+y, sobre todo, que la rampa local se pasó esperando al limitador de intentos. El dato que
+importa para la unidad es que **la medición es reproducible**: cualquier integrante que
+abra un Codespace desde esta rama obtiene este mismo entorno.
+
+### Estado de las dos compuertas
+
+```
+==================== RESUMEN DE LAS COMPUERTAS ====================
+  Pruebas funcionales (PHPUnit) ....... FALLO (codigo 2)
+  Prueba de carga (k6) ................ CORRECTO
+===================================================================
+```
+
+La suite de PHPUnit falla por deuda anterior a esta unidad: 72 de 79 métodos terminan en
+`Expected response status code [422] but received 401`, es decir, sin sesión autenticada.
+Es el mismo problema que el issue #86 documenta y que hoy tapa el `|| true` del `ci.yml`
+heredado. **No se arregla aquí**: está asignado a otro integrante y queda fuera del
+alcance de esta entrega.
+
+Lo que sí se corrigió es el diseño del script de pruebas. Con `set -e`, ese fallo abortaba
+todo antes de que k6 llegara a ejecutarse, de modo que la deuda funcional dejaba a la
+unidad sin medición. La salida fácil habría sido añadir `|| true` a PHPUnit —el mismo
+vicio que este documento critica—. En su lugar, las dos compuertas se ejecutan siempre, se
+informan por separado y el script sale con error si cualquiera falla.
 
 ## 7.5 Qué dicen estos números
 
-1. **El cuello de botella es `bcrypt`, no la base de datos.** El panel, que ejecuta
-   tres consultas por petición, responde en 59 ms de p95. Autenticar cuesta 827 ms, es
-   decir, catorce veces más. `BCRYPT_ROUNDS=12` está haciendo exactamente lo que debe:
-   ser caro a propósito. Conviene saberlo antes de optimizar consultas que van bien.
-2. **La cola la marca el login, no el contenido.** El p99 de 1.52 s corresponde a las
-   autenticaciones durante la rampa, cuando diez usuarios virtuales compiten por CPU.
-3. **El limitador actuó 40 veces en 60 segundos.** Con un patrón de acceso legítimo.
+1. **El cuello de botella es `bcrypt`, no la base de datos.** El panel, que ejecuta tres
+   consultas por petición, responde en 67 ms de p95. Autenticar cuesta 291 ms, más de
+   cuatro veces más, y es el único endpoint que se acerca a los 300 ms. `BCRYPT_ROUNDS=12`
+   está haciendo exactamente lo que debe: ser caro a propósito. Conviene saberlo antes de
+   optimizar consultas que van bien.
+2. **La cola la marca el arranque, no el contenido.** Los máximos de 649 ms en la portada
+   y 696 ms en `/about` corresponden a las primeras peticiones, cuando el framework aún no
+   tiene nada cacheado. A partir de ahí la mediana se estabiliza en torno a los 19 ms.
+3. **El limitador actuó 14 veces en dos minutos.** Con un patrón de acceso legítimo.
    En producción, detrás de un proxy o una red institucional donde muchos usuarios
    comparten IP, `throttle:5,1` puede bloquear a gente que no ha hecho nada malo. No es
    un defecto de la prueba: es una decisión de diseño que conviene revisar.
