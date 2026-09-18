@@ -1,0 +1,50 @@
+
+    checks_total.......: 2586    21.518841/s
+    checks_succeeded...: 100.00% 2586 out of 2586
+    checks_failed......: 0.00%   0 out of 2586
+
+    ✓ portada responde 200
+    ✓ about responde (200 esperado, 500 con el defecto abierto)
+    ✓ login redirige con 302
+    ✓ panel responde 200
+    ✓ panel devuelve JSON
+
+    CUSTOM
+    duracion_about.................: avg=36.32ms  min=12.34ms med=18.39ms max=696.91ms p(90)=53.53ms  p(95)=75.54ms  p(99)=622.76ms
+    duracion_login_get.............: avg=24.11ms  min=13.11ms med=17.75ms max=59.77ms  p(90)=41.92ms  p(95)=47.59ms  p(99)=57.19ms 
+    duracion_login_post............: avg=136.93ms min=12.4ms  med=49.68ms max=343.61ms p(90)=289.91ms p(95)=290.89ms p(99)=331.51ms
+    duracion_panel.................: avg=29.51ms  min=16.32ms med=22.43ms max=314.28ms p(90)=51.22ms  p(95)=67.51ms  p(99)=100.9ms 
+    duracion_portada...............: avg=30.76ms  min=12.18ms med=19.01ms max=649.44ms p(90)=51.71ms  p(95)=90.17ms  p(99)=194.63ms
+    respuestas_limitadas...........: 14      0.116498/s
+    tasa_about_correcto............: 98.44%  634 out of 644
+    tasa_login_exitoso.............: 100.00% 10 out of 10
+
+    HTTP
+    http_req_duration..............: avg=33.36ms  min=12.18ms med=20.19ms max=696.91ms p(90)=53.21ms  p(95)=75.92ms  p(99)=277.4ms 
+      { expected_response:true }...: avg=33.36ms  min=12.18ms med=20.19ms max=696.91ms p(90)=53.21ms  p(95)=75.92ms  p(99)=277.4ms 
+    http_req_failed................: 0.00%   0 out of 1981
+    http_reqs......................: 1981    16.484464/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.43s    min=1.04s   med=1.06s   max=47.26s   p(90)=1.16s    p(95)=1.29s    p(99)=2.05s   
+    iterations.....................: 644     5.358907/s
+    vus............................: 1       min=1          max=10
+    vus_max........................: 10      min=10         max=10
+
+    NETWORK
+    data_received..................: 22 MB   182 kB/s
+    data_sent......................: 1.6 MB  13 kB/s
+
+
+
+
+running (2m00.2s), 00/10 VUs, 644 complete and 0 interrupted iterations
+default ✓ [ 100% ] 00/10 VUs  2m0s
+
+==================== RESUMEN DE LAS COMPUERTAS ====================
+  Pruebas funcionales (PHPUnit) ....... FALLO (codigo 2)
+  Prueba de carga (k6) ................ CORRECTO
+===================================================================
+Resultados en tests/carga/resultados/
+
+[exited with code 0]

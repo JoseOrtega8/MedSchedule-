@@ -6,7 +6,9 @@
         "build": "vite build",
         "dev": "vite",
         "test:e2e": "playwright test",
-        "prepare": "husky"
+        "prepare": "husky",
+        "carga": "k6 run --env URL_BASE=${URL_BASE:-http://127.0.0.1:8000} tests/carga/jri-prueba.js",
+        "carga:humo": "k6 run --vus 1 --duration 10s --env URL_BASE=${URL_BASE:-http://127.0.0.1:8000} tests/carga/jri-prueba.js"
     },
     "devDependencies": {
         "@playwright/test": "^1.62.1",
