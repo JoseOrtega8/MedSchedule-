@@ -13,8 +13,12 @@ name: Liberacion continua
 on:
     push:
         branches: [main, develop]
+    # Tambien en los pull requests encadenados: cuando una entrega se reparte en
+    # varios PRs, la base de cada uno es la rama del anterior y no develop. Sin
+    # "feat/**" aqui, esos PRs se quedarian sin ejecutar el pipeline, que es justo
+    # donde interesa comprobar la compuerta de rendimiento.
     pull_request:
-        branches: [main, develop]
+        branches: [main, develop, 'feat/**']
     workflow_dispatch:
 
 concurrency:
