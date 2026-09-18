@@ -1,0 +1,38 @@
+# Stack local de analisis estatico. Se levanta solo cuando se va a analizar y se
+# apaga despues: SonarQube reserva alrededor de 2 GB de memoria.
+#
+#   Levantar:  bash scripts/sonarqube-local.sh
+#   Apagar:    docker compose -f infra/sonarqube/docker-compose.yml down
+services:
+    sonarqube:
+        image: sonarqube:community
+        depends_on:
+            - db
+        environment:
+            SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+            SONAR_JDBC_USERNAME: sonar
+            # Credenciales de un stack local y efimero de analisis. La instancia
+            # solo escucha en la maquina del desarrollador y no guarda datos de
+            # la aplicacion: ni un solo secreto de produccion pasa por aqui.
+            SONAR_JDBC_PASSWORD: sonar
+        ports:
+            - '9000:9000'
+        volumes:
+            - datos_sonarqube:/opt/sonarqube/data
+            - extensiones_sonarqube:/opt/sonarqube/extensions
+            - logs_sonarqube:/opt/sonarqube/logs
+
+    db:
+        image: postgres:16
+        environment:
+            POSTGRES_USER: sonar
+            POSTGRES_PASSWORD: sonar
+            POSTGRES_DB: sonar
+        volumes:
+            - datos_postgres:/var/lib/postgresql/data
+
+volumes:
+    datos_sonarqube:
+    extensiones_sonarqube:
+    logs_sonarqube:
+    datos_postgres:
