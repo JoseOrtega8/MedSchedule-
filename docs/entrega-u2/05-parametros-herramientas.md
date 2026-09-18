@@ -147,19 +147,63 @@ bien, dejó de funcionar. El síntoma mejora cuando la causa empeora.
 Sin SSH no se puede ejecutar el pipeline desde la línea de comandos, que es justo lo que
 esta unidad necesita del entorno.
 
-### 5.3.4 Resumen de los tres defectos del entorno
+### 5.3.3.1 Instalación de k6 sin servidor de claves
+
+El método que documenta la web de k6 usa `gpg --recv-keys` contra un servidor de claves.
+Dentro de un contenedor de devcontainer falla:
+
+```
+gpg: failed to create temporary file '/root/.gnupg/...': No such file or directory
+gpg: connecting dirmngr at '/root/.gnupg/S.dirmngr' failed: No such file or directory
+gpg: keyserver receive failed: No dirmngr
+```
+
+El contenedor no trae `dirmngr` ni el directorio `/root/.gnupg`. Peor: el fallo tumba el
+`postCreateCommand` entero, de modo que el entorno queda a medio preparar.
+
+`scripts/instalar-k6.sh` descarga la clave por HTTPS desde `https://dl.k6.io/key.gpg` y,
+si aun así falla, cae a descargar el binario oficial publicado en GitHub. En el Codespace
+de esta entrega se usó la vía de reserva, porque `gpg` intenta abrir `/dev/tty` en una
+sesión no interactiva. El resultado es el mismo: **k6 v2.2.0 instalado**.
+
+### 5.3.4 Xdebug apagado en el entorno de liberación
+
+La imagen oficial trae Xdebug activo en modo `debug`:
+
+```
+xdebug.mode => debug => debug
+Xdebug: [Step Debug] Could not connect to debugging client. Tried: localhost:9000
+```
+
+Cada petición intenta conectarse a un cliente de depuración que no existe. Además de
+llenar la salida de avisos, Xdebug instrumenta cada llamada de función y multiplica el
+tiempo de ejecución de PHP.
+
+Para una unidad cuyo entregable es una medición de rendimiento, esto no es un detalle:
+**medir con Xdebug activo habría producido números que no describen a la aplicación**, y
+nada en la salida de k6 lo habría delatado. El `Dockerfile` lo apaga con un archivo que
+se carga después del de la imagen:
+
+```dockerfile
+RUN echo "xdebug.mode=off" > /usr/local/etc/php/conf.d/zz-xdebug-apagado.ini
+```
+
+### 5.3.5 Resumen de los cinco defectos del entorno
 
 | # | Defecto | Síntoma | Corrección |
 |---|---|---|---|
 | 1 | Repositorio apt de Yarn con clave GPG caducada | Features fallan con código 100; contenedor de recuperación sin PHP | `Dockerfile` propio que retira el repositorio |
 | 2 | Guion final en el nombre del repositorio | `invalid tag "medschedule-_devcontainer-app"` | `image:` declarada a mano |
 | 3 | Imagen base sin servidor SSH | `gh codespace ssh` no conecta | Feature `sshd` declarada |
+| 4 | `gpg --recv-keys` sin `dirmngr` en el contenedor | La instalación de k6 tumba el `postCreateCommand` | Clave por HTTPS, con el binario oficial como reserva |
+| 5 | Xdebug activo en modo `debug` | Avisos en cada petición y latencia inflada | `xdebug.mode=off` en el `Dockerfile` |
 
-Ninguno es un error de configuración del autor: los tres son propiedades de las imágenes
-oficiales y del nombre heredado del repositorio. Los tres habrían impedido que cualquier
-integrante levantara el entorno, y los tres quedan resueltos en archivos versionados, que
-es exactamente el argumento del apartado 2: un entorno declarado como código se arregla
-una vez para todos.
+Ninguno es un error de configuración del autor: los cinco son propiedades de las imágenes
+oficiales, del nombre heredado del repositorio o de la documentación de las herramientas.
+Los cinco habrían impedido que cualquier integrante levantara el entorno —o, peor en el
+caso del quinto, lo habrían dejado levantarlo y medir mal—, y los cinco quedan resueltos
+en archivos versionados. Es exactamente el argumento del apartado 2: un entorno declarado
+como código se arregla una vez para todos.
 
 ## 5.4 GitHub Actions
 

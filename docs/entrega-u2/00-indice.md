@@ -63,7 +63,7 @@ cobertura sale en 0 % en lugar de dejar el número sin contexto.
 
 ## 3. Qué distingue esta entrega
 
-Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron ocho
+Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron diez
 defectos reales** que la suite funcional existente no detectaba. Uno de ellos, el error 500 de `/about` para
 cualquier visitante anónimo, estaba en producción y visible para cualquiera.
 
@@ -77,6 +77,8 @@ cualquier visitante anónimo, estaba en producción y visible para cualquiera.
 | 6 | La imagen oficial de PHP trae el repositorio apt de Yarn con clave GPG caducada | §5.3.1 |
 | 7 | El guion final del nombre del repositorio genera una etiqueta de imagen inválida | §5.3.2 |
 | 8 | La imagen base del devcontainer no incluye servidor SSH | §5.3.3 |
+| 9 | La instalación documentada de k6 falla sin `dirmngr` en el contenedor | §5.3.3.1 |
+| 10 | Xdebug viene activo y habría falseado toda la medición de rendimiento | §5.3.4 |
 
 Ninguno se buscó a propósito. Aparecieron al intentar medir, que es exactamente el
 argumento a favor de medir.
