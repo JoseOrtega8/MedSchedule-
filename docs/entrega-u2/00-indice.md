@@ -63,7 +63,7 @@ cobertura sale en 0 % en lugar de dejar el número sin contexto.
 
 ## 3. Qué distingue esta entrega
 
-Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron siete
+Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron ocho
 defectos reales** que la suite funcional existente no detectaba. Uno de ellos, el error 500 de `/about` para
 cualquier visitante anónimo, estaba en producción y visible para cualquiera.
 
@@ -76,6 +76,7 @@ cualquier visitante anónimo, estaba en producción y visible para cualquiera.
 | 5 | El publicador SCM de SonarQube se cuelga en este repositorio | §8.2 |
 | 6 | La imagen oficial de PHP trae el repositorio apt de Yarn con clave GPG caducada | §5.3.1 |
 | 7 | El guion final del nombre del repositorio genera una etiqueta de imagen inválida | §5.3.2 |
+| 8 | La imagen base del devcontainer no incluye servidor SSH | §5.3.3 |
 
 Ninguno se buscó a propósito. Aparecieron al intentar medir, que es exactamente el
 argumento a favor de medir.

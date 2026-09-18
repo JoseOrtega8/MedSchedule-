@@ -73,6 +73,7 @@ Archivo: `.devcontainer/devcontainer.json`
 |---|---|---|
 | Imagen base | Construida desde `.devcontainer/Dockerfile` sobre `mcr.microsoft.com/devcontainers/php:1-8.2-bookworm` | PHP 8.2, el mínimo que declara `composer.json`. Se construye en vez de usarse tal cual por el defecto de apt que documenta §5.3.1 |
 | `features` node | versión `20` | La misma que usan los workflows |
+| `features` sshd | activada | Sin ella `gh codespace ssh` no conecta. Ver §5.3.3 |
 | `forwardPorts` | `8000`, `3306` | Aplicación y base de datos. SonarQube no va aquí: corre en un stack local |
 | `portsAttributes.visibility` | `private` en los tres | **Decisión de seguridad.** Un puerto público deja la aplicación accesible a cualquiera con la URL |
 | `postCreateCommand` | `bash .devcontainer/post-create.sh` | Toda la preparación en un script versionado, no en el JSON |
@@ -127,6 +128,38 @@ junto a `build:` evita que Compose derive el nombre.
 
 El caso se reprodujo en local ejecutando `docker compose --project-name
 medschedule-_devcontainer build app`, que falla antes del arreglo y construye después.
+
+### 5.3.3 Por qué hace falta declarar la feature `sshd`
+
+Corregidos los dos defectos anteriores, el contenedor se creó bien —cero contenedores
+de recuperación en el registro— pero `gh codespace ssh` seguía sin conectar:
+
+```
+you can add the following to your devcontainer.json:
+"features": { "ghcr.io/devcontainers/features/sshd:1": { "version": "latest" } }
+```
+
+La imagen base de devcontainers no incluye servidor SSH. El contenedor de recuperación
+de Codespaces sí lo trae, lo que explica una confusión fácil de cometer: mientras el
+devcontainer estuvo roto, la conexión por SSH funcionaba; en cuanto empezó a construirse
+bien, dejó de funcionar. El síntoma mejora cuando la causa empeora.
+
+Sin SSH no se puede ejecutar el pipeline desde la línea de comandos, que es justo lo que
+esta unidad necesita del entorno.
+
+### 5.3.4 Resumen de los tres defectos del entorno
+
+| # | Defecto | Síntoma | Corrección |
+|---|---|---|---|
+| 1 | Repositorio apt de Yarn con clave GPG caducada | Features fallan con código 100; contenedor de recuperación sin PHP | `Dockerfile` propio que retira el repositorio |
+| 2 | Guion final en el nombre del repositorio | `invalid tag "medschedule-_devcontainer-app"` | `image:` declarada a mano |
+| 3 | Imagen base sin servidor SSH | `gh codespace ssh` no conecta | Feature `sshd` declarada |
+
+Ninguno es un error de configuración del autor: los tres son propiedades de las imágenes
+oficiales y del nombre heredado del repositorio. Los tres habrían impedido que cualquier
+integrante levantara el entorno, y los tres quedan resueltos en archivos versionados, que
+es exactamente el argumento del apartado 2: un entorno declarado como código se arregla
+una vez para todos.
 
 ## 5.4 GitHub Actions
 

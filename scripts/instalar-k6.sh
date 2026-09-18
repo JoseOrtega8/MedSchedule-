@@ -15,14 +15,27 @@ sistema="$(uname -s)"
 case "${sistema}" in
     Linux)
         echo "==> Instalando k6 desde el repositorio oficial de Grafana"
-        sudo gpg --no-default-keyring \
-            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-            --keyserver hkp://keyserver.ubuntu.com:80 \
-            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
-            | sudo tee /etc/apt/sources.list.d/k6.list >/dev/null
-        sudo apt-get update
-        sudo apt-get install -y k6
+        # La clave se descarga por HTTPS en vez de pedirla a un servidor de claves.
+        # El metodo con --keyserver falla dentro de los contenedores de devcontainer:
+        # no traen dirmngr ni el directorio /root/.gnupg, y gpg aborta con
+        # "keyserver receive failed: No dirmngr".
+        if curl -fsSL https://dl.k6.io/key.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg; then
+            echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+                | sudo tee /etc/apt/sources.list.d/k6.list >/dev/null
+            sudo apt-get update
+            sudo apt-get install -y k6
+        else
+            # Reserva: binario oficial publicado en GitHub. Evita depender de apt
+            # y de gpg por completo.
+            echo "==> La instalacion por apt fallo. Descargando el binario oficial"
+            arquitectura="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
+            url_binario="https://github.com/grafana/k6/releases/download/v${version_referencia}/k6-v${version_referencia}-linux-${arquitectura}.tar.gz"
+            directorio_temporal="$(mktemp -d)"
+            curl -fsSL "${url_binario}" | tar -xz -C "${directorio_temporal}" --strip-components=1
+            sudo install -m 0755 "${directorio_temporal}/k6" /usr/local/bin/k6
+            rm -rf "${directorio_temporal}"
+        fi
         ;;
     Darwin)
         echo "==> Instalando k6 con Homebrew"
