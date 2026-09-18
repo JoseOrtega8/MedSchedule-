@@ -7,6 +7,12 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+        # El nombre de la imagen se fija a mano por el guion final del nombre del
+        # repositorio (MedSchedule-). Docker Compose deriva la etiqueta del nombre
+        # del proyecto, y en Codespaces eso produce "medschedule-_devcontainer-app",
+        # que Docker rechaza con "invalid reference format" y hace fallar la
+        # creacion del contenedor.
+        image: medschedule-devcontainer-app
         volumes:
             - ../..:/workspaces:cached
         # El contenedor no arranca la aplicacion: la arranca el script del
