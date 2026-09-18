@@ -22,6 +22,11 @@ url_sonarqube="${SONAR_HOST_URL:-http://localhost:9000}"
 clave_rama="$(echo "${rama}" | tr '/' '-' | tr -cd '[:alnum:]-_.')"
 clave_proyecto="medschedule-${clave_rama}"
 
+# El publicador SCM recorre el historico de cada archivo con jgit para atribuir
+# autoria linea a linea. En este repositorio esa etapa se queda colgada varios
+# minutos sin avanzar, y no aporta nada a las reglas de analisis: solo alimenta
+# la atribucion de autor y el calculo de "codigo nuevo" por fecha. Se desactiva
+# por defecto y se puede reactivar con SONAR_SCM=false.
 echo "==> Analizando la rama ${rama} como proyecto ${clave_proyecto}"
 
 # --network host permite al contenedor del escaner alcanzar el SonarQube que
@@ -39,7 +44,8 @@ docker run --rm \
     -v "$(pwd):/usr/src" \
     sonarsource/sonar-scanner-cli \
     -Dsonar.projectKey="${clave_proyecto}" \
-    -Dsonar.projectName="MedSchedule (${rama})"
+    -Dsonar.projectName="MedSchedule (${rama})" \
+    -Dsonar.scm.disabled="${SONAR_SCM:-true}"
 
 echo ""
 echo "Analisis terminado."
