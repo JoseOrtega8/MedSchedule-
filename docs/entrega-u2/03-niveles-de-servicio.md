@@ -27,7 +27,7 @@ consecuencia es técnica y automática, que para un equipo de desarrollo es más
 
 El umbral de p95 por debajo de 5 s lo fija el enunciado de la unidad. Vale la pena
 señalar que es **holgado** para una aplicación de este tamaño: la medición real de
-MedSchedule se mueve en torno a los 600 ms de p95. Un umbral holgado tiene una virtud
+MedSchedule en el entorno de liberación es de 76 ms de p95. Un umbral holgado tiene una virtud
 y un riesgo:
 
 - **Virtud:** no produce falsos positivos. Cuando salta, algo va mal de verdad.
@@ -42,17 +42,16 @@ La media esconde exactamente lo que interesa. En la corrida de esta unidad:
 
 | Estadístico de `http_req_duration` | Valor |
 |---|---|
-| Media | 98.76 ms |
-| Mediana | 34.28 ms |
-| p90 | 61.01 ms |
-| p95 | 625.17 ms |
-| p99 | 1.52 s |
-| Máximo | 2.06 s |
+| Media | 33.36 ms |
+| Mediana | 20.19 ms |
+| p90 | 53.21 ms |
+| p95 | 75.92 ms |
+| p99 | 277.40 ms |
+| Máximo | 696.91 ms |
 
-La media dice 98 ms; una de cada veinte peticiones tarda más de 625 ms, y una de cada
-cien supera el segundo y medio. Un acuerdo escrito sobre la media declararía sano un
-sistema en el que una parte real de los usuarios espera veinte veces más que lo
-anunciado.
+La media dice 33 ms; una de cada cien peticiones tarda más de 277 ms, y la peor supera
+los 696 ms, veinte veces la media. Un acuerdo escrito sobre la media declararía sano un
+sistema en el que una parte real de los usuarios espera mucho más que lo anunciado.
 
 ## 3.5 Ventana de medición
 
