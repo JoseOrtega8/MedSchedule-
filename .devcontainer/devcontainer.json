@@ -5,14 +5,12 @@
     "workspaceFolder": "/workspaces/MedSchedule-",
     "features": {
         "ghcr.io/devcontainers/features/node:1": { "version": "20" },
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
-    "forwardPorts": [8000, 3306, 9000],
+    "forwardPorts": [8000, 3306],
     "portsAttributes": {
         "8000": { "label": "Laravel", "visibility": "private" },
-        "3306": { "label": "MySQL", "visibility": "private" },
-        "9000": { "label": "SonarQube", "visibility": "private" }
+        "3306": { "label": "MySQL", "visibility": "private" }
     },
     "customizations": {
         "vscode": {

@@ -3,7 +3,10 @@
 # obtiene la misma base de datos y la misma version de PHP sin instalar nada.
 services:
     app:
-        image: mcr.microsoft.com/devcontainers/php:1-8.2-bookworm
+        # Imagen propia: corrige el repositorio apt de Yarn de la imagen oficial.
+        build:
+            context: .
+            dockerfile: Dockerfile
         volumes:
             - ../..:/workspaces:cached
         # El contenedor no arranca la aplicacion: la arranca el script del
