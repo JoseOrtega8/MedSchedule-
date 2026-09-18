@@ -205,6 +205,66 @@ Las cifras del informe corresponden a una segunda corrida equivalente a la ofici
 iteraciones, p95 de 71 ms, 100 % de aserciones correctas, 16.53 peticiones por segundo.
 La repetición confirma que la medición es estable, no un resultado afortunado.
 
+### 7.4.1 El defecto que solo apareció en el runner
+
+La prueba pasó en el Codespace y **falló en GitHub Actions**, con dos síntomas a la vez:
+
+```
+tasa_login_exitoso ... 65.21% (15 de 23)   ✗ umbral rate>0.99
+panel devuelve JSON .. 0%     (0 de 15)
+```
+
+La causa no estaba en la prueba. `phpunit.xml` declara:
+
+```xml
+<env name="DB_DATABASE" value="medschedule_test"/>
+```
+
+**sin `force="true"`**, y PHPUnit no sobrescribe una variable que ya exista en el
+entorno. El workflow exporta `DB_DATABASE=medschedule` para la aplicación, así que la
+suite corría contra la base de datos de la aplicación y, con `RefreshDatabase`, se
+llevaba por delante los datos que la prueba de carga necesitaba justo después.
+
+El síntoma que lo delató es contraintuitivo: **PHPUnit pasaba más pruebas de lo normal**,
+64 de 79 frente a las 7 del Codespace, porque encontraba datos reales donde debía haber
+una base vacía. Un fallo que se manifiesta como «las pruebas van mejor» es de los más
+difíciles de ver.
+
+| Entorno | `DB_DATABASE` en el entorno | Base que usaba PHPUnit | PHPUnit | k6 |
+|---|---|---|---|---|
+| Codespace | sin definir | `medschedule_test` | 72 fallos | Correcto |
+| Runner | `medschedule` | **`medschedule`** | 15 fallos | **Falla** |
+
+Corregido en `scripts/pruebas-liberacion.sh`, pasando la base de pruebas de forma
+explícita y resembrando antes de medir:
+
+```bash
+base_pruebas="${DB_DATABASE_PRUEBAS:-medschedule_test}"
+DB_DATABASE="${base_pruebas}" php artisan test
+```
+
+**No se modificó `phpunit.xml`**: es un archivo del equipo y el arreglo de fondo
+—añadirle `force="true"`— corresponde a quien mantenga la suite. Conviene avisarlo,
+porque el problema no es solo del pipeline: cualquier integrante que tenga `DB_DATABASE`
+exportada en su shell y ejecute `php artisan test` en local **borra su propia base de
+desarrollo**.
+
+### 7.4.2 Ejecución en el pipeline
+
+La misma prueba, ejecutada por GitHub Actions sin intervención manual, sobre el servicio
+MySQL del runner:
+
+| Métrica | Valor |
+|---|---|
+| Aserciones correctas | **2446 de 2446 (100 %)** |
+| `http_req_duration` p95 | **114.27 ms** |
+| `http_req_duration` mediana | 39.99 ms |
+| `http_req_failed` | 0.00 % (0 de 1876) |
+| `tasa_login_exitoso` | 100.00 % (10 de 10) |
+
+Tres entornos distintos —máquina local, Codespace y runner de GitHub— con la misma
+prueba y el mismo veredicto: el sistema cumple el acuerdo de servicio con holgura.
+
 ### Estado de las dos compuertas
 
 ```
