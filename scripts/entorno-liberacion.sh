@@ -17,17 +17,12 @@ url_base="${URL_BASE:-http://127.0.0.1:8000}"
 intentos_maximos=30
 
 echo "==> Esperando a que la base de datos acepte conexiones"
+# La comprobacion se hace con artisan, no abriendo un socket a mano: las
+# variables del .env no estan en el entorno del shell, asi que leerlas con
+# getenv() devuelve false y la comprobacion terminaria apuntando a 127.0.0.1
+# aunque la base viva en otro host del compose.
 for intento in $(seq 1 "${intentos_maximos}"); do
-    if php -r '
-        $host = getenv("DB_HOST") ?: "127.0.0.1";
-        $puerto = (int) (getenv("DB_PORT") ?: 3306);
-        $conexion = @fsockopen($host, $puerto, $codigo_error, $mensaje_error, 2);
-        if ($conexion === false) {
-            exit(1);
-        }
-        fclose($conexion);
-        exit(0);
-    '; then
+    if php artisan db:show > /dev/null 2>&1; then
         echo "Base de datos disponible."
         break
     fi
