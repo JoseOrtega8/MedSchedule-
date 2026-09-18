@@ -188,7 +188,26 @@ se carga después del de la imagen:
 RUN echo "xdebug.mode=off" > /usr/local/etc/php/conf.d/zz-xdebug-apagado.ini
 ```
 
-### 5.3.5 Resumen de los cinco defectos del entorno
+### 5.3.4.1 El controlador pdo_mysql no viene compilado
+
+Con Xdebug ya apagado y k6 instalado, la primera orden de artisan contra la base del
+compose respondió:
+
+```
+PDOException
+could not find driver
+```
+
+MySQL estaba levantado y el nombre `mysql` resolvía correctamente a `172.18.0.2`. Lo que
+faltaba era el controlador: la imagen oficial de PHP para devcontainers **no compila
+`pdo_mysql`**. El síntoma engaña, porque parece un problema de red o de credenciales y
+no lo es.
+
+```dockerfile
+RUN docker-php-ext-install pdo_mysql
+```
+
+### 5.3.5 Resumen de los seis defectos del entorno
 
 | # | Defecto | Síntoma | Corrección |
 |---|---|---|---|
@@ -197,8 +216,9 @@ RUN echo "xdebug.mode=off" > /usr/local/etc/php/conf.d/zz-xdebug-apagado.ini
 | 3 | Imagen base sin servidor SSH | `gh codespace ssh` no conecta | Feature `sshd` declarada |
 | 4 | `gpg --recv-keys` sin `dirmngr` en el contenedor | La instalación de k6 tumba el `postCreateCommand` | Clave por HTTPS, con el binario oficial como reserva |
 | 5 | Xdebug activo en modo `debug` | Avisos en cada petición y latencia inflada | `xdebug.mode=off` en el `Dockerfile` |
+| 6 | El controlador `pdo_mysql` no viene compilado | `PDOException: could not find driver` con MySQL levantado y accesible | `docker-php-ext-install pdo_mysql` |
 
-Ninguno es un error de configuración del autor: los cinco son propiedades de las imágenes
+Ninguno es un error de configuración del autor: los seis son propiedades de las imágenes
 oficiales, del nombre heredado del repositorio o de la documentación de las herramientas.
 Los cinco habrían impedido que cualquier integrante levantara el entorno —o, peor en el
 caso del quinto, lo habrían dejado levantarlo y medir mal—, y los cinco quedan resueltos
