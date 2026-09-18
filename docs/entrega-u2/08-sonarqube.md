@@ -99,18 +99,45 @@ anterior. Evidencia cruda en `evidencia/sonar-metricas-pr95.json` y
 
 ### Calidad
 
-| Métrica | Valor | Lectura |
-|---|---|---|
-| Bugs | **0** | Ninguna incidencia de fiabilidad |
-| Vulnerabilidades | **0** | Ninguna incidencia de seguridad |
-| Security hotspots | **0** | Nada que requiera revisión manual de seguridad |
-| Code smells | **95** | Toda la deuda es de mantenibilidad |
-| Deuda técnica | **467 minutos** (7 h 47 min) | Estimación de SonarQube para saldarla entera |
-| Duplicación | **2.8 %** en 12 bloques | Por debajo del 3 % que se suele tomar como umbral |
-| Cobertura | **0 %** | Ver el apartado 8.5 |
-| Calificación de mantenibilidad | **A** | |
-| Calificación de fiabilidad | **A** | |
-| Calificación de seguridad | **A** | |
+SonarQube 26 clasifica las incidencias por **cualidad del software** (la taxonomía Clean
+Code), no por el tipo antiguo de bug, vulnerabilidad y *code smell*. Las cifras de esta
+tabla son las que muestra la interfaz, capturadas en
+`evidencia/sonar-01-panel-general.png`:
+
+| Métrica | Valor | Calificación | Lectura |
+|---|---|---|---|
+| Seguridad | **0** incidencias | **A** | Ninguna incidencia de seguridad |
+| Fiabilidad | **2** incidencias | **C** | Ver el apartado 8.3.1: son las dos que bajan la nota |
+| Mantenibilidad | **94** incidencias | **A** | El grueso de la deuda |
+| Security hotspots | **0** | **A** | Nada que requiera revisión manual |
+| Deuda técnica | **447 minutos** (7 h 27 min) | | Estimación para saldar la mantenibilidad entera |
+| Duplicación | **2.8 %** en 12 bloques | | Por debajo del 3 % que se suele tomar como umbral |
+| Cobertura | **0 %** | | Ver el apartado 8.5 |
+| Puerta de calidad | **Passed** | | Con avisos en el análisis |
+
+**Cuidado con las métricas antiguas.** La API sigue exponiendo `bugs`, `vulnerabilities`,
+`code_smells` y `reliability_rating`, pero están deprecadas y **no coinciden con la
+interfaz**: devuelven `bugs = 0` y fiabilidad `A`, mientras que la pantalla muestra dos
+incidencias de fiabilidad y calificación `C`. Un informe construido sobre esas métricas
+afirmaría que el proyecto no tiene ningún problema de fiabilidad, y quien abriera la
+interfaz vería lo contrario. Las cifras de este documento salen de las métricas
+`software_quality_*`, que son las que la herramienta muestra.
+
+### 8.3.1 Las dos incidencias de fiabilidad
+
+| Regla | Severidad | Archivo | Qué señala |
+|---|---|---|---|
+| `javascript:S8786` | MEDIA | `resources/js/admin-rbac.js:30` | Expresión regular con rendimiento super-lineal por *backtracking* |
+| `javascript:S7781` | BAJA | `resources/js/topbar-date.js:9` | Usar `String#replaceAll()` en lugar de `String#replace()` |
+
+La primera merece atención en una unidad dedicada al rendimiento: una expresión regular
+con *backtracking* super-lineal es el patrón que hace posible un ReDoS, es decir, una
+denegación de servicio provocada por una entrada construida a propósito para disparar el
+coste de la expresión. Está en la pantalla de administración de roles, que recibe datos
+escritos por el usuario. **La prueba de carga no la habría encontrado**, porque las
+entradas que genera son benignas; el análisis estático sí.
+
+Captura en `evidencia/sonar-02-fiabilidad.png`.
 
 ### Incidencias por severidad
 
@@ -150,15 +177,16 @@ Tres matices que conviene decir antes de que los pregunte quien revise:
    métricas de arriba describen el estado del sistema, no la aportación del PR. Es una
    limitación de la edición Community combinada con la naturaleza de ese PR, y es
    preferible explicarla a presentar el número como si fuera otra cosa.
-2. **Cero bugs y cero vulnerabilidades no significa código perfecto.** Significa que
-   ninguna regla del perfil por defecto se disparó. SonarQube no entiende la lógica de
-   negocio: el defecto #97, que deja `/about` en error 500 para cualquier visitante
-   anónimo, **no aparece en este informe**. Lo encontró la prueba de carga. Las dos
-   herramientas son complementarias, no sustitutas.
-3. **La calificación A en las tres dimensiones es fácil de malinterpretar.** La
-   mantenibilidad se califica sobre la razón entre deuda y tamaño del código; 467
-   minutos sobre 5 615 líneas da A, pero siguen siendo casi ocho horas de trabajo
-   pendiente.
+2. **Cero incidencias de seguridad no significa código seguro.** Significa que ninguna
+   regla del perfil por defecto se disparó. SonarQube no entiende la lógica de negocio: el
+   defecto #97, que deja `/about` en error 500 para cualquier visitante anónimo, **no
+   aparece en este informe**. Lo encontró la prueba de carga. A la inversa, la expresión
+   regular vulnerable a ReDoS del apartado 8.3.1 no la habría encontrado ninguna prueba de
+   carga. Las dos herramientas son complementarias, no sustitutas.
+3. **La calificación A de mantenibilidad es fácil de malinterpretar.** Se calcula sobre
+   la razón entre deuda y tamaño del código: 447 minutos sobre 5 615 líneas da A, pero
+   siguen siendo más de siete horas de trabajo pendiente. Y la fiabilidad no es A, es
+   **C**, por una sola incidencia de severidad media.
 
 ## 8.5 Por qué la cobertura sale en 0 %
 
