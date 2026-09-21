@@ -196,6 +196,8 @@ K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=informe.html \
 | `evidencia/k6-jri-codespace-resumen.txt` | Salida de la terminal |
 | `evidencia/k6-jri-codespace-resumen.json` | Resumen agregado en JSON |
 
+![Informe de k6 generado durante la corrida en el entorno de liberación: evolución de la latencia, usuarios virtuales, tasa de transferencia y tabla de métricas agregadas](evidencia/k6-01-informe-general.png)
+
 Se prefiere el informe de la herramienta a una fotografía de la terminal: muestra la
 evolución de la latencia durante la rampa, que un resumen agregado no puede mostrar. En
 las gráficas se ve con claridad que el pico de latencia está al principio, cuando el
@@ -319,5 +321,12 @@ vieja.
 ## 7.6 Pull request de ejecución
 
 Los resultados de este apartado se commitean en markdown junto con la evidencia cruda,
-como pide el punto 3 del enunciado. El pull request de ejecución de las pruebas queda
-enlazado en el apartado 10 del índice una vez abierto.
+como pide el punto 3 del enunciado.
+
+**Pull request de ejecución de las pruebas de carga:**
+[`JoseOrtega8/MedSchedule- #103`](https://github.com/JoseOrtega8/MedSchedule-/pull/103)
+
+Ese pull request contiene el script `tests/carga/jri-prueba.js`, el seeder de las cuentas
+de carga, los resultados de este documento y la evidencia de las corridas. Su descripción
+incluye el antes y el después de comportamiento: la ausencia total de medición de
+rendimiento antes, y las métricas reales con los cuatro umbrales cumplidos después.
