@@ -90,3 +90,25 @@ jobs:
                   DB_USERNAME: root
                   DB_PASSWORD: password
               run: php artisan test --filter="AuthTest|ActivityLogControllerTest|ExampleTest|EnsureAdminRoleTest" || true
+
+    analisis-estatico:
+        name: Analisis estatico (SonarQube)
+        runs-on: ubuntu-latest
+        # El analisis obligatorio de la unidad 2 es el del stack local: una
+        # instancia en localhost no es alcanzable desde un runner de GitHub.
+        # Este job queda escrito y solo se ejecuta cuando exista una instancia
+        # accesible y sus secretos esten configurados en el repositorio.
+        if: ${{ vars.SONAR_HABILITADO == 'true' }}
+
+        steps:
+            - name: Descargar el codigo
+              uses: actions/checkout@v4
+              with:
+                  # SonarQube necesita el historico para calcular el codigo nuevo.
+                  fetch-depth: 0
+
+            - name: Analizar con SonarQube
+              uses: SonarSource/sonarqube-scan-action@v5
+              env:
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

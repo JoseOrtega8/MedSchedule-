@@ -8,13 +8,13 @@ de assets. Tres roles la usan: administrador, doctor y paciente, cada uno con su
 panel y su propio conjunto de permisos, resueltos con `spatie/laravel-permission`.
 
 El sistema tiene 79 métodos de prueba en PHPUnit y una suite de extremo a extremo con
-Playwright, heredadas de la unidad anterior. El repositorio es público y vive en
+Playwright, heredadas de la fase anterior. El repositorio es público y vive en
 `github.com/JoseOrtega8/MedSchedule-`.
 
 ## 1.2 El equipo y su restricción real
 
 Cinco integrantes trabajan sobre el mismo repositorio, pero **los reportes de cada
-unidad son entregas individuales**. Esa combinación define casi todo lo que sigue:
+fase son entregas individuales**. Esa combinación define casi todo lo que sigue:
 
 - Ningún integrante puede imponer al resto una infraestructura que dependa de su
   cuenta personal o de su tarjeta de crédito.
@@ -25,9 +25,9 @@ unidad son entregas individuales**. Esa combinación define casi todo lo que sig
 No es una restricción académica artificial: es exactamente la situación de un equipo
 que entra a un proyecto existente y necesita reproducirlo sin acceso a producción.
 
-## 1.3 El problema que esta unidad resuelve
+## 1.3 El problema que este trabajo resuelve
 
-Al terminar la unidad anterior, el proyecto tenía integración continua parcial y
+Al terminar la fase anterior del proyecto, el proyecto tenía integración continua parcial y
 ninguna forma de responder a tres preguntas:
 
 1. **¿Aguanta?** No existía ninguna medición de rendimiento. Nadie sabía cuánto tarda
@@ -46,16 +46,16 @@ los ejecutó.
 
 ## 1.4 Lo que esta entrega construye
 
-| Pregunta | Respuesta de esta unidad |
+| Pregunta | Respuesta de este trabajo |
 |---|---|
 | ¿Dónde se libera? | Un entorno declarado como código en `.devcontainer/`, que GitHub Codespaces materializa bajo demanda |
 | ¿Aguanta? | Pruebas de carga con k6 y un nivel de servicio acordado: p95 por debajo de 5 s |
-| ¿Está sano el código? | SonarQube Community en un stack local, con el escaneo del PR de la unidad anterior |
+| ¿Está sano el código? | SonarQube Community en un stack local, con el escaneo del PR de la fase anterior |
 | ¿Cómo se automatiza? | Un pipeline de cuatro etapas que invoca los mismos scripts que se usan en local |
 
 ## 1.5 El hilo que recorre el documento
 
-Las pruebas de carga de esta unidad no solo midieron: **encontraron tres defectos
+Las pruebas de carga de este trabajo no solo midieron: **encontraron tres defectos
 reales antes de que llegaran a producción**, uno de ellos visible para cualquier
 visitante anónimo del sitio. Ese hallazgo, documentado en el apartado 7, es el mejor
 argumento a favor del pipeline que este documento justifica: la compuerta de

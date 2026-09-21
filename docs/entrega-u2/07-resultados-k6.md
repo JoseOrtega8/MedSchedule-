@@ -8,7 +8,7 @@
 | Autor | `ramonibr` |
 | Herramienta | k6 v2.2.0 |
 | Entorno oficial | Codespace de 2 núcleos, MySQL 8.0.46, Xdebug apagado |
-| Usuarios virtuales | 10 (el requisito pide más de 5) |
+| Usuarios virtuales | 10 |
 | Perfil | 30 s de rampa, 60 s sostenidos, 30 s de bajada |
 | Endpoints | `/`, `/about`, `GET /login`, `POST /login`, `/patient/dashboard/data` |
 | Métricas propias | 9, además de las de k6 |
@@ -175,7 +175,7 @@ La misma prueba, mismo script, dos entornos:
 El entorno declarado rinde tres veces más que la máquina de desarrollo. La diferencia no
 es del hardware: es que `php artisan serve` en local competía con el resto del escritorio
 y, sobre todo, que la rampa local se pasó esperando al limitador de intentos. El dato que
-importa para la unidad es que **la medición es reproducible**: cualquier integrante que
+importa es que **la medición es reproducible**: cualquier integrante que
 abra un Codespace desde esta rama obtiene este mismo entorno.
 
 ### Evidencia visual
@@ -276,7 +276,7 @@ prueba y el mismo veredicto: el sistema cumple el acuerdo de servicio con holgur
 ===================================================================
 ```
 
-La suite de PHPUnit falla por deuda anterior a esta unidad: 72 de 79 métodos terminan en
+La suite de PHPUnit falla por deuda anterior a este trabajo: 72 de 79 métodos terminan en
 `Expected response status code [422] but received 401`, es decir, sin sesión autenticada.
 Es el mismo problema que el issue #86 documenta y que hoy tapa el `|| true` del `ci.yml`
 heredado. **No se arregla aquí**: está asignado a otro integrante y queda fuera del
@@ -284,7 +284,7 @@ alcance de esta entrega.
 
 Lo que sí se corrigió es el diseño del script de pruebas. Con `set -e`, ese fallo abortaba
 todo antes de que k6 llegara a ejecutarse, de modo que la deuda funcional dejaba a la
-unidad sin medición. La salida fácil habría sido añadir `|| true` a PHPUnit —el mismo
+este trabajo sin medición. La salida fácil habría sido añadir `|| true` a PHPUnit —el mismo
 vicio que este documento critica—. En su lugar, las dos compuertas se ejecutan siempre, se
 informan por separado y el script sale con error si cualquiera falla.
 
@@ -312,7 +312,7 @@ Al preparar el hook de pre-commit se comprobó que:
 - **ESLint no tiene archivo de configuración ni figura en `devDependencies`.** `npx`
   lo descarga y falla por ausencia de configuración. El paso correspondiente de
   `ci.yml` termina con `|| true`, así que **nunca ha analizado nada**.
-- **Prettier falla en 13 archivos** anteriores a esta unidad, por la misma razón.
+- **Prettier falla en 13 archivos** anteriores a este trabajo, por la misma razón.
 
 Por eso tanto el hook como el pipeline de esta entrega exigen formato **solo sobre los
 archivos que toca cada cambio**: impide añadir deuda nueva sin bloquear a nadie con la
@@ -320,8 +320,8 @@ vieja.
 
 ## 7.6 Pull request de ejecución
 
-Los resultados de este apartado se commitean en markdown junto con la evidencia cruda,
-como pide el punto 3 del enunciado.
+Los resultados de este apartado se versionan en markdown junto con la evidencia cruda,
+para que cualquier integrante pueda contrastarlos con una corrida propia.
 
 **Pull request de ejecución de las pruebas de carga:**
 [`JoseOrtega8/MedSchedule- #103`](https://github.com/JoseOrtega8/MedSchedule-/pull/103)

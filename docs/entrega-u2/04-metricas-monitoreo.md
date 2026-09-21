@@ -65,7 +65,7 @@ interfaz**; el apartado §8.3 lo detalla.
 
 ## 4.2 Umbral contractual y umbral de vigilancia
 
-El acuerdo de la unidad fija el p95 en 5 s. La medición real en el entorno de liberación
+El acuerdo fija el p95 en 5 s. La medición real en el entorno de liberación
 es de 76 ms. Un umbral sesenta y seis veces mayor que la medición no detecta
 degradaciones: el rendimiento podría empeorar un 6 000 % sin que nadie se entere.
 
@@ -98,7 +98,7 @@ puedan comparar.
 
 ## 4.4 Qué no se mide todavía
 
-Conviene ser explícito sobre los huecos, que son los que da la cara la unidad siguiente:
+Conviene ser explícito sobre los huecos, de los que se ocupa la siguiente fase:
 
 | Hueco | Consecuencia |
 |---|---|
@@ -108,7 +108,7 @@ Conviene ser explícito sobre los huecos, que son los que da la cara la unidad s
 | No hay histórico consultable | Comparar corridas exige descargar artefactos a mano |
 | No hay trazas | Se sabe que una petición tardó, no en qué parte del código |
 
-## 4.5 Interpretación de la corrida de esta unidad
+## 4.5 Interpretación de la corrida de este trabajo
 
 | Métrica | Valor | Lectura |
 |---|---|---|
@@ -127,7 +127,7 @@ autenticar cuesta más de cuatro veces eso. Es el comportamiento correcto — `b
 diseñado para ser caro — pero conviene saberlo antes de optimizar consultas que no lo
 necesitan.
 
-## 4.6 Trabajo pendiente para la unidad siguiente
+## 4.6 Trabajo pendiente para la siguiente fase
 
 Los huecos del apartado 4.4 se cubren con un stack de observabilidad continua. El
 diseño previsto, no implementado en esta entrega:
@@ -139,7 +139,7 @@ diseño previsto, no implementado en esta entrega:
 | Alertmanager | Alertas por umbral con enrutamiento de avisos |
 
 k6 puede exportar sus métricas directamente a Prometheus mediante
-`--out experimental-prometheus-rw`, de modo que las mismas métricas de esta unidad
+`--out experimental-prometheus-rw`, de modo que las mismas métricas de este trabajo
 alimentarían los paneles sin reescribir la prueba. El stack se añadiría al mismo
 `docker compose` que ya levanta el entorno, que es la razón por la que el entorno se
 declaró como código desde el principio.

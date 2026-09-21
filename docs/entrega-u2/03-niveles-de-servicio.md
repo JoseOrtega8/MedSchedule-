@@ -12,7 +12,7 @@ En un producto comercial el SLA conlleva penalizaciones económicas. Aquí la
 consecuencia es técnica y automática, que para un equipo de desarrollo es más útil:
 **no se libera lo que no cumple**.
 
-## 3.2 Acuerdos de esta unidad
+## 3.2 Acuerdos vigentes
 
 | # | Indicador (SLI) | Objetivo (SLO) | Dónde se mide | Consecuencia si se incumple |
 |---|---|---|---|---|
@@ -25,7 +25,7 @@ consecuencia es técnica y automática, que para un equipo de desarrollo es más
 
 ## 3.3 De dónde sale el objetivo de 5 segundos
 
-El umbral de p95 por debajo de 5 s lo fija el enunciado de la unidad. Vale la pena
+El equipo fija el umbral de p95 por debajo de 5 s como compromiso de servicio. Vale la pena
 señalar que es **holgado** para una aplicación de este tamaño: la medición real de
 MedSchedule en el entorno de liberación es de 76 ms de p95. Un umbral holgado tiene una virtud
 y un riesgo:
@@ -38,7 +38,7 @@ mucho más ceñido a la medición real.
 
 ## 3.4 Por qué el percentil 95 y no la media
 
-La media esconde exactamente lo que interesa. En la corrida de esta unidad:
+La media esconde exactamente lo que interesa. En la corrida de referencia:
 
 | Estadístico de `http_req_duration` | Valor |
 |---|---|
@@ -58,7 +58,7 @@ sistema en el que una parte real de los usuarios espera mucho más que lo anunci
 | Parámetro | Valor | Por qué |
 |---|---|---|
 | Duración de la prueba | 2 minutos | 30 s de rampa, 1 min sostenido, 30 s de bajada |
-| Usuarios virtuales | 10 | El requisito pide más de 5; 10 deja margen |
+| Usuarios virtuales | 10 | Suficientes para provocar concurrencia real sin saturar el entorno |
 | Pausa entre iteraciones | 1 s | Modela a un usuario que lee la pantalla, no a un bucle cerrado |
 | Frecuencia | En cada push y cada PR contra `main` y `develop` | Lo define `.github/workflows/release.yml` |
 
@@ -69,5 +69,5 @@ framework, que no representa el uso real.
 
 Honestidad sobre el alcance: los seis acuerdos de arriba se verifican **en el momento
 de liberar**, no de forma continua sobre un sistema en operación. No hay todavía
-recolección permanente de métricas, ni alertas, ni histórico. Esa es la materia de la
-unidad siguiente, esbozada en el apartado 4.6.
+recolección permanente de métricas, ni alertas, ni histórico. Ese es el objetivo de la
+siguiente fase, esbozada en el apartado 4.6.
