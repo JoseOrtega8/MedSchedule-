@@ -115,6 +115,8 @@ tabla son las que muestra la interfaz, capturadas en
 | Cobertura | **0 %** | | Ver el apartado 8.5 |
 | Puerta de calidad | **Passed** | | Con avisos en el análisis |
 
+![Panel de SonarQube sobre la rama del PR #95: puerta de calidad superada, cero incidencias de seguridad, dos de fiabilidad con calificación C, noventa y cuatro de mantenibilidad, cobertura del cero por ciento y duplicación del 2.8 por ciento](evidencia/sonar-01-panel-general.png)
+
 **Cuidado con las métricas antiguas.** La API sigue exponiendo `bugs`, `vulnerabilities`,
 `code_smells` y `reliability_rating`, pero están deprecadas y **no coinciden con la
 interfaz**: devuelven `bugs = 0` y fiabilidad `A`, mientras que la pantalla muestra dos
@@ -137,7 +139,9 @@ coste de la expresión. Está en la pantalla de administración de roles, que re
 escritos por el usuario. **La prueba de carga no la habría encontrado**, porque las
 entradas que genera son benignas; el análisis estático sí.
 
-Captura en `evidencia/sonar-02-fiabilidad.png`.
+![Las dos incidencias de fiabilidad que bajan la calificación a C: la expresión regular con backtracking super-lineal en admin-rbac.js y el uso de replace en lugar de replaceAll en topbar-date.js](evidencia/sonar-02-fiabilidad.png)
+
+![Pantalla de medidas de SonarQube con el desglose completo del proyecto](evidencia/sonar-03-medidas.png)
 
 ### Incidencias por severidad
 
@@ -205,7 +209,17 @@ bash scripts/sonarqube-escanear.sh <rama>
 Se documenta como pendiente en lugar de dejar el 0 % sin explicación, que se leería
 como «no hay pruebas» cuando el proyecto tiene 79 métodos de PHPUnit.
 
-## 8.6 Integración en el pipeline
+## 8.6 Pull request del análisis estático
+
+**Pull request:**
+[`JoseOrtega8/MedSchedule- #104`](https://github.com/JoseOrtega8/MedSchedule-/pull/104)
+
+Contiene el stack local de SonarQube, los scripts que lo levantan y lo analizan, la
+configuración del proyecto y la evidencia del escaneo. El antes y el después de
+comportamiento de su descripción es directo: ninguna medida de calidad del código antes,
+y el informe completo con las doce métricas después.
+
+## 8.7 Integración en el pipeline
 
 El análisis obligatorio de esta entrega es el local, por dos razones: el requisito pide
 expresamente un stack local, y una instancia en `localhost` no es alcanzable desde un

@@ -61,7 +61,25 @@ cobertura sale en 0 % en lugar de dejar el número sin contexto.
 | **SonarQube punto 2.** Evidencia de resultados, escaneo del PR de la unidad anterior | [08](08-sonarqube.md) | §8.3 |
 | Objetivo de carga: p95 < 5 s | [03](03-niveles-de-servicio.md), [07](07-resultados-k6.md) | §3.2, §7.4 |
 
-## 3. Qué distingue esta entrega
+## 3. Pull requests de esta entrega
+
+La entrega se reparte en tres pull requests encadenados, cada uno con su propio antes y
+después **de comportamiento**. Se revisan e integran en este orden:
+
+| # | Pull request | Contenido | Base |
+|---|---|---|---|
+| 1 | [#102](https://github.com/JoseOrtega8/MedSchedule-/pull/102) | Entorno de liberación en Codespaces y scripts del pipeline | `develop` |
+| 2 | [#103](https://github.com/JoseOrtega8/MedSchedule-/pull/103) | Pruebas de carga con k6 y sus resultados | #102 |
+| 3 | [#104](https://github.com/JoseOrtega8/MedSchedule-/pull/104) | Análisis estático con SonarQube | #103 |
+
+Los tres tienen el pipeline en verde. La compuerta de rendimiento se ejecuta de verdad en
+GitHub Actions dentro del PR #103, con 2446 de 2446 aserciones correctas y un p95 de
+114.27 ms.
+
+Defecto reportado y **no corregido a propósito**, por corresponder a otro integrante:
+[#97, `/about` responde 500 a visitantes no autenticados](https://github.com/JoseOrtega8/MedSchedule-/issues/97).
+
+## 4. Qué distingue esta entrega
 
 Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron doce
 defectos reales** que la suite funcional existente no detectaba. Uno de ellos, el error 500 de `/about` para
