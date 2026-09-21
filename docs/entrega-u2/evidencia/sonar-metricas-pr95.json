@@ -1,0 +1,119 @@
+{
+    "component": {
+        "key": "medschedule-feat-unidad-docs-sdd",
+        "name": "MedSchedule (feat/unidad-docs-sdd)",
+        "qualifier": "TRK",
+        "measures": [
+            {
+                "metric": "coverage",
+                "value": "0.0",
+                "bestValue": false
+            },
+            {
+                "metric": "complexity",
+                "value": "1116"
+            },
+            {
+                "metric": "minor_violations",
+                "value": "64",
+                "bestValue": false
+            },
+            {
+                "metric": "reliability_rating",
+                "value": "1.0",
+                "bestValue": true
+            },
+            {
+                "metric": "duplicated_lines_density",
+                "value": "2.8",
+                "bestValue": false
+            },
+            {
+                "metric": "code_smells",
+                "value": "95",
+                "bestValue": false
+            },
+            {
+                "metric": "functions",
+                "value": "491"
+            },
+            {
+                "metric": "security_rating",
+                "value": "1.0",
+                "bestValue": true
+            },
+            {
+                "metric": "classes",
+                "value": "48"
+            },
+            {
+                "metric": "violations",
+                "value": "95",
+                "bestValue": false
+            },
+            {
+                "metric": "comment_lines_density",
+                "value": "2.8",
+                "bestValue": false
+            },
+            {
+                "metric": "security_hotspots",
+                "value": "0",
+                "bestValue": true
+            },
+            {
+                "metric": "sqale_index",
+                "value": "467",
+                "bestValue": false
+            },
+            {
+                "metric": "critical_violations",
+                "value": "11",
+                "bestValue": false
+            },
+            {
+                "metric": "sqale_rating",
+                "value": "1.0",
+                "bestValue": true
+            },
+            {
+                "metric": "blocker_violations",
+                "value": "0",
+                "bestValue": true
+            },
+            {
+                "metric": "bugs",
+                "value": "0",
+                "bestValue": true
+            },
+            {
+                "metric": "major_violations",
+                "value": "20",
+                "bestValue": false
+            },
+            {
+                "metric": "cognitive_complexity",
+                "value": "529",
+                "bestValue": false
+            },
+            {
+                "metric": "duplicated_blocks",
+                "value": "12",
+                "bestValue": false
+            },
+            {
+                "metric": "ncloc",
+                "value": "5615"
+            },
+            {
+                "metric": "files",
+                "value": "64"
+            },
+            {
+                "metric": "vulnerabilities",
+                "value": "0",
+                "bestValue": true
+            }
+        ]
+    }
+}
