@@ -55,7 +55,7 @@ Archivo: `.husky/pre-commit`
 | Prueba de humo de k6 | Diez segundos | Solo si hay un entorno escuchando |
 
 El alcance limitado no es pereza, es la única forma de que el hook sea usable: el
-repositorio arrastra 13 archivos que no cumplen Prettier desde antes de esta unidad, y
+repositorio arrastra 13 archivos que no cumplen Prettier desde antes de este trabajo, y
 un hook que los exigiera bloquearía cualquier commit de cualquier integrante.
 
 La prueba de humo es condicional por la misma razón. Un hook que falla por motivos

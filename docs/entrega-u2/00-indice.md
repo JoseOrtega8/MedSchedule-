@@ -23,12 +23,12 @@ elaboración, no de estimaciones. Cada una se puede rastrear a un archivo de
 Donde algo no se midió, se dice que no se midió. El apartado 8.5 explica por qué la
 cobertura sale en 0 % en lugar de dejar el número sin contexto.
 
-## 1. Índice de documentos
+## 1. Contenido
 
 | # | Documento | Contenido |
 |---|---|---|
-| 00 | [Índice y mapa de rúbrica](00-indice.md) | Este documento |
-| 01 | [Caso de estudio](01-caso-de-estudio.md) | El sistema, el equipo, sus restricciones y el problema que resuelve la unidad |
+| 00 | [Índice](00-indice.md) | Este documento |
+| 01 | [Caso de estudio](01-caso-de-estudio.md) | El sistema, el equipo, sus restricciones y el problema que resuelve este trabajo |
 | 02 | [Entorno de liberación](02-entorno-liberacion.md) | Entorno requerido, adopción de Codespaces y justificación del descarte de IONOS y Railway |
 | 03 | [Niveles de servicio](03-niveles-de-servicio.md) | SLI, SLO y SLA acordados, con su ventana de medición |
 | 04 | [Métricas de monitoreo](04-metricas-monitoreo.md) | Qué se mide, por qué, con qué umbral, y qué queda pendiente |
@@ -38,30 +38,7 @@ cobertura sale en 0 % en lugar de dejar el número sin contexto.
 | 08 | [Análisis estático con SonarQube](08-sonarqube.md) | Instalación del stack local, limitaciones encontradas y resultados del PR #95 |
 | 09 | [Integración en CI/CD](09-integracion-cicd.md) | Cuándo usar las pruebas, cómo se integran y evidencia con y sin la compuerta |
 
-## 2. Mapa de rúbrica
-
-| Requisito del profesor | Cubierto en | Sección |
-|---|---|---|
-| Documento a partir de un caso de estudio | [01](01-caso-de-estudio.md) | §1.1 a §1.5 |
-| Justificación del flujo de trabajo (pipeline) para la liberación y el despliegue continuo | [01](01-caso-de-estudio.md), [09](09-integracion-cicd.md) | §1.3, §1.4, §9.2 |
-| Entorno requerido para la liberación y el despliegue | [02](02-entorno-liberacion.md) | §2.1 a §2.6 |
-| Niveles de servicio acordados | [03](03-niveles-de-servicio.md) | §3.2 a §3.5 |
-| Métricas para el monitoreo de la aplicación | [04](04-metricas-monitoreo.md) | §4.1 a §4.5 |
-| Parámetros de configuración de las herramientas | [05](05-parametros-herramientas.md) | §5.1 a §5.7 |
-| Configurar y vincular una herramienta de liberación continua con el entorno de despliegue | [02](02-entorno-liberacion.md), [09](09-integracion-cicd.md) | §2.2, §9.2 |
-| Repositorio con los scripts del pipeline | [`scripts/`](../../scripts/) | `verificar-formato.sh`, y los tres siguientes |
-| Scripts para generar el entorno de liberación | [`scripts/entorno-liberacion.sh`](../../scripts/entorno-liberacion.sh), [`.devcontainer/`](../../.devcontainer/) | §2.2 |
-| Scripts para ejecutar pruebas en ese entorno | [`scripts/pruebas-liberacion.sh`](../../scripts/pruebas-liberacion.sh) | §6.4 |
-| Scripts para generar el despliegue | [`scripts/despliegue.sh`](../../scripts/despliegue.sh) | §9.2 |
-| **k6 punto 1.** PR de implementación con plan en markdown, comandos de instalación y endpoints | [06](06-plan-implementacion-k6.md) | §6.2, §6.3 |
-| **k6 punto 2.** Ejecución con script propio `iniciales-prueba.js`, más de 5 VUs, máximo de métricas | [`tests/carga/jri-prueba.js`](../../tests/carga/jri-prueba.js), [07](07-resultados-k6.md) | §7.1, §7.4 |
-| **k6 punto 3.** Resultados commiteados en markdown y PR de ejecución | [07](07-resultados-k6.md) | §7.4, §7.6 |
-| **k6 punto 4.** Cuándo usarla y cómo se incluye en el CI/CD, con evidencia con y sin ella | [09](09-integracion-cicd.md) | §9.1, §9.3, §9.4 |
-| **SonarQube punto 1.** Instalación en stack local, pasos en markdown, en un PR | [08](08-sonarqube.md) | §8.1 |
-| **SonarQube punto 2.** Evidencia de resultados, escaneo del PR de la unidad anterior | [08](08-sonarqube.md) | §8.3 |
-| Objetivo de carga: p95 < 5 s | [03](03-niveles-de-servicio.md), [07](07-resultados-k6.md) | §3.2, §7.4 |
-
-## 3. Pull requests de esta entrega
+## 2. Pull requests de esta entrega
 
 La entrega se reparte en tres pull requests encadenados, cada uno con su propio antes y
 después **de comportamiento**. Se revisan e integran en este orden:
@@ -79,7 +56,7 @@ GitHub Actions dentro del PR #103, con 2446 de 2446 aserciones correctas y un p9
 Defecto reportado y **no corregido a propósito**, por corresponder a otro integrante:
 [#97, `/about` responde 500 a visitantes no autenticados](https://github.com/JoseOrtega8/MedSchedule-/issues/97).
 
-## 4. Qué distingue esta entrega
+## 3. Qué distingue este trabajo
 
 Las pruebas de carga, el análisis estático y el montaje del entorno **encontraron doce
 defectos reales** que la suite funcional existente no detectaba. Uno de ellos, el error 500 de `/about` para

@@ -81,8 +81,7 @@ atribución de autor y el cálculo de «código nuevo» por fecha.
 ## 8.3 Resultados del escaneo del PR #95
 
 Rama analizada: `feat/unidad-docs-sdd`, correspondiente al
-[PR #95](https://github.com/JoseOrtega8/MedSchedule-/pull/95), la entrega de la unidad
-anterior. Evidencia cruda en `evidencia/sonar-metricas-pr95.json` y
+[PR #95](https://github.com/JoseOrtega8/MedSchedule-/pull/95), la entrega de la fase anterior. Evidencia cruda en `evidencia/sonar-metricas-pr95.json` y
 `evidencia/sonar-incidencias-pr95.json`.
 
 ### Tamaño y estructura
@@ -132,7 +131,7 @@ interfaz vería lo contrario. Las cifras de este documento salen de las métrica
 | `javascript:S8786` | MEDIA | `resources/js/admin-rbac.js:30` | Expresión regular con rendimiento super-lineal por *backtracking* |
 | `javascript:S7781` | BAJA | `resources/js/topbar-date.js:9` | Usar `String#replaceAll()` en lugar de `String#replace()` |
 
-La primera merece atención en una unidad dedicada al rendimiento: una expresión regular
+La primera merece atención en un trabajo dedicado al rendimiento: una expresión regular
 con *backtracking* super-lineal es el patrón que hace posible un ReDoS, es decir, una
 denegación de servicio provocada por una entrada construida a propósito para disparar el
 coste de la expresión. Está en la pantalla de administración de roles, que recibe datos
@@ -221,9 +220,8 @@ y el informe completo con las doce métricas después.
 
 ## 8.7 Integración en el pipeline
 
-El análisis obligatorio de esta entrega es el local, por dos razones: el requisito pide
-expresamente un stack local, y una instancia en `localhost` no es alcanzable desde un
-runner de GitHub Actions.
+El análisis de referencia de este trabajo es el local, por una razón práctica: una
+instancia en `localhost` no es alcanzable desde un runner de GitHub Actions.
 
 El job correspondiente queda escrito y condicionado a que existan los secretos
 `SONAR_HOST_URL` y `SONAR_TOKEN`. Mientras no exista una instancia accesible desde

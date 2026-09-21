@@ -45,8 +45,7 @@ k6 version
 ```
 
 Los tres casos están automatizados e son idempotentes en `scripts/instalar-k6.sh`: si
-k6 ya está presente, el script no hace nada. Versión verificada en esta entrega:
-**k6 v2.2.0**.
+k6 ya está presente, el script no hace nada. Versión verificada: **k6 v2.2.0**.
 
 ## 6.3 Endpoints elegidos y por qué
 
@@ -84,8 +83,8 @@ Guion de cada iteración:
 
 ## 6.5 Nomenclatura por integrante
 
-El requisito pide un script por integrante con el patrón `iniciales+prueba.js`. Esta
-entrega aporta el del autor:
+Cada integrante aporta su propio script con el patrón `iniciales-prueba.js`, de modo que
+los archivos no colisionen. Este trabajo aporta el del autor:
 
 | Script | Autor | Endpoints |
 |---|---|---|
@@ -117,11 +116,16 @@ el repositorio.**
 Los tres primeros riesgos **se materializaron**. El apartado 7 documenta qué pasó
 exactamente y cómo se resolvió cada uno.
 
-## 6.8 Criterios de aceptación del plan
+## 6.8 Condiciones que debía cumplir la prueba
 
-- [x] Más de 5 usuarios virtuales.
-- [x] Al menos un endpoint; la prueba recorre cinco.
-- [x] La mayor cantidad posible de métricas: nueve propias más las de k6.
-- [x] `http_req_duration` p95 por debajo de 5000 ms.
-- [x] Ninguna credencial en el repositorio.
-- [x] Resultados commiteados en markdown.
+El plan se dio por bueno cuando la prueba cumplió estas condiciones, todas verificadas en
+la ejecución del apartado 7:
+
+| Condición | Por qué | Resultado |
+|---|---|---|
+| Concurrencia real, no secuencial | Una prueba de un solo usuario no revela contención | 10 usuarios virtuales |
+| Recorrido completo, no un endpoint suelto | Medir solo la portada no dice nada del sistema | 5 endpoints, incluido el flujo autenticado |
+| Métricas por endpoint, no solo agregadas | El agregado esconde qué ruta es la lenta | 9 métricas propias más las de k6 |
+| Latencia dentro del acuerdo | Es el compromiso de servicio del apartado 3 | p95 de 75.92 ms sobre un umbral de 5000 ms |
+| Ninguna credencial en el repositorio | El repositorio es público | Usuario y contraseña por variable de entorno |
+| Resultados versionados y reproducibles | Un número sin evidencia no se puede contrastar | Markdown, JSON, informe HTML y capturas |

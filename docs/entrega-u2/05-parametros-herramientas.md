@@ -9,8 +9,8 @@ Archivo: `tests/carga/jri-prueba.js`
 
 | Parámetro | Valor | Por qué |
 |---|---|---|
-| `stages` | 30 s → 10 VUs, 1 min → 10 VUs, 30 s → 0 | El requisito pide más de 5 usuarios virtuales. La rampa evita medir el arranque en frío |
-| `thresholds.http_req_duration` | `p(95)<5000` | El nivel de servicio de la unidad. k6 sale con código 99 si no se cumple |
+| `stages` | 30 s → 10 VUs, 1 min → 10 VUs, 30 s → 0 | Diez usuarios simultáneos generan concurrencia real; la rampa evita medir el arranque en frío |
+| `thresholds.http_req_duration` | `p(95)<5000` | El nivel de servicio acordado. k6 sale con código 99 si no se cumple |
 | `thresholds.http_req_failed` | `rate<0.01` | Menos del 1 % de respuestas inesperadas |
 | `thresholds.tasa_login_exitoso` | `rate>0.99` | Una autenticación fallida invalida el resto de la iteración |
 | `thresholds.duracion_panel` | `p(95)<5000` | El endpoint con más consultas por petición se vigila aparte del agregado |
@@ -145,7 +145,7 @@ devcontainer estuvo roto, la conexión por SSH funcionaba; en cuanto empezó a c
 bien, dejó de funcionar. El síntoma mejora cuando la causa empeora.
 
 Sin SSH no se puede ejecutar el pipeline desde la línea de comandos, que es justo lo que
-esta unidad necesita del entorno.
+este trabajo necesita del entorno.
 
 ### 5.3.3.1 Instalación de k6 sin servidor de claves
 
@@ -179,7 +179,7 @@ Cada petición intenta conectarse a un cliente de depuración que no existe. Ade
 llenar la salida de avisos, Xdebug instrumenta cada llamada de función y multiplica el
 tiempo de ejecución de PHP.
 
-Para una unidad cuyo entregable es una medición de rendimiento, esto no es un detalle:
+Para un trabajo cuyo entregable es una medición de rendimiento, esto no es un detalle:
 **medir con Xdebug activo habría producido números que no describen a la aplicación**, y
 nada en la salida de k6 lo habría delatado. El `Dockerfile` lo apaga con un archivo que
 se carga después del de la imagen:
@@ -246,7 +246,7 @@ Archivo: `.husky/pre-commit`
 | Comprobación | Alcance | Por qué ese alcance |
 |---|---|---|
 | `php -l` | Solo archivos PHP en el índice | Detecta errores de sintaxis antes de que lleguen al pipeline |
-| `scripts/verificar-formato.sh --staged` | Solo JS y CSS en el índice | **El repositorio arrastra 13 archivos que no cumplen Prettier desde antes de esta unidad.** Exigirlo sobre todo el árbol bloquearía cualquier commit |
+| `scripts/verificar-formato.sh --staged` | Solo JS y CSS en el índice | **El repositorio arrastra 13 archivos que no cumplen Prettier desde antes de este trabajo.** Exigirlo sobre todo el árbol bloquearía cualquier commit |
 | Prueba de humo de k6 | Solo si hay un entorno escuchando | No todo commit toca código que afecte al rendimiento; la ausencia de servidor no debe bloquear |
 
 ## 5.6 MySQL en el pipeline

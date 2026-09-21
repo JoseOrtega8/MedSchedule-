@@ -64,13 +64,13 @@ tres razones, en orden de gravedad:
    no se puede encadenar a una compuerta de calidad.
 
 Durante esta entrega se detectó, además, que las reglas de exclusión de esos dos
-archivos existían **solo en la rama de la unidad anterior**. En `develop` aparecían
+archivos existían **solo en la rama de la fase anterior**. En `develop` aparecían
 como archivos sin rastrear: un `git add` amplio los habría publicado. La corrección va
 en el primer commit de esta entrega.
 
 ## 2.4 Por qué se descarta Railway
 
-La unidad anterior dejó esbozado un despliegue en Railway, con un workflow manual
+La fase anterior dejó esbozado un despliegue en Railway, con un workflow manual
 (`cd-railway.yml`, aún en el PR #95 sin integrar) y un esqueleto de Terraform sin
 aplicar. Se descarta por dos razones:
 
@@ -82,8 +82,7 @@ aplicar. Se descarta por dos razones:
    como entorno de despliegue algo que jamás se levantó sería describir una intención,
    no un entorno.
 
-El esqueleto de Terraform se conserva como constancia del trabajo de la unidad
-anterior, sin aplicar.
+El esqueleto de Terraform se conserva como constancia del trabajo previo, sin aplicar.
 
 ## 2.5 Comparación
 
