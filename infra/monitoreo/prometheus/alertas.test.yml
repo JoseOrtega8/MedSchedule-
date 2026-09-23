@@ -1,0 +1,100 @@
+# Pruebas unitarias de las reglas de alerta: promtool test rules alertas.test.yml
+rule_files:
+    - alertas.yml
+
+evaluation_interval: 1m
+
+tests:
+    - interval: 1m
+      input_series:
+          - series: 'probe_success{job="disponibilidad",instance="app"}'
+            values: '1 1 0 0 0 0'
+      alert_rule_test:
+          - eval_time: 2m
+            alertname: AplicacionCaida
+            exp_alerts: []
+          - eval_time: 4m
+            alertname: AplicacionCaida
+            exp_alerts:
+                - exp_labels: { severidad: critica, job: disponibilidad, instance: app }
+                  exp_annotations:
+                      summary: 'MedSchedule no responde en /up'
+                      description: 'La sonda de disponibilidad falla desde hace mas de 1 minuto.'
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="0.5"}'
+            values: '0+1x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="5"}'
+            values: '0+2x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="10"}'
+            values: '0+100x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="+Inf"}'
+            values: '0+100x20'
+      alert_rule_test:
+          - eval_time: 15m
+            alertname: LatenciaP95FueraDeAcuerdo
+            exp_alerts:
+                - exp_labels: { severidad: critica }
+                  exp_annotations:
+                      summary: 'p95 por encima del acuerdo de 5 s'
+                      description: 'El percentil 95 de duracion supera 5 s durante 5 minutos.'
+          - eval_time: 15m
+            alertname: LatenciaP95Degradada
+            exp_alerts:
+                - exp_labels: { severidad: advertencia }
+                  exp_annotations:
+                      summary: 'p95 degradado por encima de 500 ms'
+                      description: 'El percentil 95 supera 500 ms durante 10 minutos; todavia dentro del acuerdo.'
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="0.5"}'
+            values: '0+100x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="+Inf"}'
+            values: '0+100x20'
+      alert_rule_test:
+          - eval_time: 15m
+            alertname: LatenciaP95Degradada
+            exp_alerts: []
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_http_requests_total{method="GET",route="login",status="500"}'
+            values: '0+2x10'
+          - series: 'medschedule_http_requests_total{method="GET",route="login",status="200"}'
+            values: '0+98x10'
+      alert_rule_test:
+          - eval_time: 8m
+            alertname: TasaErrores5xxAlta
+            exp_alerts:
+                - exp_labels: { severidad: critica }
+                  exp_annotations:
+                      summary: 'Mas de 1 % de respuestas 5xx'
+                      description: 'La tasa de errores 5xx de los ultimos 5 minutos supera el 1 % acordado.'
+
+    - interval: 1m
+      input_series:
+          - series: 'mysql_up{job="mysql",instance="mysqld-exporter:9104"}'
+            values: '1 0 0 0'
+      alert_rule_test:
+          - eval_time: 3m
+            alertname: BaseDeDatosCaida
+            exp_alerts:
+                - exp_labels: { severidad: critica, job: mysql, instance: 'mysqld-exporter:9104' }
+                  exp_annotations:
+                      summary: 'MySQL no responde'
+                      description: 'El exporter no logra conectarse a MySQL desde hace mas de 1 minuto.'
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_jobs_fallidos{job="medschedule",instance="app"}'
+            values: '0 1 1 1 1 1 1 1 1 1 1 1 1'
+      alert_rule_test:
+          - eval_time: 12m
+            alertname: JobsFallidos
+            exp_alerts:
+                - exp_labels: { severidad: advertencia, job: medschedule, instance: app }
+                  exp_annotations:
+                      summary: 'Hay jobs fallidos'
+                      description: 'La tabla failed_jobs tiene registros desde hace mas de 10 minutos.'
