@@ -44,7 +44,9 @@ Route::middleware('auth')->group(function () {
 
 Route::view('/about', 'about.about')->name('about');
 
-Route::middleware(['auth', 'auditar.denegado', 'role:admin', 'throttle:60,1'])->group(function () {
+// throttle antes de auditar.denegado: los intentos repetidos de un no admin
+// reciben 429 sin llenar la auditoria de filas selladas
+Route::middleware(['auth', 'throttle:60,1', 'auditar.denegado', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 	Route::get('/dashboard/data', [DashboardController::class, 'adminData'])->name('dashboard.data');
 	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');

@@ -56,4 +56,20 @@ class EventosAuditadosTest extends TestCase
 		$this->assertSame($paciente->id, $registro->user_id);
 		$this->assertStringContainsString('/admin/logs', $registro->description);
 	}
+
+	// throttle va antes de auditar.denegado: pasado el limite, los intentos
+	// responden 429 sin escribir mas filas selladas en la auditoria
+	public function test_accesos_denegados_repetidos_se_limitan_antes_de_auditarse(): void
+	{
+		Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+		$paciente = User::factory()->create();
+		$this->actingAs($paciente);
+
+		for ($i = 0; $i < 60; $i++) {
+			$this->get(route('admin.logs'))->assertForbidden();
+		}
+		$this->get(route('admin.logs'))->assertStatus(429);
+
+		$this->assertSame(60, ActivityLog::where('action', 'acceso_denegado')->count());
+	}
 }
