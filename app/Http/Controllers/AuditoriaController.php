@@ -16,7 +16,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class AuditoriaController extends Controller
 {
@@ -81,26 +83,36 @@ class AuditoriaController extends Controller
 		$registrador->registrar('auditoria_exportada', nuevos: $filtros, descripcion: 'Exportación CSV de la auditoría');
 
 		return response()->streamDownload(function () use ($filtros) {
+			// $escape = '' desactiva el escape con backslash de fputcsv (invierte comillas
+			// dentro de la celda y no es RFC 4180): sin el, un valor con `",` controlado
+			// por el usuario podria correr una celda hacia una formula sin escapar.
 			$salida = fopen('php://output', 'w');
-			fputcsv($salida, ['id', 'fecha', 'usuario', 'accion', 'entidad', 'id_entidad', 'ip', 'descripcion', 'antes', 'despues', 'trace_id']);
 
-			$this->consulta($filtros)->reorder()->lazyByIdDesc(500)->each(function (ActivityLog $registro) use ($salida) {
-				fputcsv($salida, array_map([CsvSeguro::class, 'celda'], [
-					$registro->id,
-					$registro->created_at?->toIso8601String(),
-					$registro->user?->name,
-					$registro->action,
-					$registro->model_type,
-					$registro->model_id,
-					$registro->ip_address,
-					$registro->description,
-					$registro->old_values,
-					$registro->new_values,
-					$registro->trace_id,
-				]));
-			});
+			try {
+				fputcsv($salida, ['id', 'fecha', 'usuario', 'accion', 'entidad', 'id_entidad', 'ip', 'descripcion', 'antes', 'despues', 'trace_id'], ',', '"', '');
 
-			fclose($salida);
+				$this->consulta($filtros)->reorder()->lazyByIdDesc(500)->each(function (ActivityLog $registro) use ($salida) {
+					fputcsv($salida, array_map([CsvSeguro::class, 'celda'], [
+						$registro->id,
+						$registro->created_at?->toIso8601String(),
+						$registro->user?->name,
+						$registro->action,
+						$registro->model_type,
+						$registro->model_id,
+						$registro->ip_address,
+						$registro->description,
+						$registro->old_values,
+						$registro->new_values,
+						$registro->trace_id,
+					]), ',', '"', '');
+				});
+			} catch (Throwable $error) {
+				// No se expone el mensaje de la excepcion en el CSV: solo queda en el log
+				Log::error('Falló la exportación de auditoría', ['error' => $error->getMessage()]);
+				fputcsv($salida, ['ERROR: exportación incompleta'], ',', '"', '');
+			} finally {
+				fclose($salida);
+			}
 		}, 'auditoria-' . now()->format('Ymd-His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
 	}
 

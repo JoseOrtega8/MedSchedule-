@@ -57,7 +57,9 @@ Route::middleware(['auth', 'auditar.denegado', 'role:admin', 'throttle:60,1'])->
 	// Visor de auditoria (unidad 3)
 	Route::get('/admin/auditoria', [AuditoriaController::class, 'index'])->name('admin.auditoria');
 	Route::get('/admin/auditoria/exportar', [AuditoriaController::class, 'exportar'])->name('admin.auditoria.exportar');
-	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->whereNumber('id')->name('admin.auditoria.entidad');
+	// [0-9]{1,18} en vez de whereNumber(): un entero de 19+ digitos pasa la regex de
+	// whereNumber pero desborda el `int $id` del controlador y responde 500
+	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->where('id', '[0-9]{1,18}')->name('admin.auditoria.entidad');
 	Route::get('/admin/auditoria/{registro}', [AuditoriaController::class, 'show'])->whereNumber('registro')->name('admin.auditoria.show');
 	Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');
 	Route::get('/admin/especialidades/data', [SpecialtyController::class, 'indexData'])->name('admin.specialties.data');
