@@ -49,3 +49,15 @@ Thumbs.db
 # versionarse nunca. Se conservan solo en local como registro del equipo.
 /docs/IONOS_Deploy_Checklist.md
 /docs/MedSchedule_Estructura_DB_IONOS.md
+
+# Documentacion entregable de la unidad 3. Igual que en la unidad 2, la regla
+# /docs/* ignora las subcarpetas de docs/ y hay que reincluirla.
+!/docs/entrega-u3/
+
+# DOCX generado con pandoc a partir de los .md de docs/entrega-u3.
+/docs/entrega-u3/*.docx
+
+# Configuracion local del stack de monitoreo: credenciales de Grafana, del
+# exporter de MySQL y el token de metricas que lee Prometheus.
+/infra/monitoreo/.env
+/infra/monitoreo/prometheus/secretos/
