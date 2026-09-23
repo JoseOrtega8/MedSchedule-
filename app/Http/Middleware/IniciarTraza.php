@@ -22,6 +22,10 @@ class IniciarTraza
 
 	public function handle(Request $request, Closure $next): Response
 	{
+		// El traceparent entrante se acepta tal cual: un cliente puede fijar el
+		// trace_id o marcarlo como no muestreado. Aceptable en local; en
+		// produccion deberia validarse o reescribirse en el borde (proxy/WAF).
+
 		// Las cabeceras llegan como arreglos; el propagador espera cadenas
 		$cabeceras = array_map(
 			fn ($valor) => is_array($valor) ? implode(',', $valor) : $valor,
@@ -34,7 +38,6 @@ class IniciarTraza
 			->setParent($contexto_padre)
 			->setSpanKind(SpanKind::KIND_SERVER)
 			->setAttribute('http.request.method', $request->method())
-			->setAttribute('url.path', '/' . ltrim($request->path(), '/'))
 			->startSpan();
 		$alcance = $span->activate();
 
@@ -48,6 +51,11 @@ class IniciarTraza
 			$ruta = $request->route();
 			$span->updateName($request->method() . ' /' . ltrim($ruta?->uri() ?? 'sin_ruta', '/'));
 			$span->setAttribute('http.route', $ruta?->getName() ?? $ruta?->uri() ?? 'sin_ruta');
+			// Solo la plantilla (reset-password/{token}), nunca la ruta real:
+			// la ruta real puede llevar tokens o firmas en sus parametros
+			if ($ruta) {
+				$span->setAttribute('url.template', $ruta->uri());
+			}
 			$span->setAttribute('http.response.status_code', $respuesta->getStatusCode());
 			if ($request->user()) {
 				$span->setAttribute('enduser.id', (string) $request->user()->getAuthIdentifier());
