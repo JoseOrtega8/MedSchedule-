@@ -70,7 +70,7 @@ return [
         'json' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => Monolog\Handler\StreamHandler::class,
+            'handler' => StreamHandler::class,
             'handler_with' => [
                 'stream' => storage_path('logs/medschedule.json'),
             ],
