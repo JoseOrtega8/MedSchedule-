@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Auditoria\SelladorAuditoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class SelladoAuditoriaTest extends TestCase
@@ -84,15 +85,33 @@ class SelladoAuditoriaTest extends TestCase
 		$this->assertSame($siguiente->id, $resultado['id_roto']);
 	}
 
-	public function test_registros_historicos_sin_sello_no_rompen_la_cadena(): void
+	public function test_fila_sin_sello_rompe_la_cadena(): void
 	{
-		DB::table('activity_logs')->insert(['action' => 'historico', 'created_at' => now(), 'updated_at' => now()]);
-		$this->crear_registro('nuevo');
+		$this->crear_registro('uno');
+		$sin_sello_id = DB::table('activity_logs')->insertGetId([
+			'action' => 'sin_sello',
+			'created_at' => now(),
+			'updated_at' => now(),
+		]);
 
 		$resultado = app(SelladorAuditoria::class)->verificar();
 
-		$this->assertSame('integra', $resultado['estado']);
-		$this->assertSame(1, $resultado['sin_sellar_historicos']);
+		$this->assertSame('rota', $resultado['estado']);
+		$this->assertSame($sin_sello_id, $resultado['id_roto']);
+	}
+
+	public function test_anular_todos_los_hashes_rompe_la_cadena(): void
+	{
+		$primero = $this->crear_registro('uno');
+		$this->crear_registro('dos');
+		$this->crear_registro('tres');
+
+		DB::table('activity_logs')->update(['hash' => null]);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+
+		$this->assertSame('rota', $resultado['estado']);
+		$this->assertSame($primero->id, $resultado['id_roto']);
 	}
 
 	public function test_borrar_usuario_conserva_la_auditoria_y_la_cadena_integra(): void
@@ -113,5 +132,29 @@ class SelladoAuditoriaTest extends TestCase
 
 		$resultado = app(SelladorAuditoria::class)->verificar();
 		$this->assertSame('integra', $resultado['estado']);
+	}
+
+	// La migracion 2026_09_23_000000 sella, en su propio up(), las filas que
+	// ya existian antes de agregar las columnas. RefreshDatabase migra sobre
+	// una base vacia, asi que no hay forma de ver ese paso actuar sobre filas
+	// reales dentro de una prueba normal: se invoca el metodo privado que usa
+	// el propio up() (via reflexion), simulando filas insertadas antes de la
+	// migracion, para probar la logica de sellado que realmente ejecuta.
+	public function test_migracion_sella_las_filas_preexistentes(): void
+	{
+		DB::table('activity_logs')->insert([
+			['action' => 'uno', 'description' => 'uno', 'created_at' => now(), 'updated_at' => now()],
+			['action' => 'dos', 'description' => 'dos', 'created_at' => now(), 'updated_at' => now()],
+		]);
+
+		$migracion = require database_path('migrations/2026_09_23_000000_add_integridad_to_activity_logs_table.php');
+		$metodo = new ReflectionMethod($migracion, 'sellar_filas_existentes');
+		$metodo->setAccessible(true);
+		$metodo->invoke($migracion);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+
+		$this->assertSame('integra', $resultado['estado']);
+		$this->assertSame(2, $resultado['revisados']);
 	}
 }

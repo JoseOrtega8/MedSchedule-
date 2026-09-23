@@ -7,7 +7,18 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 // Sella cada registro de auditoria con un HMAC encadenado al registro anterior.
-// Quien altere o borre una fila sin conocer la llave rompe la cadena.
+// Detecta alterar o borrar una fila intermedia sin conocer la llave.
+//
+// Limites conocidos (no detectables por verificar()):
+// - Borrar las ultimas N filas de la tabla: la cadena queda intacta hasta
+//   donde llega; no hay forma de saber que faltan filas al final.
+// - Quien conoce AUDIT_HMAC_KEY puede recalcular y reescribir toda la
+//   cadena de forma consistente; el sello protege contra quien NO tiene
+//   la llave, no contra quien la tiene.
+// - `id` y `updated_at` no forman parte del contenido sellado (canonico());
+//   cambiar solo esos campos no se detecta.
+// - Rotar AUDIT_HMAC_KEY invalida la cadena existente: hay que volver a
+//   sellar todo el historico con la llave nueva antes de rotarla en produccion.
 class SelladorAuditoria
 {
 	private static bool $aviso_llave_emitido = false;
@@ -29,23 +40,17 @@ class SelladorAuditoria
 		return hash_hmac('sha256', ($hash_anterior ?? '') . '|' . $this->canonico($log), $this->llave());
 	}
 
-	// Recorre la cadena completa y devuelve el primer eslabon roto
+	// Recorre la cadena completa y devuelve el primer eslabon roto.
+	// No existe el concepto de fila "historica sin sello": toda fila con
+	// hash nulo se considera rota (ver migracion 2026_09_23_000000, que
+	// sella las filas preexistentes al agregar estas columnas).
 	public function verificar(): array
 	{
 		$anterior = null;
-		$sellado_visto = false;
 		$revisados = 0;
-		$historicos = 0;
 
 		foreach (ActivityLog::query()->orderBy('id')->lazyById(500) as $log) {
 			$revisados++;
-
-			// Filas anteriores a la adopcion del sello: quedan fuera de la cadena
-			if ($log->hash === null && !$sellado_visto) {
-				$historicos++;
-				continue;
-			}
-			$sellado_visto = true;
 
 			$intacto = $log->hash !== null
 				&& $log->hash_anterior === $anterior
@@ -57,7 +62,6 @@ class SelladorAuditoria
 					'id_roto' => $log->id,
 					'fecha_rota' => $log->created_at?->toIso8601String(),
 					'revisados' => $revisados,
-					'sin_sellar_historicos' => $historicos,
 				];
 			}
 
@@ -69,7 +73,6 @@ class SelladorAuditoria
 			'id_roto' => null,
 			'fecha_rota' => null,
 			'revisados' => $revisados,
-			'sin_sellar_historicos' => $historicos,
 		];
 	}
 
@@ -99,7 +102,7 @@ class SelladorAuditoria
 		if (!is_array($valor)) {
 			return $valor;
 		}
-		ksort($valor);
+		ksort($valor, SORT_STRING);
 
 		return array_map(fn ($elemento) => $this->ordenar($elemento), $valor);
 	}

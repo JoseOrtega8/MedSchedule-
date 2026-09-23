@@ -48,11 +48,13 @@ class ActivityLog extends Model
 	}
 
 	// La insercion va en transaccion para que el bloqueo de la ultima fila
-	// serialice la cadena cuando dos cambios se auditan al mismo tiempo
+	// serialice la cadena cuando dos cambios se auditan al mismo tiempo.
+	// Reintenta hasta 3 veces si MySQL reporta un deadlock por la contencion
+	// del lockForUpdate() en SelladorAuditoria::sellar().
 	public function save(array $options = []): bool
 	{
 		if (!$this->exists) {
-			return DB::transaction(fn () => parent::save($options));
+			return DB::transaction(fn () => parent::save($options), 3);
 		}
 
 		return parent::save($options);
