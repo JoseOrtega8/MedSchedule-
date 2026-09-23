@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Observability\Trazas\Trazas;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
@@ -119,5 +120,9 @@ class TrazasServiceProvider extends ServiceProvider
 
 		Queue::after(fn (JobProcessed $evento) => $cerrar($evento));
 		Queue::failing(fn (JobFailed $evento) => $cerrar($evento, $evento->exception));
+		// Si al job le quedan reintentos, Laravel lo libera de vuelta a la cola sin
+		// disparar JobProcessed ni JobFailed: el guard evita el doble cierre cuando,
+		// en el ultimo intento, JobFailed ya cerro el mismo span antes que este evento.
+		Queue::exceptionOccurred(fn (JobExceptionOccurred $evento) => $cerrar($evento, $evento->exception));
 	}
 }

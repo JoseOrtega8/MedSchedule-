@@ -4,8 +4,12 @@ namespace Tests\Feature\Trazas;
 
 use App\Observability\Trazas\Trazas;
 use App\Models\User;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
+use Mockery;
 use RuntimeException;
 
 class SpansHijosTest extends TrazasTestCase
@@ -60,5 +64,25 @@ class SpansHijosTest extends TrazasTestCase
 
 		$span = $this->spans_que_empiezan_con('google_calendar.prueba')[0];
 		$this->assertSame('Error', $span->getStatus()->getCode());
+	}
+
+	// Simula el camino de Worker::handleJobException: al job le quedan intentos,
+	// Laravel dispara JobExceptionOccurred y lo libera de vuelta a la cola SIN
+	// disparar JobProcessed ni JobFailed. El span del job debe cerrarse igual.
+	public function test_reintento_de_job_cierra_su_span_via_exception_occurred(): void
+	{
+		$job = Mockery::mock(Job::class);
+		$job->shouldReceive('getJobId')->andReturn('job-de-prueba-1');
+		$job->shouldReceive('resolveName')->andReturn('App\\Jobs\\JobDePrueba');
+		$job->shouldReceive('getQueue')->andReturn('default');
+		$job->shouldReceive('payload')->andReturn([]);
+
+		event(new JobProcessing('sync', $job));
+		event(new JobExceptionOccurred('sync', $job, new RuntimeException('fallo con reintento pendiente')));
+
+		$spans = $this->spans_que_empiezan_con('job ');
+		$this->assertNotEmpty($spans, 'El span del job debio exportarse aunque el job se libere para reintento');
+		$this->assertSame('Error', $spans[0]->getStatus()->getCode());
+		$this->assertNull(app(Trazas::class)->trace_id_actual(), 'El scope del span del job debio liberarse');
 	}
 }
