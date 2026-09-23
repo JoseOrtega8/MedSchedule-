@@ -21,6 +21,12 @@ protected $fillable = [
 ];
 
 
+	// Datos clinicos en texto libre: la auditoria registra que cambio, nunca el valor
+	public function campos_protegidos_auditoria(): array
+	{
+		return ['reason', 'observaciones'];
+	}
+
 	public function patient()
 	{
 		return $this->belongsTo(User::class, 'patient_id');

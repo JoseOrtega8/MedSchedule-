@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auditoria;
 
 use App\Models\ActivityLog;
+use App\Models\Appointment;
 use App\Models\PatientProfile;
 use App\Models\Specialty;
 use App\Models\User;
@@ -77,5 +78,34 @@ class AuditableTest extends TestCase
 		$usuario->update(['remember_token' => 'otro-token-cualquiera']);
 
 		$this->assertSame($antes, ActivityLog::count());
+	}
+
+	public function test_motivo_y_observaciones_de_la_cita_se_registran_como_protegidos(): void
+	{
+		$especialidad = Specialty::create(['name' => 'Cardiologia']);
+		$paciente = User::factory()->create();
+		$doctor = User::factory()->create();
+
+		$cita = Appointment::create([
+			'patient_id' => $paciente->id,
+			'doctor_id' => $doctor->id,
+			'specialty_id' => $especialidad->id,
+			'appointment_date' => now()->toDateString(),
+			'start_time' => '10:00:00',
+			'end_time' => '10:30:00',
+			'status' => 'pending',
+			'reason' => 'dolor de pecho',
+		]);
+		$creado = $this->ultimo(Appointment::class, $cita->id);
+		$this->assertSame('[protegido]', $creado->new_values['reason']);
+
+		// observaciones no es asignable en masa: se llena como lo haria el doctor
+		$cita->forceFill(['reason' => 'dolor de pecho intenso', 'observaciones' => 'dolor de pecho con disnea'])->save();
+		$actualizado = $this->ultimo(Appointment::class, $cita->id);
+		$this->assertSame('[protegido]', $actualizado->old_values['reason']);
+		$this->assertSame('[protegido]', $actualizado->new_values['reason']);
+		$this->assertSame('[protegido]', $actualizado->new_values['observaciones']);
+
+		$this->assertStringNotContainsString('dolor de pecho', json_encode(ActivityLog::all()->toArray()));
 	}
 }
