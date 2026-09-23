@@ -13,7 +13,8 @@
 	<div class="card border-0 shadow-sm p-4 text-center" style="max-width: 480px;">
 		<h1 class="h4 mb-3">Ocurrió un error inesperado</h1>
 		<p class="text-muted mb-3">Ya quedó registrado. Si necesitas ayuda, comparte este folio con soporte.</p>
-		@php($folio = request()->attributes->get('trace_id'))
+		{{-- Con trazas apagadas no hay trace_id: se usa el request_id de respaldo --}}
+		@php($folio = request()->attributes->get('trace_id') ?? request()->attributes->get('request_id'))
 		<p class="fw-semibold mb-4">Folio: {{ $folio ?? 'no disponible' }}</p>
 		<a class="btn btn-primary" href="{{ url('/') }}">Volver al inicio</a>
 	</div>

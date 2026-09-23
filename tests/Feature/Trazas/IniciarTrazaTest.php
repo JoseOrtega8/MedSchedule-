@@ -51,4 +51,12 @@ class IniciarTrazaTest extends TrazasTestCase
 		$raiz = $this->spans_que_empiezan_con('GET ')[0];
 		$this->assertSame('_prueba/reset/{token}', $raiz->getAttributes()->get('url.template'));
 	}
+
+	// El scrape de Prometheus (cada 15 s) no se traza
+	public function test_scrape_de_metricas_no_produce_spans(): void
+	{
+		$this->withToken('token-solo-para-pruebas')->get('/metrics')->assertOk();
+
+		$this->assertCount(0, $this->exportador->getSpans());
+	}
 }

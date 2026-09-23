@@ -22,6 +22,14 @@ class IniciarTraza
 
 	public function handle(Request $request, Closure $next): Response
 	{
+		// El scrape de Prometheus (ruta 'metricas', cada 15 s) no se traza: solo
+		// generaria ruido y costo de exportacion. Conserva su request_id.
+		if ($request->is('metrics')) {
+			$request->attributes->set('request_id', (string) Str::uuid());
+
+			return $next($request);
+		}
+
 		// El traceparent entrante se acepta tal cual: un cliente puede fijar el
 		// trace_id o marcarlo como no muestreado. Aceptable en local; en
 		// produccion deberia validarse o reescribirse en el borde (proxy/WAF).
