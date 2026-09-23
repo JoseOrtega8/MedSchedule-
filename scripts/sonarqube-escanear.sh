@@ -37,7 +37,10 @@ if [ "$(uname -s)" = "Darwin" ]; then
     url_sonarqube="${SONAR_HOST_URL:-http://host.docker.internal:9000}"
 fi
 
-docker run --rm \
+# sonar.qualitygate.wait hace que el scanner espere el veredicto de la puerta
+# de calidad y termine con codigo distinto de cero si no se supera. Asi el
+# analisis funciona como compuerta del pipeline y no solo como reporte.
+if ! docker run --rm \
     "${argumentos_red[@]}" \
     -e SONAR_HOST_URL="${url_sonarqube}" \
     -e SONAR_TOKEN="${SONAR_TOKEN}" \
@@ -45,8 +48,15 @@ docker run --rm \
     sonarsource/sonar-scanner-cli \
     -Dsonar.projectKey="${clave_proyecto}" \
     -Dsonar.projectName="MedSchedule (${rama})" \
-    -Dsonar.scm.disabled="${SONAR_SCM:-true}"
+    -Dsonar.scm.disabled="${SONAR_SCM:-true}" \
+    -Dsonar.qualitygate.wait=true \
+    -Dsonar.qualitygate.timeout=300; then
+    echo "" >&2
+    echo "La puerta de calidad no se supero o el analisis fallo." >&2
+    echo "Detalle en http://localhost:9000/dashboard?id=${clave_proyecto}" >&2
+    exit 1
+fi
 
 echo ""
-echo "Analisis terminado."
+echo "Analisis terminado: puerta de calidad superada."
 echo "Resultados en http://localhost:9000/dashboard?id=${clave_proyecto}"

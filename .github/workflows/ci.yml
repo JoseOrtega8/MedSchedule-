@@ -109,6 +109,11 @@ jobs:
 
             - name: Analizar con SonarQube
               uses: SonarSource/sonarqube-scan-action@v5
+              with:
+                  # Espera el veredicto de la puerta de calidad y falla el job si no se supera
+                  args: >
+                      -Dsonar.qualitygate.wait=true
+                      -Dsonar.qualitygate.timeout=300
               env:
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
                   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
