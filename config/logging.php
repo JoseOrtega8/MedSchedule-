@@ -65,6 +65,22 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Logs estructurados para Loki (unidad 3): una linea JSON por registro,
+        // con contexto de traza y PII enmascarada
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => Monolog\Handler\StreamHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/medschedule.json'),
+            ],
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'processors' => [
+                App\Logging\AgregarContextoTraza::class,
+                App\Logging\RedactarDatosSensibles::class,
+            ],
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
