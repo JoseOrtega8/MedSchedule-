@@ -76,6 +76,44 @@ services:
             - '127.0.0.1:6380:6379'
         restart: unless-stopped
 
+    loki:
+        image: grafana/loki:3.7.8
+        command: ['-config.file=/etc/loki/loki.yml']
+        # Solo local: el volumen nombrado nace con duenio root y Loki corre como 10001
+        user: root
+        volumes:
+            - ./loki/loki.yml:/etc/loki/loki.yml:ro
+            - datos_loki:/loki
+        restart: unless-stopped
+
+    # Tempo 2.9.x: la rama 3.x cambio el formato de configuracion; se fija la 2.9
+    # por estabilidad de la configuracion de un solo binario
+    tempo:
+        image: grafana/tempo:2.9.5
+        command: ['-config.file=/etc/tempo/tempo.yml']
+        user: root
+        volumes:
+            - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+            - datos_tempo:/var/tempo
+        ports:
+            # La app, fuera de Docker, envia las trazas aqui
+            - '127.0.0.1:4318:4318'
+        restart: unless-stopped
+
+    alloy:
+        image: grafana/alloy:v1.19.2
+        command:
+            - run
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy/data
+            - /etc/alloy/config.alloy
+        volumes:
+            - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+            - ../../storage/logs:/logs:ro
+        restart: unless-stopped
+
 volumes:
     datos_prometheus:
     datos_grafana:
+    datos_loki:
+    datos_tempo:
