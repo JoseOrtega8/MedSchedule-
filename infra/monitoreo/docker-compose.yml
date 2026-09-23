@@ -1,0 +1,81 @@
+# Stack de monitoreo de MedSchedule (unidad 3). Se levanta con scripts/monitoreo-local.sh.
+# Todos los puertos se publican solo en 127.0.0.1: es un entorno local.
+name: medschedule-monitoreo
+
+services:
+    prometheus:
+        image: prom/prometheus:v3.14.0
+        command:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=15d
+            - --web.enable-lifecycle
+        volumes:
+            - ./prometheus:/etc/prometheus:ro
+            - datos_prometheus:/prometheus
+        ports:
+            - '127.0.0.1:9090:9090'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        restart: unless-stopped
+
+    alertmanager:
+        image: prom/alertmanager:v0.34.1
+        command:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+        volumes:
+            - ./alertmanager:/etc/alertmanager:ro
+        ports:
+            - '127.0.0.1:9093:9093'
+        restart: unless-stopped
+
+    # Buzon SMTP falso: evidencia visible de que la alerta llego, sin correo real
+    mailpit:
+        image: axllent/mailpit:v1.31.2
+        ports:
+            - '127.0.0.1:8025:8025'
+        restart: unless-stopped
+
+    grafana:
+        image: grafana/grafana:13.2.2
+        environment:
+            GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?falta GRAFANA_ADMIN_USER en infra/monitoreo/.env}
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?falta GRAFANA_ADMIN_PASSWORD en infra/monitoreo/.env}
+            GF_USERS_ALLOW_SIGN_UP: 'false'
+            # Lectura anonima solo en local, para capturas sin exponer credenciales
+            GF_AUTH_ANONYMOUS_ENABLED: 'true'
+            GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+        volumes:
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./grafana/dashboards:/etc/grafana/dashboards:ro
+            - datos_grafana:/var/lib/grafana
+        ports:
+            - '127.0.0.1:3000:3000'
+        restart: unless-stopped
+
+    blackbox-exporter:
+        image: prom/blackbox-exporter:v0.28.0
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        restart: unless-stopped
+
+    mysqld-exporter:
+        image: prom/mysqld-exporter:v0.20.0
+        command:
+            - --mysqld.address=${MYSQL_EXPORTER_HOST:-host.docker.internal:8889}
+            - --mysqld.username=exporter
+        environment:
+            MYSQLD_EXPORTER_PASSWORD: ${MYSQL_EXPORTER_PASSWORD:?falta MYSQL_EXPORTER_PASSWORD en infra/monitoreo/.env}
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        restart: unless-stopped
+
+    # Almacen compartido de las metricas de la app entre peticiones
+    redis:
+        image: redis:8.8.3-alpine
+        ports:
+            - '127.0.0.1:6380:6379'
+        restart: unless-stopped
+
+volumes:
+    datos_prometheus:
+    datos_grafana:

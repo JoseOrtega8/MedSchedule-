@@ -1,0 +1,30 @@
+{
+	"uid": "medschedule-base-de-datos",
+	"title": "MedSchedule - Base de datos",
+	"schemaVersion": 39,
+	"refresh": "15s",
+	"time": { "from": "now-1h", "to": "now" },
+	"panels": [
+		{
+			"type": "stat", "title": "MySQL disponible",
+			"gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [{ "refId": "A", "expr": "mysql_up" }]
+		},
+		{
+			"type": "timeseries", "title": "Conexiones activas",
+			"gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [{ "refId": "A", "expr": "mysql_global_status_threads_connected", "legendFormat": "conexiones" }]
+		},
+		{
+			"type": "timeseries", "title": "Consultas por segundo y consultas lentas",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [
+				{ "refId": "A", "expr": "rate(mysql_global_status_queries[5m])", "legendFormat": "consultas/s" },
+				{ "refId": "B", "expr": "rate(mysql_global_status_slow_queries[5m])", "legendFormat": "lentas/s" }
+			]
+		}
+	]
+}

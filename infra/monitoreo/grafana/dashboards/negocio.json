@@ -1,0 +1,31 @@
+{
+	"uid": "medschedule-negocio",
+	"title": "MedSchedule - Negocio",
+	"schemaVersion": 39,
+	"refresh": "30s",
+	"time": { "from": "now-24h", "to": "now" },
+	"panels": [
+		{
+			"type": "timeseries", "title": "Citas agendadas y canceladas por hora",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [
+				{ "refId": "A", "expr": "increase(medschedule_citas_agendadas_total[1h])", "legendFormat": "agendadas" },
+				{ "refId": "B", "expr": "increase(medschedule_citas_canceladas_total[1h])", "legendFormat": "canceladas" }
+			]
+		},
+		{
+			"type": "stat", "title": "Citas de hoy",
+			"gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [{ "refId": "A", "expr": "medschedule_citas_hoy" }]
+		},
+		{
+			"type": "stat", "title": "Jobs fallidos",
+			"gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+			"targets": [{ "refId": "A", "expr": "medschedule_jobs_fallidos" }]
+		}
+	]
+}
