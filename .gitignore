@@ -61,3 +61,13 @@ Thumbs.db
 # exporter de MySQL y el token de metricas que lee Prometheus.
 /infra/monitoreo/.env
 /infra/monitoreo/prometheus/secretos/
+
+# Regla global de seguridad del autor: variantes de .env (salvo las plantillas
+# .env.example), llaves y certificados, carpetas de secretos y respaldos SQL.
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+*.sql.gz
