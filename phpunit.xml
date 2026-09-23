@@ -33,5 +33,6 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="METRICAS_ALMACEN" value="memoria"/>
         <env name="METRICS_TOKEN" value="token-solo-para-pruebas"/>
+        <env name="OTEL_ENABLED" value="false"/>
     </php>
 </phpunit>
