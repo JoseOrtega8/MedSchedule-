@@ -37,9 +37,15 @@ class TrazasServiceProvider extends ServiceProvider
 				return new NoopTracerProvider();
 			}
 
+			// Tempo inalcanzable no debe frenar la peticion: con los valores por
+			// defecto (timeout 10 s, 3 reintentos) vaciar() bloqueaba ~40 s.
+			// Timeout de 1 s (segundos, se pasa al cliente HTTP) y sin reintentos:
+			// si falla, esos spans se pierden y solo queda el aviso en el log.
 			$transporte = (new OtlpHttpTransportFactory())->create(
 				rtrim((string) config('trazas.endpoint'), '/') . '/v1/traces',
-				'application/json'
+				'application/json',
+				timeout: 1.0,
+				maxRetries: 0,
 			);
 			$recurso = ResourceInfoFactory::emptyResource()->merge(
 				ResourceInfo::create(Attributes::create(['service.name' => config('trazas.servicio')]))
