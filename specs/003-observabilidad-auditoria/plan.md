@@ -141,6 +141,21 @@ feat/100-sonarqube (#104, U2)
 Los números R17–R20 se conocen al crear los issues. Cada PR lleva antes/después **de
 comportamiento** e imágenes renderizadas (`raw.githubusercontent.com`), nunca solo rutas.
 
+**Aislamiento entre PRs:** cada punto tiene su propio archivo de configuración
+(`config/metricas.php`, `config/trazas.php`, `config/auditoria.php`) y su propio service
+provider (`MetricasServiceProvider`, `TrazasServiceProvider`, `AuditoriaServiceProvider`), para
+que las ramas paralelas solo coincidan en líneas sueltas de `bootstrap/providers.php` y
+`phpunit.xml`. `/metrics` vive en `routes/observabilidad.php`, registrado con `then:` en
+`bootstrap/app.php` fuera del grupo `web` (Prometheus no necesita sesión ni cookies).
+
+**Versiones fijadas:** Prometheus v3.14.0, Alertmanager v0.34.1, Grafana 13.2.2, Loki 3.7.8,
+Tempo 2.9.5 (la rama 3.x cambió el formato de configuración; se fija la 2.9 por estabilidad),
+Alloy v1.19.2, blackbox-exporter v0.28.0, mysqld-exporter v0.20.0, Redis 8.8.3-alpine (puerto
+6380 en el host), Mailpit v1.31.2; `promphp/prometheus_client_php` 2.15.1 con adaptador `Predis`
+(no requiere la extensión phpredis), `open-telemetry/sdk` 1.15.0, `open-telemetry/exporter-otlp`
+1.4.0. Todos los puertos del stack se publican solo en `127.0.0.1`; Grafana permite lectura
+anónima en local para tomar capturas sin exponer credenciales.
+
 ### 1. Corrección de SonarQube
 
 - Apartado 00 del documento: "Dashboards de SonarQube (observación U2)" con capturas al inicio.
@@ -217,15 +232,24 @@ localizado.
 ### 4. Punto 3 — Auditoría
 
 **Datos:** migración nueva sobre `activity_logs`: `trace_id` (string 32, nullable),
-`hash_anterior` (char 64, nullable), `hash` (char 64); índices `(model_type, model_id)` y
-`trace_id`.
+`hash_anterior` (char 64, nullable), `hash` (char 64, nullable solo para filas históricas);
+índice `trace_id`. El índice `(model_type, model_id)` ya existe (`idx_model`, migración
+`2026_08_15_043158`). El `trace_id` se lee del atributo de la petición que deja `IniciarTraza`,
+así la auditoría no depende del código de trazas y su rama sale directo del PR general.
 
 **Captura:** trait `Auditable` en `Appointment`, `User`, `Specialty`, `Schedule`,
 `DoctorProfile`, `PatientProfile` (`creado`, `actualizado`, `eliminado`; solo campos cambiados;
-excluye `password` y `remember_token`; clínicos como `[protegido]`). Listeners de `Login`,
-`Logout`, `Failed` (correo enmascarado), `PasswordReset`; eventos de Spatie
-(`events_enabled => true`); accesos denegados 403 en rutas admin. Los tres `ActivityLog::create`
-existentes siguen funcionando porque el sello se calcula en el hook `creating`.
+excluye `remember_token` y marcas de tiempo; `password` y campos clínicos como `[protegido]`).
+Listeners de `Logout`, `Failed` (correo enmascarado), `PasswordReset`; eventos de Spatie
+(`events_enabled => true`); middleware `auditar.denegado` antes de `role:admin` para los 403.
+El inicio de sesión ya lo registra `AuthenticatedSessionController` (`login`), así que no se
+agrega listener de `Login` para no duplicarlo; ese `ActivityLog::create` sigue funcionando porque
+el sello se calcula en el hook `creating`.
+
+**Hallazgo al planear:** los dos `ActivityLog::create` de `PatientProfileController` guardan
+alergias, padecimientos, tipo de sangre y CURP **en claro** en `old_values`/`new_values`, lo que
+viola FR-016. Se eliminan: el trait registra esos mismos cambios con los valores protegidos.
+`FullDataSeeder` inserta auditoría con `DB::table()` (sin sello); pasa a usar el modelo.
 
 **Integridad:** `ActivityLog` lanza excepción en `update`/`delete`.
 `hash = HMAC-SHA256(hash_anterior || json_canonico(fila), AUDIT_HMAC_KEY)`; `json_canonico` con
