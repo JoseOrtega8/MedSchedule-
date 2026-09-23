@@ -4,6 +4,8 @@ namespace Tests\Unit\Logging;
 
 use App\Logging\RedactarDatosSensibles;
 use DateTimeImmutable;
+use Illuminate\Database\QueryException;
+use PDOException;
 use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\TestCase;
@@ -69,5 +71,41 @@ class RedactarDatosSensiblesTest extends TestCase
 		]));
 
 		$this->assertSame('contactar a [redactado]', $resultado->context['mensaje']);
+	}
+
+	public function test_enmascara_claves_que_contienen_token_por_subcadena(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([
+			'remember_token' => 'abc123',
+			'access_token' => 'def456',
+			'Refresh_Token' => 'ghi789',
+			'api_secret' => 'jkl000',
+			'nombre' => 'Ana',
+		]));
+
+		$this->assertSame('[redactado]', $resultado->context['remember_token']);
+		$this->assertSame('[redactado]', $resultado->context['access_token']);
+		$this->assertSame('[redactado]', $resultado->context['Refresh_Token']);
+		$this->assertSame('[redactado]', $resultado->context['api_secret']);
+		$this->assertSame('Ana', $resultado->context['nombre']);
+	}
+
+	public function test_query_exception_no_expone_los_valores_de_binding(): void
+	{
+		$excepcion = new QueryException(
+			'mysql',
+			'update patient_profiles set allergies = ? where id = ?',
+			['Penicilina-Grave', 77],
+			new PDOException('SQLSTATE[HY000]: fallo simulado')
+		);
+
+		$resultado = (new RedactarDatosSensibles())($this->registro(['exception' => $excepcion]));
+
+		$serializado = json_encode($resultado->context);
+		$this->assertStringNotContainsString('Penicilina-Grave', $serializado);
+		$this->assertSame(QueryException::class, $resultado->context['exception']['class']);
+		$this->assertSame('update patient_profiles set allergies = ? where id = ?', $resultado->context['exception']['message']);
+		$this->assertArrayHasKey('file', $resultado->context['exception']);
+		$this->assertArrayHasKey('line', $resultado->context['exception']);
 	}
 }

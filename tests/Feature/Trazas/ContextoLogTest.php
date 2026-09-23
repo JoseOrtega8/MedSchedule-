@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use Monolog\LogRecord;
+use RuntimeException;
 
 class ContextoLogTest extends TrazasTestCase
 {
@@ -54,6 +55,37 @@ class ContextoLogTest extends TrazasTestCase
 			$this->assertSame('[redactado]', $ultima['context']['password']);
 			$this->assertSame('[redactado]', $ultima['context']['email']);
 			$this->assertSame($span->getTraceId(), $ultima['extra']['trace_id']);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// La excepcion que Laravel pone en context['exception'] se serializa sin
+	// PII: solo clase, mensaje redactado, archivo y linea (sin trace)
+	public function test_canal_json_redacta_la_excepcion_del_contexto(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			Log::forgetChannel('json');
+
+			Log::channel('json')->error('fallo', [
+				'exception' => new RuntimeException('fallo para ana@example.com con alergia a penicilina'),
+			]);
+
+			$lineas = file($archivo);
+			$linea = end($lineas);
+			$ultima = json_decode($linea, true);
+
+			$this->assertStringNotContainsString('ana@example.com', $linea);
+			$this->assertSame(RuntimeException::class, $ultima['context']['exception']['class']);
+			$this->assertSame('fallo para [redactado] con alergia a penicilina', $ultima['context']['exception']['message']);
+			$this->assertSame(__FILE__, $ultima['context']['exception']['file']);
+			$this->assertIsInt($ultima['context']['exception']['line']);
+			$this->assertArrayNotHasKey('trace', $ultima['context']['exception']);
 		} finally {
 			if (file_exists($archivo)) {
 				unlink($archivo);

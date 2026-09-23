@@ -2,8 +2,10 @@
 
 namespace App\Logging;
 
+use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
+use Throwable;
 
 // Enmascara credenciales y PII medica antes de escribir cualquier log
 //
@@ -13,17 +15,20 @@ use Monolog\Processor\ProcessorInterface;
 // secretos en el mensaje: siempre deben pasarse en $context con su propia
 // clave (password, token, etc.), que SI se enmascara por nombre de clave
 // (ver self::CLAVES), sin importar el patron del valor.
+//
+// Las excepciones (Laravel las pone en context['exception']) se reducen a
+// clase, mensaje redactado, archivo y linea: nunca el trace con argumentos.
 class RedactarDatosSensibles implements ProcessorInterface
 {
 	public const MASCARA = '[redactado]';
 
-	// Comparacion en minusculas
+	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
+	// (asi 'remember_token', 'access_token', 'api_secret' o
+	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
 	public const CLAVES = [
-		'password', 'password_confirmation', 'current_password',
-		'token', '_token', 'authorization', 'cookie',
+		'token', 'password', 'secret', 'authorization', 'cookie',
 		'curp', 'email',
-		'allergies', 'chronic_conditions', 'blood_type',
-		'emergency_contact_name', 'emergency_contact_phone',
+		'allergies', 'chronic_conditions', 'blood_type', 'emergency_contact',
 	];
 
 	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
@@ -52,8 +57,10 @@ class RedactarDatosSensibles implements ProcessorInterface
 	private function redactar(array $datos): array
 	{
 		foreach ($datos as $clave => $valor) {
-			if (is_string($clave) && in_array(strtolower($clave), self::CLAVES, true)) {
+			if (is_string($clave) && $this->es_clave_sensible($clave)) {
 				$datos[$clave] = self::MASCARA;
+			} elseif ($valor instanceof Throwable) {
+				$datos[$clave] = $this->resumir_excepcion($valor);
 			} elseif (is_array($valor)) {
 				$datos[$clave] = $this->redactar($valor);
 			} elseif (is_string($valor)) {
@@ -62,6 +69,32 @@ class RedactarDatosSensibles implements ProcessorInterface
 		}
 
 		return $datos;
+	}
+
+	private function es_clave_sensible(string $clave): bool
+	{
+		$clave = strtolower($clave);
+		foreach (self::CLAVES as $subcadena) {
+			if (str_contains($clave, $subcadena)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// Reduce una excepcion a datos sin PII. De una QueryException se toma la
+	// sentencia SIN bindings (getSql), porque getMessage() los interpola.
+	private function resumir_excepcion(Throwable $excepcion): array
+	{
+		$mensaje = $excepcion instanceof QueryException ? $excepcion->getSql() : $excepcion->getMessage();
+
+		return [
+			'class' => $excepcion::class,
+			'message' => $this->redactar_texto($mensaje),
+			'file' => $excepcion->getFile(),
+			'line' => $excepcion->getLine(),
+		];
 	}
 
 	// Enmascara, dentro de un texto libre, cualquier coincidencia de los PATRONES
