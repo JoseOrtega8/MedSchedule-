@@ -70,7 +70,7 @@ de alerta; 4 dashboards de Grafana; 4 PRs (general + uno por punto).
 - **Principio IV (Validación de entrada)**: PASA. Filtros del visor de auditoría validados con
   FormRequest; token de métricas comparado con `hash_equals`.
 - **Principio V (Exposición de errores al cliente)**: PASA. La página de error 500 muestra solo
-  un folio (`trace_id`).
+  un folio (`trace_id`, o `request_id` si las trazas están apagadas).
 - **Principio VI (Spec-Driven Development)**: PASA. `spec.md` y este plan preceden al código;
   `tasks.md` se genera antes de implementar.
 - **Principio VII (Control de versiones)**: PASA. Una rama por issue (R17–R20), commits
@@ -96,24 +96,33 @@ docs/entrega-u3/         # Documento de entrega, evidencia/ y DOCX (gitignored)
 ```text
 app/
 ├── Console/Commands/
-│   ├── VerificarAuditoria.php          # auditoria:verificar
-│   └── SellarHistoricoAuditoria.php    # auditoria:sellar-historico
+│   └── VerificarAuditoria.php          # auditoria:verificar (diario)
+├── Exceptions/RegistroAuditoriaInmutable.php
 ├── Http/
 │   ├── Controllers/
 │   │   ├── MetricasController.php      # GET /metrics
 │   │   └── AuditoriaController.php     # /admin/auditoria
 │   ├── Middleware/
 │   │   ├── RegistrarMetricasHttp.php
-│   │   └── IniciarTraza.php
+│   │   ├── IniciarTraza.php
+│   │   └── AuditarAccesoDenegado.php   # alias auditar.denegado
 │   └── Requests/FiltrarAuditoriaRequest.php
-├── Listeners/Auditoria/                # sesión, roles, accesos denegados
+├── Listeners/Auditoria/                # sesión, roles y permisos
 ├── Logging/
 │   ├── AgregarContextoTraza.php
 │   └── RedactarDatosSensibles.php
 ├── Models/Concerns/Auditable.php
 ├── Observability/                      # proveedor de métricas y de trazas
-└── Services/SelladorAuditoria.php      # cadena HMAC
-database/migrations/xxxx_add_integridad_to_activity_logs_table.php
+├── Observers/ContadorCitasObserver.php # contadores de citas agendadas/canceladas
+├── Services/Auditoria/
+│   ├── SelladorAuditoria.php           # cadena HMAC
+│   └── RegistradorAuditoria.php        # punto único de escritura de auditoría
+└── Support/
+    ├── CsvSeguro.php                   # escape de fórmulas en la exportación
+    └── Enmascarar.php                  # correo enmascarado en login fallido
+database/migrations/
+├── 2026_09_23_000000_add_integridad_to_activity_logs_table.php
+└── 2026_09_23_000001_drop_user_fk_from_activity_logs_table.php
 resources/views/admin/auditoria/        # index, show, timeline
 infra/monitoreo/
 ├── docker-compose.yml
@@ -144,8 +153,8 @@ comportamiento** e imágenes renderizadas (`raw.githubusercontent.com`), nunca s
 **Aislamiento entre PRs:** cada punto tiene su propio archivo de configuración
 (`config/metricas.php`, `config/trazas.php`, `config/auditoria.php`) y su propio service
 provider (`MetricasServiceProvider`, `TrazasServiceProvider`, `AuditoriaServiceProvider`), para
-que las ramas paralelas solo coincidan en líneas sueltas de `bootstrap/providers.php` y
-`phpunit.xml`. `/metrics` vive en `routes/observabilidad.php`, registrado con `then:` en
+que las ramas paralelas coincidan en pocas líneas. En la práctica hubo tres conflictos reales,
+todos de líneas sueltas: `.env.example`, `bootstrap/providers.php` y `phpunit.xml`. `/metrics` vive en `routes/observabilidad.php`, registrado con `then:` en
 `bootstrap/app.php` fuera del grupo `web` (Prometheus no necesita sesión ni cookies).
 
 **Versiones fijadas:** Prometheus v3.14.0, Alertmanager v0.34.1, Grafana 13.2.2, Loki 3.7.8,
@@ -192,6 +201,9 @@ anónima en local para tomar capturas sin exponer credenciales.
 | `BaseDeDatosCaida` | `mysql_up == 0` por 1 min | crítica | Disponibilidad |
 | `JobsFallidos` | `medschedule_jobs_fallidos > 0` por 10 min | advertencia | Operación de colas |
 
+`alertas.test.yml` prueba cada regla en positivo y también casos negativos (bajo el umbral o por
+menos tiempo del `for`, la alerta no dispara).
+
 **Dashboards:** Servicio (RED + SLO + disponibilidad + alertas), Negocio (citas, jobs), Base de
 datos.
 
@@ -206,18 +218,31 @@ Mailpit.
 **Stack** (mismo compose): `loki` (7 días), `tempo` (OTLP/HTTP 4318, 48 h), `alloy` (lee
 `storage/logs/medschedule.json` y envía a Loki).
 
-**Logs:** canal `json` (Monolog `JsonFormatter`) agregado al `stack`, conservando `laravel.log`.
-Processors `AgregarContextoTraza` (`trace_id`, `span_id`, `request_id`, `user_id`, `route`,
-`method`) y `RedactarDatosSensibles` (`password`, `password_confirmation`, `token`,
-`authorization`, `cookie`, `curp`, `email`, campos clínicos; a cualquier profundidad).
+**Logs:** canal `json` (Monolog `JsonFormatter`) agregado al `stack` (`LOG_STACK=single,json`),
+conservando `laravel.log`. Driver `monolog` con `StreamHandler` (`handler_with.stream`): el driver
+`single` ignora `processors` en Laravel 12.53. Processors `AgregarContextoTraza` (`trace_id`,
+`span_id`, `request_id`, `user_id`, `route`, `method`) y `RedactarDatosSensibles`, que enmascara a
+cualquier profundidad: claves por subcadena sin distinguir mayúsculas (`token`, `password`,
+`secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`);
+patrones dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones
+del contexto, reducidas a clase, mensaje redactado (de `QueryException`, la sentencia sin
+bindings), archivo y línea, sin trace. Límite documentado: una contraseña escrita en texto libre
+sin clave propia no se detecta; la regla es pasar secretos en `$context` con su clave.
 
 **Trazas:** middleware `IniciarTraza` (span raíz `SERVER`, respeta `traceparent`, cabecera
-`X-Trace-Id`, estado de error en 5xx). Spans hijos: SQL vía `DB::listen` (sentencia sin
-bindings, inicio calculado por duración), jobs (`JobProcessing`/`JobProcessed`), HTTP saliente a
-Google Calendar. `BatchSpanProcessor` con flush en `terminate()`. `.env`: `OTEL_ENABLED`
-(default `false`), `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_TRACES_SAMPLER_ARG` (default `1.0`),
-`OTEL_SERVICE_NAME=medschedule`. Fallo del exportador: warning, sin afectar la petición. Vista 500
-con "Folio: `<trace_id>`".
+`X-Trace-Id`, estado de error en 5xx). El span guarda `url.template` (plantilla de la ruta, p. ej.
+`reset-password/{token}`), nunca la ruta real, que puede llevar tokens. `/metrics` no se traza (el
+scrape de Prometheus cada 15 s). El `traceparent` entrante se acepta tal cual (un cliente puede
+fijar el `trace_id` o marcarlo no muestreado): aceptable en local; en producción debe validarse en
+el borde. Spans hijos: SQL vía `DB::listen` (sentencia sin bindings, inicio calculado por
+duración), jobs (abre en `JobProcessing`; cierra en `JobProcessed`, `JobFailed` o
+`JobExceptionOccurred`, este último cuando al job le quedan reintentos), HTTP saliente a Google
+Calendar. `BatchSpanProcessor` con flush en `terminate()`; transporte OTLP con timeout de 1 s y
+sin reintentos (con los valores por defecto un Tempo inalcanzable bloqueaba ~40 s). `.env`:
+`OTEL_ENABLED` (default `false`), `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_TRACES_SAMPLER_ARG`
+(default `1.0`), `OTEL_SERVICE_NAME=medschedule`. Fallo del exportador: warning, sin afectar la
+petición. Vista 500 con "Folio: `<trace_id>`"; con las trazas apagadas, el folio de respaldo es
+el `request_id`.
 
 **Correlación:** derived field de Loki (`trace_id` → Tempo) y `tracesToLogs` de Tempo. Dashboard
 Trazabilidad: logs filtrables, trazas más lentas, errores recientes con enlace.
@@ -232,19 +257,26 @@ localizado.
 ### 4. Punto 3 — Auditoría
 
 **Datos:** migración nueva sobre `activity_logs`: `trace_id` (string 32, nullable),
-`hash_anterior` (char 64, nullable), `hash` (char 64, nullable solo para filas históricas);
-índice `trace_id`. El índice `(model_type, model_id)` ya existe (`idx_model`, migración
+`hash_anterior` (char 64, nullable), `hash` (char 64, nullable solo para poder agregar la columna:
+la misma migración sella todas las filas existentes en orden de id, así que después de migrar
+toda fila con `hash` NULL cuenta como rota); índice `trace_id`. Segunda migración
+(`2026_09_23_000001`): se elimina la FK de `activity_logs.user_id` (su `ON DELETE SET NULL`
+alteraba filas selladas al borrar un usuario) y se conserva su índice; restaurarla en el
+rollback falla si ya hay `user_id` huérfanos. El índice `(model_type, model_id)` ya existe (`idx_model`, migración
 `2026_08_15_043158`). El `trace_id` se lee del atributo de la petición que deja `IniciarTraza`,
 así la auditoría no depende del código de trazas y su rama sale directo del PR general.
 
 **Captura:** trait `Auditable` en `Appointment`, `User`, `Specialty`, `Schedule`,
 `DoctorProfile`, `PatientProfile` (`creado`, `actualizado`, `eliminado`; solo campos cambiados;
-excluye `remember_token` y marcas de tiempo; `password` y campos clínicos como `[protegido]`).
+excluye `remember_token` y marcas de tiempo; `password` y campos clínicos como `[protegido]`,
+incluidos `reason` y `observaciones` de `Appointment`, texto clínico libre).
 Listeners de `Logout`, `Failed` (correo enmascarado), `PasswordReset`; eventos de Spatie
 (`events_enabled => true`); middleware `auditar.denegado` antes de `role:admin` para los 403.
-El inicio de sesión ya lo registra `AuthenticatedSessionController` (`login`), así que no se
-agrega listener de `Login` para no duplicarlo; ese `ActivityLog::create` sigue funcionando porque
-el sello se calcula en el hook `creating`.
+El `logout` lo registra solo el listener: se quitó el `ActivityLog::create` de
+`AuthenticatedSessionController@destroy`, que duplicaba la fila. El inicio de sesión ya lo
+registra `AuthenticatedSessionController` (`login`), así que no se agrega listener de `Login` para
+no duplicarlo; ese `ActivityLog::create` sigue funcionando porque el sello se calcula en el hook
+`creating`.
 
 **Hallazgo al planear:** los dos `ActivityLog::create` de `PatientProfileController` guardan
 alergias, padecimientos, tipo de sangre y CURP **en claro** en `old_values`/`new_values`, lo que
@@ -253,19 +285,30 @@ viola FR-016. Se eliminan: el trait registra esos mismos cambios con los valores
 
 **Integridad:** `ActivityLog` lanza excepción en `update`/`delete`.
 `hash = HMAC-SHA256(hash_anterior || json_canonico(fila), AUDIT_HMAC_KEY)`; `json_canonico` con
-claves ordenadas, sin espacios y fechas ISO 8601 UTC; cálculo en transacción con
-`lockForUpdate` sobre la última fila. Sin `AUDIT_HMAC_KEY` la app no arranca en producción.
-Comandos `auditoria:verificar` (por lotes, código de salida ≠ 0 si hay ruptura, programado
-diario) y `auditoria:sellar-historico` (una sola vez para filas previas).
+claves ordenadas (`ksort(..., SORT_STRING)`), sin espacios y fechas ISO 8601 UTC; cálculo en
+`DB::transaction(..., 3)` (reintenta ante deadlock) con `lockForUpdate` sobre la última fila. Sin
+`AUDIT_HMAC_KEY` la app no arranca en producción. Comando `auditoria:verificar` (por lotes, código
+de salida ≠ 0 si hay ruptura, programado diario; requiere el cron `schedule:run`). No hay comando
+de sellado histórico: lo hace la migración.
 
-**Visor `/admin/auditoria`:** `auth` + `role:admin` + `throttle`; filtros usuario, acción,
-entidad, fechas, IP (FormRequest); paginación en servidor; diff lado a lado; línea de tiempo por
-entidad; enlace a traza; indicador de integridad; exportación CSV en streaming con escape de
-`= + - @`, tabulador y retorno de carro, exportación auditada.
+Límites no detectables (documentados en `SelladorAuditoria` y en el documento 07): borrar las
+últimas filas de la tabla (borrado de cola); quien posee `AUDIT_HMAC_KEY` puede recalcular toda
+la cadena; `id` y `updated_at` no forman parte del contenido canónico; rotar la llave obliga a
+resellar el histórico; la migración que sella debe correr en modo mantenimiento para que nadie
+inserte auditoría a mitad del sellado.
 
-**Pruebas:** diff correcto por modelo; sin `password` y clínicos `[protegido]`; excepción en
-`update`/`delete`; alteración por SQL detectada en el id exacto; 403 a no admin; validación de
-filtros; CSV escapado y exportación auditada.
+**Visor `/admin/auditoria`:** middleware del grupo admin en este orden: `auth`,
+`throttle:60,1`, `auditar.denegado`, `role:admin` (el límite de tasa corta antes de escribir
+auditoría de accesos denegados); filtros usuario, acción, entidad, fechas, IP (FormRequest);
+paginación en servidor; diff lado a lado; línea de tiempo por entidad (`id` restringido a
+`[0-9]{1,18}` para evitar el desbordamiento a 500); enlace a traza; indicador de integridad;
+exportación CSV en streaming con escape de `= + - @`, tabulador y retorno de carro, `fputcsv` con
+escape `''` (sin barra invertida), `try/catch` dentro del stream y exportación auditada.
+
+**Pruebas:** diff correcto por modelo; sin `password` y clínicos `[protegido]` (incluido el motivo
+de la cita); excepción en `update`/`delete`; alteración por SQL detectada en el id exacto; fila sin
+sello y anulado masivo de hashes detectados como rotos; 403 a no admin y 404 para ids inválidos;
+validación de filtros; CSV escapado y exportación auditada.
 
 **Evidencia:** antes, cambio de cita sin rastro y alteración de `activity_logs` inadvertida;
 después, diff con quién/qué/cuándo/IP e indicador rojo señalando el registro alterado.

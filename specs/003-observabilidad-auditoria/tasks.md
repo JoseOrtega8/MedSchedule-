@@ -23,6 +23,29 @@ description: "Lista de tareas de implementación de observabilidad y auditoría"
 
 **Organization**: Tareas agrupadas por User Story (US1 SonarQube, US2 monitoreo, US3 trazabilidad, US4 auditoría) y por la rama/PR en que se entregan.
 
+## Cambios respecto al plan original
+
+Este archivo describe lo que realmente se implementó. Decisiones que cambiaron durante la implementación y las revisiones:
+
+- **T007**: `alertas.test.yml` incluye casos negativos (la alerta NO dispara bajo el umbral) además de los positivos.
+- **T010**: el span raíz guarda `url.template` (plantilla de la ruta) en lugar de `url.path`: la ruta real podía llevar tokens (`reset-password/{token}`, `verify-email/{id}/{hash}`).
+- **T010**: el exportador OTLP usa timeout de 1 s y sin reintentos: con los valores por defecto un Tempo inalcanzable bloqueaba ~40 s cada petición.
+- **T010**: `/metrics` no se traza (el scrape de Prometheus cada 15 s solo generaba ruido); el `traceparent` entrante se acepta tal cual, válido en local y a validar en el borde en producción.
+- **T011**: el span del job se cierra también en `JobExceptionOccurred`: si al job le quedan reintentos, Laravel no dispara `JobProcessed` ni `JobFailed` y el span quedaba abierto.
+- **T012**: el canal `json` usa driver `monolog` + `StreamHandler`: el driver `single` ignora `processors` en Laravel 12.53 y los logs salían sin redactar ni contexto de traza.
+- **T012**: la redacción se amplió a `PATRONES` en el texto (correo, `Bearer`/`Basic`, CURP), a excepciones del contexto (clase, mensaje redactado, archivo y línea; `QueryException` sin bindings) y a claves por subcadena (`remember_token`, `access_token`, `api_secret`…).
+- **T013**: el folio usa el `request_id` como respaldo cuando las trazas están apagadas (antes decía "no disponible").
+- **T016**: no existe el concepto de fila histórica sin sello: la migración sella las filas existentes y `verificar()` trata como rota cualquier fila con `hash` nulo (se quitó `sin_sellar_historicos`).
+- **T016**: se quitó la FK `activity_logs.user_id` (conservando el índice): su `ON DELETE SET NULL` alteraba filas selladas al borrar un usuario.
+- **T016**: `DB::transaction(..., 3)` reintenta ante deadlocks del `lockForUpdate`; el JSON canónico ordena claves con `ksort(SORT_STRING)`.
+- **T017**: `Appointment` protege `reason` y `observaciones` (texto clínico libre) como `[protegido]`.
+- **T018**: el `logout` lo registra solo el listener; se quitó el `ActivityLog::create` de `AuthenticatedSessionController@destroy`, que duplicaba la fila.
+- **T018/T020**: orden del grupo admin `auth`, `throttle:60,1`, `auditar.denegado`, `role:admin`: el límite de tasa corta antes de escribir auditoría de accesos denegados.
+- **T019**: sin comando `auditoria:sellar-historico` (lo cubre la migración); el comando de verificación informa "Registros revisados".
+- **T020**: `fputcsv` con escape `''`, `try/catch` en el stream de exportación, `id` de la línea de tiempo con `[0-9]{1,18}` (evita el desbordamiento a 500) y pruebas 404/403.
+- **T021**: sin sellado histórico; `migrate` sella la fila alterada del "antes", hay que alterarla de nuevo después; `AUDIT_HMAC_KEY` antes de migrar, modo mantenimiento, no alternar ramas sobre la misma base.
+- **T022**: el documento recoge File sharing de Docker Desktop, `LOG_STACK=single,json`, los límites completos de la auditoría y la condición `SONAR_HABILITADO` con el `|| true` heredado del CI.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Puede ejecutarse en paralelo (archivos distintos, sin dependencias)
@@ -46,7 +69,7 @@ description: "Lista de tareas de implementación de observabilidad y auditoría"
 ## Entorno de pruebas (no obvio)
 
 - Las pruebas corren contra **MySQL de MAMP en el puerto 8889**, base `medschedule_test` (lo fuerza `phpunit.xml`). Arrancar MySQL: `/Applications/MAMP/bin/startMysql.sh`.
-- El usuario exporta en su sesión la contraseña de MySQL de MAMP como `MAMP_DB_PASSWORD` (no se escribe en ningún archivo).
+- `DB_PASSWORD` se define **solo en el shell** (MAMP local): el usuario exporta en su sesión la contraseña de MySQL de MAMP como `MAMP_DB_PASSWORD` y la función de abajo la pasa como `DB_PASSWORD`. Nunca se escribe en `phpunit.xml`, `.env.example` ni en ningún otro archivo versionado.
 - Función de apoyo, definida una vez por sesión de shell:
 
 ```bash
@@ -1013,6 +1036,51 @@ tests:
                   exp_annotations:
                       summary: 'Hay jobs fallidos'
                       description: 'La tabla failed_jobs tiene registros desde hace mas de 10 minutos.'
+          - eval_time: 6m
+            alertname: JobsFallidos
+            exp_alerts: []
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_http_requests_total{method="GET",route="login",status="500"}'
+            values: '0+5x10'
+          - series: 'medschedule_http_requests_total{method="GET",route="login",status="200"}'
+            values: '0+995x10'
+      alert_rule_test:
+          - eval_time: 8m
+            alertname: TasaErrores5xxAlta
+            exp_alerts: []
+
+    - interval: 1m
+      input_series:
+          - series: 'mysql_up{job="mysql",instance="mysqld-exporter:9104"}'
+            values: '1 0 0 0'
+      alert_rule_test:
+          - eval_time: 1m
+            alertname: BaseDeDatosCaida
+            exp_alerts: []
+
+    - interval: 1m
+      input_series:
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="0.5"}'
+            values: '0+10x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="2.5"}'
+            values: '0+80x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="5"}'
+            values: '0+96x20'
+          - series: 'medschedule_http_request_duration_seconds_bucket{method="GET",route="login",le="+Inf"}'
+            values: '0+100x20'
+      alert_rule_test:
+          - eval_time: 15m
+            alertname: LatenciaP95Degradada
+            exp_alerts:
+                - exp_labels: { severidad: advertencia }
+                  exp_annotations:
+                      summary: 'p95 degradado por encima de 500 ms'
+                      description: 'El percentil 95 supera 500 ms durante 10 minutos; todavia dentro del acuerdo.'
+          - eval_time: 15m
+            alertname: LatenciaP95FueraDeAcuerdo
+            exp_alerts: []
 ```
 
 - [ ] **Paso 2: Correr las pruebas y verificar que fallan**
@@ -1730,6 +1798,7 @@ abstract class TrazasTestCase extends TestCase
 namespace Tests\Feature\Trazas;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 
 class IniciarTrazaTest extends TrazasTestCase
 {
@@ -1757,6 +1826,33 @@ class IniciarTrazaTest extends TrazasTestCase
 		$respuesta = $this->withHeader('traceparent', "00-{$padre}-00f067aa0ba902b7-01")->get(route('login'));
 
 		$this->assertSame($padre, $respuesta->headers->get('X-Trace-Id'));
+	}
+
+	// La ruta real puede llevar tokens (reset-password/{token}); solo se guarda la plantilla
+	public function test_ningun_span_guarda_la_ruta_real_con_tokens(): void
+	{
+		Route::middleware('web')->get('/_prueba/reset/{token}', fn () => 'ok');
+
+		$this->get('/_prueba/reset/TOKEN-SECRETO-123')->assertOk();
+
+		$spans = $this->exportador->getSpans();
+		$this->assertNotEmpty($spans);
+		foreach ($spans as $span) {
+			$this->assertStringNotContainsString('TOKEN-SECRETO-123', $span->getName());
+			foreach ($span->getAttributes()->toArray() as $valor) {
+				$this->assertStringNotContainsString('TOKEN-SECRETO-123', (string) $valor);
+			}
+		}
+		$raiz = $this->spans_que_empiezan_con('GET ')[0];
+		$this->assertSame('_prueba/reset/{token}', $raiz->getAttributes()->get('url.template'));
+	}
+
+	// El scrape de Prometheus (cada 15 s) no se traza
+	public function test_scrape_de_metricas_no_produce_spans(): void
+	{
+		$this->withToken('token-solo-para-pruebas')->get('/metrics')->assertOk();
+
+		$this->assertCount(0, $this->exportador->getSpans());
 	}
 }
 ```
@@ -1878,6 +1974,18 @@ class IniciarTraza
 
 	public function handle(Request $request, Closure $next): Response
 	{
+		// El scrape de Prometheus (ruta 'metricas', cada 15 s) no se traza: solo
+		// generaria ruido y costo de exportacion. Conserva su request_id.
+		if ($request->is('metrics')) {
+			$request->attributes->set('request_id', (string) Str::uuid());
+
+			return $next($request);
+		}
+
+		// El traceparent entrante se acepta tal cual: un cliente puede fijar el
+		// trace_id o marcarlo como no muestreado. Aceptable en local; en
+		// produccion deberia validarse o reescribirse en el borde (proxy/WAF).
+
 		// Las cabeceras llegan como arreglos; el propagador espera cadenas
 		$cabeceras = array_map(
 			fn ($valor) => is_array($valor) ? implode(',', $valor) : $valor,
@@ -1890,7 +1998,6 @@ class IniciarTraza
 			->setParent($contexto_padre)
 			->setSpanKind(SpanKind::KIND_SERVER)
 			->setAttribute('http.request.method', $request->method())
-			->setAttribute('url.path', '/' . ltrim($request->path(), '/'))
 			->startSpan();
 		$alcance = $span->activate();
 
@@ -1904,6 +2011,11 @@ class IniciarTraza
 			$ruta = $request->route();
 			$span->updateName($request->method() . ' /' . ltrim($ruta?->uri() ?? 'sin_ruta', '/'));
 			$span->setAttribute('http.route', $ruta?->getName() ?? $ruta?->uri() ?? 'sin_ruta');
+			// Solo la plantilla (reset-password/{token}), nunca la ruta real:
+			// la ruta real puede llevar tokens o firmas en sus parametros
+			if ($ruta) {
+				$span->setAttribute('url.template', $ruta->uri());
+			}
 			$span->setAttribute('http.response.status_code', $respuesta->getStatusCode());
 			if ($request->user()) {
 				$span->setAttribute('enduser.id', (string) $request->user()->getAuthIdentifier());
@@ -1966,9 +2078,15 @@ class TrazasServiceProvider extends ServiceProvider
 				return new NoopTracerProvider();
 			}
 
+			// Tempo inalcanzable no debe frenar la peticion: con los valores por
+			// defecto (timeout 10 s, 3 reintentos) vaciar() bloqueaba ~40 s.
+			// Timeout de 1 s (segundos, se pasa al cliente HTTP) y sin reintentos:
+			// si falla, esos spans se pierden y solo queda el aviso en el log.
 			$transporte = (new OtlpHttpTransportFactory())->create(
 				rtrim((string) config('trazas.endpoint'), '/') . '/v1/traces',
-				'application/json'
+				'application/json',
+				timeout: 1.0,
+				maxRetries: 0,
 			);
 			$recurso = ResourceInfoFactory::emptyResource()->merge(
 				ResourceInfo::create(Attributes::create(['service.name' => config('trazas.servicio')]))
@@ -1998,7 +2116,9 @@ class TrazasServiceProvider extends ServiceProvider
 - [ ] **Paso 9: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="IniciarTrazaTest|Metricas"`
-Expected: PASS (las 2 de trazas y las 6 de métricas).
+Expected: PASS (las 4 de trazas y las de métricas). El span guarda `url.template` (la plantilla de la ruta, p. ej. `reset-password/{token}`) y nunca la ruta real; `/metrics` no abre span.
+
+Comprobación manual del timeout del exportador (no hay prueba automática sin red): con `OTEL_ENABLED=true` y `OTEL_EXPORTER_OTLP_ENDPOINT=http://10.255.255.1:4318` (IP no enrutable), medir una llamada a `app(Trazas::class)->vaciar()` después de crear un span. Expected: ≲ 2 s (con los valores por defecto del SDK tardaba ~40 s).
 
 - [ ] **Paso 10: Commit**
 
@@ -2029,8 +2149,12 @@ namespace Tests\Feature\Trazas;
 
 use App\Observability\Trazas\Trazas;
 use App\Models\User;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
+use Mockery;
 use RuntimeException;
 
 class SpansHijosTest extends TrazasTestCase
@@ -2086,13 +2210,33 @@ class SpansHijosTest extends TrazasTestCase
 		$span = $this->spans_que_empiezan_con('google_calendar.prueba')[0];
 		$this->assertSame('Error', $span->getStatus()->getCode());
 	}
+
+	// Simula el camino de Worker::handleJobException: al job le quedan intentos,
+	// Laravel dispara JobExceptionOccurred y lo libera de vuelta a la cola SIN
+	// disparar JobProcessed ni JobFailed. El span del job debe cerrarse igual.
+	public function test_reintento_de_job_cierra_su_span_via_exception_occurred(): void
+	{
+		$job = Mockery::mock(Job::class);
+		$job->shouldReceive('getJobId')->andReturn('job-de-prueba-1');
+		$job->shouldReceive('resolveName')->andReturn('App\\Jobs\\JobDePrueba');
+		$job->shouldReceive('getQueue')->andReturn('default');
+		$job->shouldReceive('payload')->andReturn([]);
+
+		event(new JobProcessing('sync', $job));
+		event(new JobExceptionOccurred('sync', $job, new RuntimeException('fallo con reintento pendiente')));
+
+		$spans = $this->spans_que_empiezan_con('job ');
+		$this->assertNotEmpty($spans, 'El span del job debio exportarse aunque el job se libere para reintento');
+		$this->assertSame('Error', $spans[0]->getStatus()->getCode());
+		$this->assertNull(app(Trazas::class)->trace_id_actual(), 'El scope del span del job debio liberarse');
+	}
 }
 ```
 
 - [ ] **Paso 2: Correr la prueba y verificar que falla**
 
 Run: `pruebas --filter=SpansHijosTest`
-Expected: FAIL en las dos primeras (no hay spans `db.query` ni `job `); la tercera ya pasa.
+Expected: FAIL en la de consultas, la de job y la de reintento (no hay spans `db.query` ni `job `); la de `en_span` ya pasa.
 
 - [ ] **Paso 3: Registrar consultas y jobs en el provider**
 
@@ -2164,6 +2308,10 @@ Agregar a `TrazasServiceProvider`:
 
 		\Illuminate\Support\Facades\Queue::after(fn (\Illuminate\Queue\Events\JobProcessed $evento) => $cerrar($evento));
 		\Illuminate\Support\Facades\Queue::failing(fn (\Illuminate\Queue\Events\JobFailed $evento) => $cerrar($evento, $evento->exception));
+		// Si al job le quedan reintentos, Laravel lo libera de vuelta a la cola sin
+		// disparar JobProcessed ni JobFailed: el guard evita el doble cierre cuando,
+		// en el ultimo intento, JobFailed ya cerro el mismo span antes que este evento.
+		\Illuminate\Support\Facades\Queue::exceptionOccurred(fn (\Illuminate\Queue\Events\JobExceptionOccurred $evento) => $cerrar($evento, $evento->exception));
 	}
 ```
 
@@ -2191,7 +2339,7 @@ Expected: mismo resultado que en la línea base de T002.
 - [ ] **Paso 5: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="SpansHijosTest|IniciarTrazaTest"`
-Expected: PASS (5 pruebas). Si `getStatus()->getCode()` devuelve la constante en otro formato, comparar con `\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR`.
+Expected: PASS (8 pruebas). El span del job se cierra en `JobProcessed`, `JobFailed` y `JobExceptionOccurred` (reintento pendiente). Si `getStatus()->getCode()` devuelve la constante en otro formato, comparar con `\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR`.
 
 - [ ] **Paso 6: Commit**
 
@@ -2223,15 +2371,17 @@ namespace Tests\Unit\Logging;
 
 use App\Logging\RedactarDatosSensibles;
 use DateTimeImmutable;
+use Illuminate\Database\QueryException;
+use PDOException;
 use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\TestCase;
 
 class RedactarDatosSensiblesTest extends TestCase
 {
-	private function registro(array $contexto): LogRecord
+	private function registro(array $contexto, string $mensaje = 'mensaje'): LogRecord
 	{
-		return new LogRecord(new DateTimeImmutable(), 'pruebas', Level::Info, 'mensaje', $contexto);
+		return new LogRecord(new DateTimeImmutable(), 'pruebas', Level::Info, $mensaje, $contexto);
 	}
 
 	public function test_enmascara_claves_sensibles_a_cualquier_profundidad(): void
@@ -2252,6 +2402,79 @@ class RedactarDatosSensiblesTest extends TestCase
 		$this->assertSame('[redactado]', $resultado->context['paciente']['allergies']);
 		$this->assertSame('Ana', $resultado->context['paciente']['nombre']);
 	}
+
+	public function test_enmascara_correo_dentro_del_mensaje(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([], 'reset para ana@ejemplo.com'));
+
+		$this->assertSame('reset para [redactado]', $resultado->message);
+	}
+
+	public function test_enmascara_credencial_bearer_dentro_del_mensaje(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([], 'token invalido Bearer abc.def'));
+
+		$this->assertSame('token invalido [redactado]', $resultado->message);
+	}
+
+	public function test_enmascara_curp_dentro_del_mensaje(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([], 'paciente CURP XXXX000000HSRXXX00 actualizado'));
+
+		$this->assertSame('paciente CURP [redactado] actualizado', $resultado->message);
+	}
+
+	public function test_no_modifica_texto_sin_pii(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([], 'cita confirmada correctamente'));
+
+		$this->assertSame('cita confirmada correctamente', $resultado->message);
+	}
+
+	public function test_enmascara_correo_en_valor_de_context_con_clave_no_sensible(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([
+			'mensaje' => 'contactar a ana@ejemplo.com',
+		]));
+
+		$this->assertSame('contactar a [redactado]', $resultado->context['mensaje']);
+	}
+
+	public function test_enmascara_claves_que_contienen_token_por_subcadena(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([
+			'remember_token' => 'abc123',
+			'access_token' => 'def456',
+			'Refresh_Token' => 'ghi789',
+			'api_secret' => 'jkl000',
+			'nombre' => 'Ana',
+		]));
+
+		$this->assertSame('[redactado]', $resultado->context['remember_token']);
+		$this->assertSame('[redactado]', $resultado->context['access_token']);
+		$this->assertSame('[redactado]', $resultado->context['Refresh_Token']);
+		$this->assertSame('[redactado]', $resultado->context['api_secret']);
+		$this->assertSame('Ana', $resultado->context['nombre']);
+	}
+
+	public function test_query_exception_no_expone_los_valores_de_binding(): void
+	{
+		$excepcion = new QueryException(
+			'mysql',
+			'update patient_profiles set allergies = ? where id = ?',
+			['Penicilina-Grave', 77],
+			new PDOException('SQLSTATE[HY000]: fallo simulado')
+		);
+
+		$resultado = (new RedactarDatosSensibles())($this->registro(['exception' => $excepcion]));
+
+		$serializado = json_encode($resultado->context);
+		$this->assertStringNotContainsString('Penicilina-Grave', $serializado);
+		$this->assertSame(QueryException::class, $resultado->context['exception']['class']);
+		$this->assertSame('update patient_profiles set allergies = ? where id = ?', $resultado->context['exception']['message']);
+		$this->assertArrayHasKey('file', $resultado->context['exception']);
+		$this->assertArrayHasKey('line', $resultado->context['exception']);
+	}
 }
 ```
 
@@ -2265,8 +2488,10 @@ namespace Tests\Feature\Trazas;
 use App\Logging\AgregarContextoTraza;
 use App\Observability\Trazas\Trazas;
 use DateTimeImmutable;
+use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use Monolog\LogRecord;
+use RuntimeException;
 
 class ContextoLogTest extends TrazasTestCase
 {
@@ -2290,6 +2515,66 @@ class ContextoLogTest extends TrazasTestCase
 
 		$this->assertArrayNotHasKey('trace_id', $resultado->extra);
 	}
+
+	// Prueba de integracion: verifica que el canal 'json' real (no solo los
+	// processors de forma aislada) escriba lineas redactadas y con contexto de traza
+	public function test_canal_json_escribe_linea_redactada_con_contexto_de_traza(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			Log::forgetChannel('json');
+
+			$this->app->make(Trazas::class)->en_span(
+				'prueba.canal',
+				fn () => Log::channel('json')->info('prueba', ['password' => 'x', 'email' => 'a@b.c'])
+			);
+
+			$lineas = file($archivo);
+			$ultima = json_decode(end($lineas), true);
+
+			$span = $this->spans_que_empiezan_con('prueba.canal')[0];
+			$this->assertSame('[redactado]', $ultima['context']['password']);
+			$this->assertSame('[redactado]', $ultima['context']['email']);
+			$this->assertSame($span->getTraceId(), $ultima['extra']['trace_id']);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// La excepcion que Laravel pone en context['exception'] se serializa sin
+	// PII: solo clase, mensaje redactado, archivo y linea (sin trace)
+	public function test_canal_json_redacta_la_excepcion_del_contexto(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			Log::forgetChannel('json');
+
+			Log::channel('json')->error('fallo', [
+				'exception' => new RuntimeException('fallo para ana@example.com con alergia a penicilina'),
+			]);
+
+			$lineas = file($archivo);
+			$linea = end($lineas);
+			$ultima = json_decode($linea, true);
+
+			$this->assertStringNotContainsString('ana@example.com', $linea);
+			$this->assertSame(RuntimeException::class, $ultima['context']['exception']['class']);
+			$this->assertSame('fallo para [redactado] con alergia a penicilina', $ultima['context']['exception']['message']);
+			$this->assertSame(__FILE__, $ultima['context']['exception']['file']);
+			$this->assertIsInt($ultima['context']['exception']['line']);
+			$this->assertArrayNotHasKey('trace', $ultima['context']['exception']);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
 }
 ```
 
@@ -2307,26 +2592,53 @@ Expected: FAIL (clases inexistentes).
 
 namespace App\Logging;
 
+use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
+use Throwable;
 
 // Enmascara credenciales y PII medica antes de escribir cualquier log
+//
+// Limite conocido: una contrasena escrita en texto libre (p.ej. "clave: abc123"
+// dentro de un mensaje interpolado) no tiene un patron detectable de forma
+// confiable y NO se enmascara por regex. La regla del equipo es no interpolar
+// secretos en el mensaje: siempre deben pasarse en $context con su propia
+// clave (password, token, etc.), que SI se enmascara por nombre de clave
+// (ver self::CLAVES), sin importar el patron del valor.
+//
+// Las excepciones (Laravel las pone en context['exception']) se reducen a
+// clase, mensaje redactado, archivo y linea: nunca el trace con argumentos.
 class RedactarDatosSensibles implements ProcessorInterface
 {
 	public const MASCARA = '[redactado]';
 
-	// Comparacion en minusculas
+	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
+	// (asi 'remember_token', 'access_token', 'api_secret' o
+	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
 	public const CLAVES = [
-		'password', 'password_confirmation', 'current_password',
-		'token', '_token', 'authorization', 'cookie',
+		'token', 'password', 'secret', 'authorization', 'cookie',
 		'curp', 'email',
-		'allergies', 'chronic_conditions', 'blood_type',
-		'emergency_contact_name', 'emergency_contact_phone',
+		'allergies', 'chronic_conditions', 'blood_type', 'emergency_contact',
+	];
+
+	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
+	// del log y los valores string de context/extra cuya clave no es sensible
+	// (p.ej. un correo interpolado dentro de 'mensaje' => "reset para a@b.c").
+	// La coincidencia completa se reemplaza por MASCARA, incluida la palabra
+	// Bearer/Basic en el segundo patron: asi no se filtra ni el esquema de auth.
+	public const PATRONES = [
+		// correos electronicos
+		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/',
+		// credenciales Bearer/Basic en texto (se enmascara la coincidencia completa)
+		'/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]+/i',
+		// CURP mexicana (18 caracteres)
+		'/\b[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d\b/',
 	];
 
 	public function __invoke(LogRecord $registro): LogRecord
 	{
 		return $registro->with(
+			message: $this->redactar_texto($registro->message),
 			context: $this->redactar($registro->context),
 			extra: $this->redactar($registro->extra),
 		);
@@ -2335,14 +2647,50 @@ class RedactarDatosSensibles implements ProcessorInterface
 	private function redactar(array $datos): array
 	{
 		foreach ($datos as $clave => $valor) {
-			if (is_string($clave) && in_array(strtolower($clave), self::CLAVES, true)) {
+			if (is_string($clave) && $this->es_clave_sensible($clave)) {
 				$datos[$clave] = self::MASCARA;
+			} elseif ($valor instanceof Throwable) {
+				$datos[$clave] = $this->resumir_excepcion($valor);
 			} elseif (is_array($valor)) {
 				$datos[$clave] = $this->redactar($valor);
+			} elseif (is_string($valor)) {
+				$datos[$clave] = $this->redactar_texto($valor);
 			}
 		}
 
 		return $datos;
+	}
+
+	private function es_clave_sensible(string $clave): bool
+	{
+		$clave = strtolower($clave);
+		foreach (self::CLAVES as $subcadena) {
+			if (str_contains($clave, $subcadena)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// Reduce una excepcion a datos sin PII. De una QueryException se toma la
+	// sentencia SIN bindings (getSql), porque getMessage() los interpola.
+	private function resumir_excepcion(Throwable $excepcion): array
+	{
+		$mensaje = $excepcion instanceof QueryException ? $excepcion->getSql() : $excepcion->getMessage();
+
+		return [
+			'class' => $excepcion::class,
+			'message' => $this->redactar_texto($mensaje),
+			'file' => $excepcion->getFile(),
+			'line' => $excepcion->getLine(),
+		];
+	}
+
+	// Enmascara, dentro de un texto libre, cualquier coincidencia de los PATRONES
+	private function redactar_texto(string $texto): string
+	{
+		return preg_replace(self::PATRONES, self::MASCARA, $texto);
 	}
 }
 ```
@@ -2399,19 +2747,21 @@ En `config/logging.php`, dentro de `'channels' => [`, después de `'single'`:
         // Logs estructurados para Loki (unidad 3): una linea JSON por registro,
         // con contexto de traza y PII enmascarada
         'json' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/medschedule.json'),
+            'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/medschedule.json'),
+            ],
             'formatter' => Monolog\Formatter\JsonFormatter::class,
             'processors' => [
                 App\Logging\AgregarContextoTraza::class,
                 App\Logging\RedactarDatosSensibles::class,
             ],
-            'replace_placeholders' => true,
         ],
 ```
 
-(`config/logging.php` usa espacios: respetar su indentación.) En `.env.example` cambiar `LOG_STACK=single` por:
+Driver `monolog` con `StreamHandler` (ya importado arriba en `config/logging.php`) y no `single`: en Laravel 12.53 el driver `single` ignora la clave `processors`, así que los processors nunca corrían. Por eso `ContextoLogTest` incluye una prueba de integración que escribe por el canal real (redirigiendo `handler_with.stream` a un archivo temporal) y no solo prueba los processors aislados. (`config/logging.php` usa espacios: respetar su indentación.) En `.env.example` cambiar `LOG_STACK=single` por:
 
 ```dotenv
 LOG_STACK=single,json
@@ -2420,7 +2770,7 @@ LOG_STACK=single,json
 - [ ] **Paso 5: Correr las pruebas y verificar que pasan; probar el canal real**
 
 Run: `pruebas --filter="RedactarDatosSensiblesTest|ContextoLogTest"`
-Expected: PASS (3 pruebas).
+Expected: PASS (12 pruebas). La redacción cubre: claves sensibles por **subcadena** sin distinguir mayúsculas (`token`, `password`, `secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`: así `remember_token`, `access_token` o `api_secret` quedan cubiertas); `PATRONES` dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones en el contexto, reducidas a clase, mensaje redactado (de una `QueryException` solo la sentencia sin bindings), archivo y línea, sin trace. Límite documentado en la clase: una contraseña escrita en texto libre sin clave propia no se detecta.
 
 ```bash
 php artisan tinker --execute="Log::channel('json')->info('prueba de canal', ['password' => 'x', 'email' => 'a@b.c']);"
@@ -2441,10 +2791,10 @@ git commit -m "feat(logs): logs JSON con contexto de traza y enmascarado de PII"
 
 **Files:**
 - Create: `resources/views/errors/500.blade.php`
-- Test: `tests/Feature/Trazas/PaginaErrorTest.php`
+- Test: `tests/Feature/Trazas/PaginaErrorTest.php`, `tests/Feature/Trazas/PaginaErrorSinTrazasTest.php`
 
 **Interfaces:**
-- Consumes: atributo `trace_id` de la petición (T010).
+- Consumes: atributos `trace_id` y, como respaldo con las trazas apagadas, `request_id` de la petición (T010).
 
 - [ ] **Paso 1: Escribir la prueba que falla**
 
@@ -2476,9 +2826,40 @@ class PaginaErrorTest extends TrazasTestCase
 }
 ```
 
+`tests/Feature/Trazas/PaginaErrorSinTrazasTest.php` (con el proveedor Noop, sin `TrazasTestCase`):
+
+```php
+<?php
+
+namespace Tests\Feature\Trazas;
+
+use Illuminate\Support\Facades\Route;
+use RuntimeException;
+use Tests\TestCase;
+
+// Con las trazas apagadas (proveedor Noop) el folio usa el request_id de respaldo
+class PaginaErrorSinTrazasTest extends TestCase
+{
+	public function test_error_500_sin_trazas_muestra_request_id_como_folio(): void
+	{
+		config(['app.debug' => false]);
+		Route::middleware('web')->get('/_prueba/error-sin-trazas', fn () => throw new RuntimeException('detalle interno'));
+
+		$respuesta = $this->get('/_prueba/error-sin-trazas');
+
+		$respuesta->assertStatus(500);
+		$this->assertMatchesRegularExpression(
+			'/Folio: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/',
+			$respuesta->getContent()
+		);
+		$respuesta->assertDontSee('detalle interno');
+	}
+}
+```
+
 - [ ] **Paso 2: Correr la prueba y verificar que falla**
 
-Run: `pruebas --filter=PaginaErrorTest`
+Run: `pruebas --filter=PaginaError`
 Expected: FAIL (la vista por defecto de Laravel no muestra el folio).
 
 - [ ] **Paso 3: Vista de error**
@@ -2501,7 +2882,8 @@ Expected: FAIL (la vista por defecto de Laravel no muestra el folio).
 	<div class="card border-0 shadow-sm p-4 text-center" style="max-width: 480px;">
 		<h1 class="h4 mb-3">Ocurrió un error inesperado</h1>
 		<p class="text-muted mb-3">Ya quedó registrado. Si necesitas ayuda, comparte este folio con soporte.</p>
-		@php($folio = request()->attributes->get('trace_id'))
+		{{-- Con trazas apagadas no hay trace_id: se usa el request_id de respaldo --}}
+		@php($folio = request()->attributes->get('trace_id') ?? request()->attributes->get('request_id'))
 		<p class="fw-semibold mb-4">Folio: {{ $folio ?? 'no disponible' }}</p>
 		<a class="btn btn-primary" href="{{ url('/') }}">Volver al inicio</a>
 	</div>
@@ -2512,13 +2894,13 @@ Expected: FAIL (la vista por defecto de Laravel no muestra el folio).
 
 - [ ] **Paso 4: Correr la prueba y verificar que pasa**
 
-Run: `pruebas --filter=PaginaErrorTest`
-Expected: PASS.
+Run: `pruebas --filter=PaginaError`
+Expected: PASS (2 pruebas). Con trazas el folio es el `trace_id`; sin trazas, el `request_id` (UUID).
 
 - [ ] **Paso 5: Commit**
 
 ```bash
-git add resources/views/errors/500.blade.php tests/Feature/Trazas/PaginaErrorTest.php
+git add resources/views/errors/500.blade.php tests/Feature/Trazas/PaginaErrorTest.php tests/Feature/Trazas/PaginaErrorSinTrazasTest.php
 git commit -m "feat(trazas): mostrar un folio de seguimiento en la pagina de error 500"
 ```
 
@@ -2826,6 +3208,7 @@ git switch -c feat/<R20>-auditoria feat/<R17>-u3-sdd
 **Files:**
 - Create: `config/auditoria.php`
 - Create: `database/migrations/2026_09_23_000000_add_integridad_to_activity_logs_table.php`
+- Create: `database/migrations/2026_09_23_000001_drop_user_fk_from_activity_logs_table.php`
 - Create: `app/Exceptions/RegistroAuditoriaInmutable.php`
 - Create: `app/Services/Auditoria/SelladorAuditoria.php`
 - Create: `app/Providers/AuditoriaServiceProvider.php`
@@ -2833,7 +3216,7 @@ git switch -c feat/<R20>-auditoria feat/<R17>-u3-sdd
 - Test: `tests/Feature/Auditoria/SelladoAuditoriaTest.php`
 
 **Interfaces:**
-- Produce: `SelladorAuditoria::sellar(ActivityLog $log): void`, `SelladorAuditoria::calcular(?string $hash_anterior, ActivityLog $log): string`, `SelladorAuditoria::verificar(): array` con claves `estado` (`integra`|`rota`), `id_roto` (?int), `fecha_rota` (?string), `revisados` (int), `sin_sellar_historicos` (int).
+- Produce: `SelladorAuditoria::sellar(ActivityLog $log): void`, `SelladorAuditoria::calcular(?string $hash_anterior, ActivityLog $log): string`, `SelladorAuditoria::verificar(): array` con claves `estado` (`integra`|`rota`), `id_roto` (?int), `fecha_rota` (?string), `revisados` (int). No hay filas "históricas sin sello": toda fila con `hash` nulo cuenta como rota.
 - Produce: columnas `activity_logs.trace_id`, `hash_anterior`, `hash`; excepción `RegistroAuditoriaInmutable` en `update`/`delete` de `ActivityLog`.
 
 - [ ] **Paso 1: Configuración y migración**
@@ -2867,8 +3250,11 @@ GRAFANA_URL=http://localhost:3000
 ```php
 <?php
 
+use App\Models\ActivityLog;
+use App\Services\Auditoria\SelladorAuditoria;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // Sello encadenado e identificador de traza para el visor de auditoria.
@@ -2880,10 +3266,14 @@ return new class extends Migration
 		Schema::table('activity_logs', function (Blueprint $table) {
 			$table->string('trace_id', 32)->nullable()->after('new_values');
 			$table->char('hash_anterior', 64)->nullable()->after('trace_id');
-			// Nullable solo para los registros historicos anteriores a esta migracion
+			// Nullable porque hash se rellena para TODAS las filas (incluidas
+			// las preexistentes) al final de este mismo up(); una fila con
+			// hash nulo despues de esta migracion se considera rota.
 			$table->char('hash', 64)->nullable()->after('hash_anterior');
 			$table->index('trace_id', 'idx_trace_id');
 		});
+
+		$this->sellar_filas_existentes();
 	}
 
 	public function down(): void
@@ -2891,6 +3281,69 @@ return new class extends Migration
 		Schema::table('activity_logs', function (Blueprint $table) {
 			$table->dropIndex('idx_trace_id');
 			$table->dropColumn(['trace_id', 'hash_anterior', 'hash']);
+		});
+	}
+
+	// Unico lugar legitimo de escritura directa de hash/hash_anterior fuera
+	// del sellador: no hay fila "historica sin sello" que verificar() deba
+	// perdonar, asi que las filas creadas antes de esta migracion se sellan
+	// aqui mismo, encadenadas en orden de id, con DB::table (nunca Eloquent,
+	// para no disparar los guardas de inmutabilidad de ActivityLog).
+	private function sellar_filas_existentes(): void
+	{
+		$sellador = app(SelladorAuditoria::class);
+		$anterior = null;
+
+		ActivityLog::query()->orderBy('id')->each(function (ActivityLog $log) use ($sellador, &$anterior) {
+			$hash = $sellador->calcular($anterior, $log);
+
+			DB::table('activity_logs')->where('id', $log->id)->update([
+				'hash_anterior' => $anterior,
+				'hash' => $hash,
+			]);
+
+			$anterior = $hash;
+		});
+	}
+};
+```
+
+`hash` es nullable solo para poder agregar la columna, pero la misma migración sella todas las filas existentes en orden de id al final de `up()`; después de migrar, cualquier fila con `hash` nulo es una ruptura. `AUDIT_HMAC_KEY` debe estar definida **antes** de migrar.
+
+`database/migrations/2026_09_23_000001_drop_user_fk_from_activity_logs_table.php` (la FK `ON DELETE SET NULL` cambiaba el contenido sellado al borrar un usuario; se quita la FK y se conserva el índice):
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+// La auditoria debe sobrevivir al usuario auditado. La FK original
+// (activity_logs_user_id_foreign, ON DELETE SET NULL, 2026_02_24_045227)
+// pone user_id a NULL cuando se borra el usuario, lo que cambia el
+// contenido sellado de filas ya firmadas y hace que verificar() reporte
+// un falso "rota". Se quita la FK; el indice activity_logs_user_id_index
+// no se toca (sigue sirviendo a los filtros del visor).
+return new class extends Migration
+{
+	public function up(): void
+	{
+		Schema::table('activity_logs', function (Blueprint $table) {
+			$table->dropForeign('activity_logs_user_id_foreign');
+		});
+	}
+
+	// Advertencia: restaurar la FK falla (MySQL 1452) si ya existen user_id
+	// huerfanos de usuarios borrados despues de up(). En ese caso el rollback
+	// exige decidir antes que hacer con esas filas selladas: ponerlas a NULL
+	// rompe su sello, y borrarlas elimina evidencia de auditoria.
+	public function down(): void
+	{
+		Schema::table('activity_logs', function (Blueprint $table) {
+			$table->foreign('user_id', 'activity_logs_user_id_foreign')
+				->references('id')->on('users')
+				->onDelete('set null');
 		});
 	}
 };
@@ -2907,9 +3360,11 @@ namespace Tests\Feature\Auditoria;
 
 use App\Exceptions\RegistroAuditoriaInmutable;
 use App\Models\ActivityLog;
+use App\Models\User;
 use App\Services\Auditoria\SelladorAuditoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class SelladoAuditoriaTest extends TestCase
@@ -2986,15 +3441,77 @@ class SelladoAuditoriaTest extends TestCase
 		$this->assertSame($siguiente->id, $resultado['id_roto']);
 	}
 
-	public function test_registros_historicos_sin_sello_no_rompen_la_cadena(): void
+	public function test_fila_sin_sello_rompe_la_cadena(): void
 	{
-		DB::table('activity_logs')->insert(['action' => 'historico', 'created_at' => now(), 'updated_at' => now()]);
-		$this->crear_registro('nuevo');
+		$this->crear_registro('uno');
+		$sin_sello_id = DB::table('activity_logs')->insertGetId([
+			'action' => 'sin_sello',
+			'created_at' => now(),
+			'updated_at' => now(),
+		]);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+
+		$this->assertSame('rota', $resultado['estado']);
+		$this->assertSame($sin_sello_id, $resultado['id_roto']);
+	}
+
+	public function test_anular_todos_los_hashes_rompe_la_cadena(): void
+	{
+		$primero = $this->crear_registro('uno');
+		$this->crear_registro('dos');
+		$this->crear_registro('tres');
+
+		DB::table('activity_logs')->update(['hash' => null]);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+
+		$this->assertSame('rota', $resultado['estado']);
+		$this->assertSame($primero->id, $resultado['id_roto']);
+	}
+
+	public function test_borrar_usuario_conserva_la_auditoria_y_la_cadena_integra(): void
+	{
+		$usuario = User::factory()->create();
+		$registro = ActivityLog::create([
+			'action' => 'uno',
+			'description' => 'Registro uno',
+			'user_id' => $usuario->id,
+		]);
+		$usuario_id = $usuario->id;
+
+		$usuario->delete();
+
+		// Sin la FK con ON DELETE SET NULL, la fila conserva el user_id
+		// aunque el usuario ya no exista.
+		$this->assertSame($usuario_id, $registro->fresh()->user_id);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+		$this->assertSame('integra', $resultado['estado']);
+	}
+
+	// La migracion 2026_09_23_000000 sella, en su propio up(), las filas que
+	// ya existian antes de agregar las columnas. RefreshDatabase migra sobre
+	// una base vacia, asi que no hay forma de ver ese paso actuar sobre filas
+	// reales dentro de una prueba normal: se invoca el metodo privado que usa
+	// el propio up() (via reflexion), simulando filas insertadas antes de la
+	// migracion, para probar la logica de sellado que realmente ejecuta.
+	public function test_migracion_sella_las_filas_preexistentes(): void
+	{
+		DB::table('activity_logs')->insert([
+			['action' => 'uno', 'description' => 'uno', 'created_at' => now(), 'updated_at' => now()],
+			['action' => 'dos', 'description' => 'dos', 'created_at' => now(), 'updated_at' => now()],
+		]);
+
+		$migracion = require database_path('migrations/2026_09_23_000000_add_integridad_to_activity_logs_table.php');
+		$metodo = new ReflectionMethod($migracion, 'sellar_filas_existentes');
+		$metodo->setAccessible(true);
+		$metodo->invoke($migracion);
 
 		$resultado = app(SelladorAuditoria::class)->verificar();
 
 		$this->assertSame('integra', $resultado['estado']);
-		$this->assertSame(1, $resultado['sin_sellar_historicos']);
+		$this->assertSame(2, $resultado['revisados']);
 	}
 }
 ```
@@ -3033,7 +3550,18 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 // Sella cada registro de auditoria con un HMAC encadenado al registro anterior.
-// Quien altere o borre una fila sin conocer la llave rompe la cadena.
+// Detecta alterar o borrar una fila intermedia sin conocer la llave.
+//
+// Limites conocidos (no detectables por verificar()):
+// - Borrar las ultimas N filas de la tabla: la cadena queda intacta hasta
+//   donde llega; no hay forma de saber que faltan filas al final.
+// - Quien conoce AUDIT_HMAC_KEY puede recalcular y reescribir toda la
+//   cadena de forma consistente; el sello protege contra quien NO tiene
+//   la llave, no contra quien la tiene.
+// - `id` y `updated_at` no forman parte del contenido sellado (canonico());
+//   cambiar solo esos campos no se detecta.
+// - Rotar AUDIT_HMAC_KEY invalida la cadena existente: hay que volver a
+//   sellar todo el historico con la llave nueva antes de rotarla en produccion.
 class SelladorAuditoria
 {
 	private static bool $aviso_llave_emitido = false;
@@ -3055,23 +3583,17 @@ class SelladorAuditoria
 		return hash_hmac('sha256', ($hash_anterior ?? '') . '|' . $this->canonico($log), $this->llave());
 	}
 
-	// Recorre la cadena completa y devuelve el primer eslabon roto
+	// Recorre la cadena completa y devuelve el primer eslabon roto.
+	// No existe el concepto de fila "historica sin sello": toda fila con
+	// hash nulo se considera rota (ver migracion 2026_09_23_000000, que
+	// sella las filas preexistentes al agregar estas columnas).
 	public function verificar(): array
 	{
 		$anterior = null;
-		$sellado_visto = false;
 		$revisados = 0;
-		$historicos = 0;
 
 		foreach (ActivityLog::query()->orderBy('id')->lazyById(500) as $log) {
 			$revisados++;
-
-			// Filas anteriores a la adopcion del sello: quedan fuera de la cadena
-			if ($log->hash === null && !$sellado_visto) {
-				$historicos++;
-				continue;
-			}
-			$sellado_visto = true;
 
 			$intacto = $log->hash !== null
 				&& $log->hash_anterior === $anterior
@@ -3083,7 +3605,6 @@ class SelladorAuditoria
 					'id_roto' => $log->id,
 					'fecha_rota' => $log->created_at?->toIso8601String(),
 					'revisados' => $revisados,
-					'sin_sellar_historicos' => $historicos,
 				];
 			}
 
@@ -3095,7 +3616,6 @@ class SelladorAuditoria
 			'id_roto' => null,
 			'fecha_rota' => null,
 			'revisados' => $revisados,
-			'sin_sellar_historicos' => $historicos,
 		];
 	}
 
@@ -3125,7 +3645,7 @@ class SelladorAuditoria
 		if (!is_array($valor)) {
 			return $valor;
 		}
-		ksort($valor);
+		ksort($valor, SORT_STRING);
 
 		return array_map(fn ($elemento) => $this->ordenar($elemento), $valor);
 	}
@@ -3178,11 +3698,13 @@ En `app/Models/ActivityLog.php`: agregar `'trace_id'` a `$fillable` y estos mét
 	}
 
 	// La insercion va en transaccion para que el bloqueo de la ultima fila
-	// serialice la cadena cuando dos cambios se auditan al mismo tiempo
+	// serialice la cadena cuando dos cambios se auditan al mismo tiempo.
+	// Reintenta hasta 3 veces si MySQL reporta un deadlock por la contencion
+	// del lockForUpdate() en SelladorAuditoria::sellar().
 	public function save(array $options = []): bool
 	{
 		if (!$this->exists) {
-			return DB::transaction(fn () => parent::save($options));
+			return DB::transaction(fn () => parent::save($options), 3);
 		}
 
 		return parent::save($options);
@@ -3222,12 +3744,12 @@ class AuditoriaServiceProvider extends ServiceProvider
 - [ ] **Paso 6: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="SelladoAuditoriaTest|ActivityLogControllerTest"`
-Expected: `SelladoAuditoriaTest` PASS (7 pruebas); `ActivityLogControllerTest` con el mismo resultado que en la línea base de T002.
+Expected: `SelladoAuditoriaTest` PASS (10 pruebas: incluye la fila sin sello y el anulado masivo de hashes, que deben dar `rota`, y la migración que sella las filas preexistentes); `ActivityLogControllerTest` con el mismo resultado que en la línea base de T002.
 
 - [ ] **Paso 7: Commit**
 
 ```bash
-git add config/auditoria.php database/migrations/2026_09_23_000000_add_integridad_to_activity_logs_table.php app/Exceptions/RegistroAuditoriaInmutable.php app/Services/Auditoria app/Providers/AuditoriaServiceProvider.php app/Models/ActivityLog.php bootstrap/providers.php phpunit.xml .env.example tests/Feature/Auditoria/SelladoAuditoriaTest.php
+git add config/auditoria.php database/migrations/2026_09_23_000000_add_integridad_to_activity_logs_table.php database/migrations/2026_09_23_000001_drop_user_fk_from_activity_logs_table.php app/Exceptions/RegistroAuditoriaInmutable.php app/Services/Auditoria app/Providers/AuditoriaServiceProvider.php app/Models/ActivityLog.php bootstrap/providers.php phpunit.xml .env.example tests/Feature/Auditoria/SelladoAuditoriaTest.php
 git diff --staged
 git commit -m "feat(auditoria): sello HMAC encadenado y registros de solo agregado"
 ```
@@ -3257,6 +3779,7 @@ git commit -m "feat(auditoria): sello HMAC encadenado y registros de solo agrega
 namespace Tests\Feature\Auditoria;
 
 use App\Models\ActivityLog;
+use App\Models\Appointment;
 use App\Models\PatientProfile;
 use App\Models\Specialty;
 use App\Models\User;
@@ -3331,6 +3854,35 @@ class AuditableTest extends TestCase
 		$usuario->update(['remember_token' => 'otro-token-cualquiera']);
 
 		$this->assertSame($antes, ActivityLog::count());
+	}
+
+	public function test_motivo_y_observaciones_de_la_cita_se_registran_como_protegidos(): void
+	{
+		$especialidad = Specialty::create(['name' => 'Cardiologia']);
+		$paciente = User::factory()->create();
+		$doctor = User::factory()->create();
+
+		$cita = Appointment::create([
+			'patient_id' => $paciente->id,
+			'doctor_id' => $doctor->id,
+			'specialty_id' => $especialidad->id,
+			'appointment_date' => now()->toDateString(),
+			'start_time' => '10:00:00',
+			'end_time' => '10:30:00',
+			'status' => 'pending',
+			'reason' => 'dolor de pecho',
+		]);
+		$creado = $this->ultimo(Appointment::class, $cita->id);
+		$this->assertSame('[protegido]', $creado->new_values['reason']);
+
+		// observaciones no es asignable en masa: se llena como lo haria el doctor
+		$cita->forceFill(['reason' => 'dolor de pecho intenso', 'observaciones' => 'dolor de pecho con disnea'])->save();
+		$actualizado = $this->ultimo(Appointment::class, $cita->id);
+		$this->assertSame('[protegido]', $actualizado->old_values['reason']);
+		$this->assertSame('[protegido]', $actualizado->new_values['reason']);
+		$this->assertSame('[protegido]', $actualizado->new_values['observaciones']);
+
+		$this->assertStringNotContainsString('dolor de pecho', json_encode(ActivityLog::all()->toArray()));
 	}
 }
 ```
@@ -3476,6 +4028,16 @@ En `PatientProfile` agregar además:
 	}
 ```
 
+En `Appointment` agregar además (motivo de consulta y observaciones son texto clínico libre):
+
+```php
+	// Datos clinicos en texto libre: la auditoria registra que cambio, nunca el valor
+	public function campos_protegidos_auditoria(): array
+	{
+		return ['reason', 'observaciones'];
+	}
+```
+
 - [ ] **Paso 5: Quitar los registros manuales que guardaban PII en claro**
 
 En `app/Http/Controllers/PatientProfileController.php` eliminar los dos bloques `ActivityLog::create([...])` de `update` y `updatePhoto` (hoy guardan `old_values`/`new_values` con alergias, CURP y tipo de sangre en claro). El trait ya registra ambos cambios con los valores protegidos. Si `$oldValues` queda sin uso, eliminarlo también; si `ActivityLog` queda sin uso, quitar su `use`.
@@ -3495,7 +4057,7 @@ donde `$registros_actividad` es el mismo arreglo que hoy recibe `insert()`. Si a
 - [ ] **Paso 7: Correr las pruebas y verificar que pasan; comparar con la línea base**
 
 Run: `pruebas --filter="AuditableTest|SelladoAuditoriaTest"`
-Expected: PASS (11 pruebas).
+Expected: PASS (15 pruebas).
 
 ```bash
 pruebas 2>&1 | tee "$SCRATCH/pruebas-despues-auditable.txt" | tail -5
@@ -3520,11 +4082,12 @@ git commit -m "feat(auditoria): auditar altas, cambios y bajas con PII protegida
 - Create: `app/Listeners/Auditoria/AuditarCierreSesion.php`, `AuditarInicioFallido.php`, `AuditarRestablecimientoPassword.php`, `AuditarCambioRoles.php`, `AuditarCambioPermisos.php`
 - Create: `app/Http/Middleware/AuditarAccesoDenegado.php`
 - Modify: `config/permission.php` (`events_enabled`), `bootstrap/app.php` (alias), `routes/web.php` (grupo admin, línea ~46)
+- Modify: `app/Http/Controllers/Auth/AuthenticatedSessionController.php` (quitar el `ActivityLog::create` de `destroy`)
 - Test: `tests/Unit/EnmascararTest.php`, `tests/Feature/Auditoria/EventosAuditadosTest.php`
 
 **Interfaces:**
 - Consumes: `RegistradorAuditoria::registrar()` (T017).
-- Produce: acciones `logout`, `login_fallido`, `password_restablecida`, `rol_asignado`, `rol_retirado`, `permiso_asignado`, `permiso_retirado`, `acceso_denegado`. El inicio de sesión ya lo registra `AuthenticatedSessionController` como `login`; no se duplica.
+- Produce: acciones `logout` (solo desde el listener), `login_fallido`, `password_restablecida`, `rol_asignado`, `rol_retirado`, `permiso_asignado`, `permiso_retirado`, `acceso_denegado`. El inicio de sesión ya lo registra `AuthenticatedSessionController` como `login`; no se duplica.
 - Produce: `Enmascarar::correo(string $correo): string`.
 
 - [ ] **Paso 1: Escribir las pruebas que fallan**
@@ -3614,6 +4177,22 @@ class EventosAuditadosTest extends TestCase
 		$registro = ActivityLog::where('action', 'acceso_denegado')->firstOrFail();
 		$this->assertSame($paciente->id, $registro->user_id);
 		$this->assertStringContainsString('/admin/logs', $registro->description);
+	}
+
+	// throttle va antes de auditar.denegado: pasado el limite, los intentos
+	// responden 429 sin escribir mas filas selladas en la auditoria
+	public function test_accesos_denegados_repetidos_se_limitan_antes_de_auditarse(): void
+	{
+		Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+		$paciente = User::factory()->create();
+		$this->actingAs($paciente);
+
+		for ($i = 0; $i < 60; $i++) {
+			$this->get(route('admin.logs'))->assertForbidden();
+		}
+		$this->get(route('admin.logs'))->assertStatus(429);
+
+		$this->assertSame(60, ActivityLog::where('action', 'acceso_denegado')->count());
 	}
 }
 ```
@@ -3788,6 +4367,15 @@ class AuditarCambioRoles
 
 Laravel 12 descubre automáticamente los listeners de `app/Listeners` por el tipo de `handle`; no se registran a mano. Comprobar con `php artisan event:list | grep -i auditar`.
 
+En `app/Http/Controllers/Auth/AuthenticatedSessionController.php`, método `destroy`: quitar el bloque `$user = Auth::user(); if ($user) { ActivityLog::create([... 'action' => 'logout' ...]); }`. El listener `AuditarCierreSesion` ya registra el evento `Logout` que dispara `Auth::guard('web')->logout()`; dejar ambos duplicaba la fila. En su lugar queda:
+
+```php
+		// El cierre de sesion se audita via el listener AuditarCierreSesion
+		// (evento Illuminate\Auth\Events\Logout), que Auth::guard('web')->logout()
+		// dispara siempre; registrarlo aqui tambien duplicaria la fila.
+		Auth::guard('web')->logout();
+```
+
 - [ ] **Paso 4: Activar eventos de Spatie**
 
 En `config/permission.php` (línea ~122): `'events_enabled' => true,` con el comentario `// La auditoria (unidad 3) escucha la asignacion de roles y permisos`.
@@ -3842,33 +4430,36 @@ En `bootstrap/app.php`, dentro de `$middleware->alias([...])`: `'auditar.denegad
 En `routes/web.php` (línea ~46) cambiar el grupo admin a:
 
 ```php
-Route::middleware(['auth', 'auditar.denegado', 'role:admin', 'throttle:60,1'])->group(function () {
+// throttle antes de auditar.denegado: los intentos repetidos de un no admin
+// reciben 429 sin llenar la auditoria de filas selladas
+Route::middleware(['auth', 'throttle:60,1', 'auditar.denegado', 'role:admin'])->group(function () {
 ```
+
+Orden: `auth` → `throttle` → `auditar.denegado` → `role:admin`. `auditar.denegado` va antes de `role:admin` para ver el 403 ya convertido en respuesta.
 
 - [ ] **Paso 6: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="EnmascararTest|EventosAuditadosTest|AdminRbacAccessTest|ActivityLogControllerTest"`
-Expected: las 6 nuevas PASS; `AdminRbacAccessTest` y `ActivityLogControllerTest` igual que en la línea base.
+Expected: las 7 nuevas PASS (incluye la de límite de tasa: tras 60 intentos denegados el siguiente responde 429 sin nueva fila); `AdminRbacAccessTest` y `ActivityLogControllerTest` igual que en la línea base.
 
 - [ ] **Paso 7: Commit**
 
 ```bash
-git add app/Support app/Listeners app/Http/Middleware/AuditarAccesoDenegado.php config/permission.php bootstrap/app.php routes/web.php tests/Unit/EnmascararTest.php tests/Feature/Auditoria/EventosAuditadosTest.php
+git add app/Support app/Listeners app/Http/Middleware/AuditarAccesoDenegado.php app/Http/Controllers/Auth/AuthenticatedSessionController.php config/permission.php bootstrap/app.php routes/web.php tests/Unit/EnmascararTest.php tests/Feature/Auditoria/EventosAuditadosTest.php
 git diff --staged
 git commit -m "feat(auditoria): auditar sesion, roles, permisos y accesos denegados"
 ```
 
-### T019 [US4] Comandos de verificación y sellado histórico
+### T019 [US4] Comando de verificación diaria de la integridad
 
 **Files:**
-- Create: `app/Console/Commands/VerificarAuditoria.php`, `app/Console/Commands/SellarHistoricoAuditoria.php`
+- Create: `app/Console/Commands/VerificarAuditoria.php`
 - Modify: `routes/console.php` (programación diaria)
 - Test: `tests/Feature/Auditoria/ComandosAuditoriaTest.php`
 
 **Interfaces:**
-- Consumes: `SelladorAuditoria::verificar()`, `SelladorAuditoria::calcular()` (T016).
+- Consumes: `SelladorAuditoria::verificar()` (T016).
 - Produce: `php artisan auditoria:verificar` (código 0 íntegra, 1 rota) y la clave de caché `auditoria.integridad` = resultado de `verificar()` + `verificado_en` (ISO 8601), que lee el visor (T020).
-- Produce: `php artisan auditoria:sellar-historico` (solo si no hay filas selladas).
 
 - [ ] **Paso 1: Escribir la prueba que falla**
 
@@ -3880,7 +4471,6 @@ git commit -m "feat(auditoria): auditar sesion, roles, permisos y accesos denega
 namespace Tests\Feature\Auditoria;
 
 use App\Models\ActivityLog;
-use App\Services\Auditoria\SelladorAuditoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -3910,28 +4500,6 @@ class ComandosAuditoriaTest extends TestCase
 
 		$this->assertSame($registro->id, Cache::get('auditoria.integridad')['id_roto']);
 	}
-
-	public function test_sellar_historico_sella_filas_sin_hash(): void
-	{
-		DB::table('activity_logs')->insert([
-			['action' => 'historico uno', 'created_at' => now(), 'updated_at' => now()],
-			['action' => 'historico dos', 'created_at' => now(), 'updated_at' => now()],
-		]);
-
-		$this->artisan('auditoria:sellar-historico')->assertExitCode(0);
-
-		$this->assertSame(0, ActivityLog::whereNull('hash')->count());
-		$resultado = app(SelladorAuditoria::class)->verificar();
-		$this->assertSame('integra', $resultado['estado']);
-		$this->assertSame(0, $resultado['sin_sellar_historicos']);
-	}
-
-	public function test_sellar_historico_se_niega_si_ya_hay_filas_selladas(): void
-	{
-		ActivityLog::create(['action' => 'sellado']);
-
-		$this->artisan('auditoria:sellar-historico')->assertExitCode(1);
-	}
 }
 ```
 
@@ -3940,7 +4508,7 @@ class ComandosAuditoriaTest extends TestCase
 Run: `pruebas --filter=ComandosAuditoriaTest`
 Expected: FAIL (`The command "auditoria:verificar" does not exist`).
 
-- [ ] **Paso 3: Implementar los comandos**
+- [ ] **Paso 3: Implementar el comando**
 
 `app/Console/Commands/VerificarAuditoria.php`:
 
@@ -3966,7 +4534,7 @@ class VerificarAuditoria extends Command
 		// El visor muestra el ultimo resultado sin recorrer la tabla en cada visita
 		Cache::forever('auditoria.integridad', $resultado + ['verificado_en' => now()->toIso8601String()]);
 
-		$this->info("Registros revisados: {$resultado['revisados']} (históricos sin sello: {$resultado['sin_sellar_historicos']})");
+		$this->info("Registros revisados: {$resultado['revisados']}");
 
 		if ($resultado['estado'] === 'rota') {
 			$this->error("Cadena rota. Registro roto: {$resultado['id_roto']} ({$resultado['fecha_rota']})");
@@ -3975,59 +4543,6 @@ class VerificarAuditoria extends Command
 		}
 
 		$this->info('Cadena íntegra.');
-
-		return self::SUCCESS;
-	}
-}
-```
-
-`app/Console/Commands/SellarHistoricoAuditoria.php`:
-
-```php
-<?php
-
-namespace App\Console\Commands;
-
-use App\Models\ActivityLog;
-use App\Services\Auditoria\RegistradorAuditoria;
-use App\Services\Auditoria\SelladorAuditoria;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-
-// Sella una sola vez los registros anteriores a la adopcion del sello
-class SellarHistoricoAuditoria extends Command
-{
-	protected $signature = 'auditoria:sellar-historico';
-
-	protected $description = 'Sella los registros de auditoria anteriores a la adopcion de la cadena (una sola vez)';
-
-	public function handle(SelladorAuditoria $sellador, RegistradorAuditoria $registrador): int
-	{
-		// Resellar una cadena existente legitimaria alteraciones: se prohibe
-		if (ActivityLog::whereNotNull('hash')->exists()) {
-			$this->error('Ya existen registros sellados; el sellado histórico solo se hace una vez, antes de cualquier registro sellado.');
-
-			return self::FAILURE;
-		}
-
-		$anterior = null;
-		$sellados = 0;
-
-		DB::transaction(function () use ($sellador, &$anterior, &$sellados) {
-			foreach (ActivityLog::query()->orderBy('id')->lazyById(500) as $log) {
-				$hash = $sellador->calcular($anterior, $log);
-				// Query builder: el modelo prohibe updates, y este es el unico caso legitimo
-				DB::table('activity_logs')->where('id', $log->id)->update([
-					'hash_anterior' => $anterior,
-					'hash' => $hash,
-				]);
-				$anterior = $hash;
-				$sellados++;
-			}
-		});
-
-		$registrador->registrar('auditoria_sellada_historico', descripcion: "Sellado histórico de {$sellados} registros");
-		$this->info("Registros sellados: {$sellados}");
 
 		return self::SUCCESS;
 	}
@@ -4046,14 +4561,14 @@ Schedule::command('auditoria:verificar')->dailyAt('03:00');
 - [ ] **Paso 4: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="ComandosAuditoriaTest|SelladoAuditoriaTest"`
-Expected: PASS (11 pruebas). `php artisan schedule:list` muestra `auditoria:verificar`.
+Expected: PASS (12 pruebas). `php artisan schedule:list` muestra `auditoria:verificar`; la salida dice "Registros revisados: N". No hay comando de sellado histórico: la migración de T016 sella las filas existentes.
 
 - [ ] **Paso 5: Commit**
 
 ```bash
 git add app/Console/Commands routes/console.php tests/Feature/Auditoria/ComandosAuditoriaTest.php
 git diff --staged
-git commit -m "feat(auditoria): comandos de verificacion diaria y sellado historico"
+git commit -m "feat(auditoria): comando de verificacion diaria de la integridad"
 ```
 
 ### T020 [US4] Visor `/admin/auditoria` con diff, línea de tiempo y exportación CSV
@@ -4204,6 +4719,89 @@ class VisorAuditoriaTest extends TestCase
 		$this->assertDoesNotMatchRegularExpression('/(^|,)"?=HYPERLINK/m', $contenido);
 		$this->assertTrue(ActivityLog::where('action', 'auditoria_exportada')->where('user_id', $admin->id)->exists());
 	}
+
+	// Regresion: el escape por defecto de fputcsv ('\') invierte la comilla de
+	// enclosure en vez de duplicarla (RFC 4180). Un lector estricto (Excel,
+	// LibreOffice, csv de Python) corta ese campo distinto y puede dejar una
+	// celda de formula sin la comilla protectora de CsvSeguro.
+	public function test_exportar_csv_no_invierte_comillas_por_el_escape_de_fputcsv(): void
+	{
+		$admin = $this->admin();
+		$this->actingAs($admin);
+		ActivityLog::create(['action' => 'prueba', 'description' => 'x\",=1+1,\"']);
+		ActivityLog::create(['action' => 'prueba', 'description' => '=CMD()']);
+
+		$respuesta = $this->get(route('admin.auditoria.exportar'));
+
+		$respuesta->assertOk();
+		$contenido = $respuesta->streamedContent();
+		$lineas = array_values(array_filter(preg_split('/\r\n|\n|\r/', $contenido), fn ($linea) => $linea !== ''));
+
+		$encabezado = str_getcsv($lineas[0], ',', '"', '');
+		$columnas_encabezado = count($encabezado);
+		$this->assertSame(11, $columnas_encabezado);
+
+		foreach (array_slice($lineas, 1) as $linea) {
+			$celdas = str_getcsv($linea, ',', '"', '');
+			$this->assertSame($columnas_encabezado, count($celdas), "Fila con numero de columnas distinto al encabezado: {$linea}");
+
+			foreach ($celdas as $celda) {
+				$this->assertFalse(str_starts_with((string) $celda, '='), "Celda de formula sin escapar: {$celda}");
+			}
+		}
+	}
+
+	public function test_linea_tiempo_con_id_desbordado_responde_404(): void
+	{
+		$admin = $this->admin();
+		$this->actingAs($admin);
+
+		$this->get(route('admin.auditoria.entidad', ['entidad' => 'especialidad', 'id' => '99999999999999999999']))
+			->assertNotFound();
+	}
+
+	public function test_linea_tiempo_con_entidad_inexistente_responde_404(): void
+	{
+		$admin = $this->admin();
+		$this->actingAs($admin);
+
+		$this->get(route('admin.auditoria.entidad', ['entidad' => 'tabla_inventada', 'id' => 1]))
+			->assertNotFound();
+	}
+
+	public function test_show_con_id_inexistente_responde_404(): void
+	{
+		$admin = $this->admin();
+		$this->actingAs($admin);
+
+		$this->get(route('admin.auditoria.show', 999999))->assertNotFound();
+	}
+
+	public function test_no_admin_recibe_403_en_show(): void
+	{
+		Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+		$especialidad = Specialty::create(['name' => 'Pediatria']);
+		$registro = ActivityLog::where('action', 'creado')->where('model_id', $especialidad->id)->firstOrFail();
+
+		$this->actingAs(User::factory()->create())->get(route('admin.auditoria.show', $registro))->assertForbidden();
+	}
+
+	public function test_no_admin_recibe_403_en_linea_tiempo(): void
+	{
+		Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+		$especialidad = Specialty::create(['name' => 'Pediatria']);
+
+		$this->actingAs(User::factory()->create())
+			->get(route('admin.auditoria.entidad', ['entidad' => 'especialidad', 'id' => $especialidad->id]))
+			->assertForbidden();
+	}
+
+	public function test_no_admin_recibe_403_en_exportar(): void
+	{
+		Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
+		$this->actingAs(User::factory()->create())->get(route('admin.auditoria.exportar'))->assertForbidden();
+	}
 }
 ```
 
@@ -4298,7 +4896,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class AuditoriaController extends Controller
 {
@@ -4363,26 +4963,36 @@ class AuditoriaController extends Controller
 		$registrador->registrar('auditoria_exportada', nuevos: $filtros, descripcion: 'Exportación CSV de la auditoría');
 
 		return response()->streamDownload(function () use ($filtros) {
+			// $escape = '' desactiva el escape con backslash de fputcsv (invierte comillas
+			// dentro de la celda y no es RFC 4180): sin el, un valor con `",` controlado
+			// por el usuario podria correr una celda hacia una formula sin escapar.
 			$salida = fopen('php://output', 'w');
-			fputcsv($salida, ['id', 'fecha', 'usuario', 'accion', 'entidad', 'id_entidad', 'ip', 'descripcion', 'antes', 'despues', 'trace_id']);
 
-			$this->consulta($filtros)->reorder()->lazyByIdDesc(500)->each(function (ActivityLog $registro) use ($salida) {
-				fputcsv($salida, array_map([CsvSeguro::class, 'celda'], [
-					$registro->id,
-					$registro->created_at?->toIso8601String(),
-					$registro->user?->name,
-					$registro->action,
-					$registro->model_type,
-					$registro->model_id,
-					$registro->ip_address,
-					$registro->description,
-					$registro->old_values,
-					$registro->new_values,
-					$registro->trace_id,
-				]));
-			});
+			try {
+				fputcsv($salida, ['id', 'fecha', 'usuario', 'accion', 'entidad', 'id_entidad', 'ip', 'descripcion', 'antes', 'despues', 'trace_id'], ',', '"', '');
 
-			fclose($salida);
+				$this->consulta($filtros)->reorder()->lazyByIdDesc(500)->each(function (ActivityLog $registro) use ($salida) {
+					fputcsv($salida, array_map([CsvSeguro::class, 'celda'], [
+						$registro->id,
+						$registro->created_at?->toIso8601String(),
+						$registro->user?->name,
+						$registro->action,
+						$registro->model_type,
+						$registro->model_id,
+						$registro->ip_address,
+						$registro->description,
+						$registro->old_values,
+						$registro->new_values,
+						$registro->trace_id,
+					]), ',', '"', '');
+				});
+			} catch (Throwable $error) {
+				// No se expone el mensaje de la excepcion en el CSV: solo queda en el log
+				Log::error('Falló la exportación de auditoría', ['error' => $error->getMessage()]);
+				fputcsv($salida, ['ERROR: exportación incompleta'], ',', '"', '');
+			} finally {
+				fclose($salida);
+			}
 		}, 'auditoria-' . now()->format('Ymd-His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
 	}
 
@@ -4423,7 +5033,9 @@ En `routes/web.php`, dentro del grupo admin (después de las rutas de `/admin/lo
 	// Visor de auditoria (unidad 3)
 	Route::get('/admin/auditoria', [AuditoriaController::class, 'index'])->name('admin.auditoria');
 	Route::get('/admin/auditoria/exportar', [AuditoriaController::class, 'exportar'])->name('admin.auditoria.exportar');
-	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->whereNumber('id')->name('admin.auditoria.entidad');
+	// [0-9]{1,18} en vez de whereNumber(): un entero de 19+ digitos pasa la regex de
+	// whereNumber pero desborda el `int $id` del controlador y responde 500
+	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->where('id', '[0-9]{1,18}')->name('admin.auditoria.entidad');
 	Route::get('/admin/auditoria/{registro}', [AuditoriaController::class, 'show'])->whereNumber('registro')->name('admin.auditoria.show');
 ```
 
@@ -4623,7 +5235,7 @@ En `resources/views/components/sidebar.blade.php`, después del bloque de "Logs"
 - [ ] **Paso 6: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="CsvSeguroTest|VisorAuditoriaTest|Auditoria"`
-Expected: PASS en todas las de `tests/Feature/Auditoria` y las dos unitarias.
+Expected: PASS en todas las de `tests/Feature/Auditoria` y las dos unitarias. El grupo admin corre `auth`, `throttle:60,1`, `auditar.denegado`, `role:admin` (T018). La exportación usa `fputcsv` con escape `''` (sin el escape con barra invertida, que corrompe campos que contienen `\"`), envuelve el stream en `try/catch` con registro en log, y `VisorAuditoriaTest` cubre 404 para ids inválidos o fuera de rango y 403 para no admin.
 
 - [ ] **Paso 7: Commit**
 
@@ -4644,16 +5256,21 @@ En un worktree o checkout temporal de `feat/100-sonarqube`: como admin, cambiar 
 
 - [ ] **Paso 2: "Después" en la rama de auditoría**
 
+Antes de migrar: fijar `AUDIT_HMAC_KEY` en `.env` (sin ella la migración no puede sellar) y poner la app en modo mantenimiento para que nadie escriba auditoría mientras se sella la cadena. No alternar ramas sobre la misma base de datos durante la evidencia (la rama de la U2 escribe filas sin sello que rompen la cadena).
+
 ```bash
+php artisan down
 php artisan migrate
-php artisan auditoria:sellar-historico
+php artisan up
 ```
+
+`migrate` sella **todas** las filas existentes, incluida la que se alteró a mano en el "antes": esa alteración queda sellada como válida, así que para la evidencia de detección hay que alterar una fila **otra vez después** de migrar.
 
 Repetir el cambio de la cita; capturar el listado (`auditoria-03`), el diff (`auditoria-04`) y la línea de tiempo de la cita (`auditoria-05`).
 
 ```bash
 php artisan auditoria:verificar | tee docs/entrega-u3/evidencia/auditoria-verificar-integra.txt
-# alterar a mano la misma fila que en el "antes", con el cliente mysql de MAMP
+# alterar a mano otra vez la misma fila que en el "antes" (la migracion ya la sello), con el cliente mysql de MAMP
 php artisan auditoria:verificar | tee docs/entrega-u3/evidencia/auditoria-verificar-rota.txt; echo "codigo: ${PIPESTATUS[0]}" | tee -a docs/entrega-u3/evidencia/auditoria-verificar-rota.txt
 ```
 
@@ -4697,13 +5314,13 @@ Contenido obligatorio por documento (formato y tono de `docs/entrega-u2/`):
 |---|---|
 | 00 | Datos de la entrega (autor `ramonibr`, materia, grupo, profesor, fecha, repo). **Primer apartado: "Dashboards de SonarQube (observación de la unidad 2)"** con las seis capturas `sonar-0*.png` incrustadas y la explicación de la puerta de calidad (salida de `sonar-puerta-pasa.txt` y `sonar-puerta-falla.txt`). Después: método de verificación (tabla dato → archivo de evidencia) e índice de documentos. |
 | 01 | Caso de estudio y justificación del pipeline: etapas integración → calidad → pruebas → liberación → despliegue, qué agrega la U3 (puerta de calidad, observabilidad). |
-| 02 | Entorno requerido: Codespaces/devcontainer, Docker local, puertos del stack, variables de entorno (nombres, nunca valores). |
+| 02 | Entorno requerido: Codespaces/devcontainer, Docker local, puertos del stack, variables de entorno (nombres, nunca valores). Docker Desktop necesita **File sharing** de `/Applications/MAMP/htdocs/MedSchedule-` (Alloy monta `storage/logs`); `LOG_STACK=single,json` para que exista `medschedule.json`. |
 | 03 | Niveles de servicio: tabla SLO → alerta de `alertas.yml` → evidencia de disparo. |
 | 04 | Punto 1: métricas expuestas (nombre, tipo, etiquetas), dashboards, alertas; antes/después con `monitoreo-*`; tiempo de notificación medido (SC-003); liga al PR del punto 1. |
 | 05 | Parámetros de configuración de cada herramienta (Prometheus, Alertmanager, Grafana, Loki, Tempo, Alloy, exporters, SonarQube, k6), con versión fijada y archivo donde vive. |
 | 06 | Punto 2: logs estructurados, redacción de PII, trazas, correlación; antes/después con `trazas-*`; costo de la instrumentación (k6 con y sin); liga al PR del punto 2. |
-| 07 | Punto 3: qué se audita, sello HMAC encadenado (y su límite: el borrado del último registro no se detecta), visor; antes/después con `auditoria-*`; hallazgo de PII en claro en `PatientProfileController` y su corrección; liga al PR del punto 3. |
-| 08 | Integración CI/CD: jobs de `ci.yml` y `release.yml`, puerta de calidad, dónde corre cada compuerta. |
+| 07 | Punto 3: qué se audita, sello HMAC encadenado y sus límites completos (borrado de las últimas filas; quien posee `AUDIT_HMAC_KEY` puede resellar la cadena; `id` y `updated_at` fuera del contenido canónico; rotar la llave obliga a resellar; migrar en modo mantenimiento), FK de `activity_logs.user_id` quitada para que borrar un usuario no rompa la cadena, verificación diaria que requiere el cron `schedule:run`, visor; antes/después con `auditoria-*`; hallazgo de PII en claro en `PatientProfileController` y su corrección; liga al PR del punto 3. |
+| 08 | Integración CI/CD: jobs de `ci.yml` y `release.yml`, puerta de calidad, dónde corre cada compuerta. Los jobs de Sonar corren solo si `vars.SONAR_HABILITADO == 'true'`; las pruebas de `ci.yml` heredan un `\|\| true` (issue #86), así que la compuerta de pruebas no es total y se dice explícitamente. |
 
 Cada cifra debe salir de un archivo de `evidencia/`. Donde algo no se midió, decirlo.
 

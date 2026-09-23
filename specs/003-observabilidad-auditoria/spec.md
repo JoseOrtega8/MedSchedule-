@@ -176,7 +176,8 @@ auditoría en la base de datos y verificar que la verificación de integridad se
 - **FR-012**: El visor DEBE permitir pasar de una línea de registro a su traza y de una traza a
   sus registros.
 - **FR-013**: Las páginas de error interno DEBEN mostrar un folio de seguimiento sin detalles
-  internos.
+  internos. Con las trazas activas el folio localiza la traza; si están apagadas, el folio de
+  respaldo es el identificador de la petición, que localiza sus registros.
 - **FR-014**: El sistema DEBE auditar la creación, modificación y eliminación de citas, usuarios,
   especialidades, horarios y perfiles de doctor y paciente, con valores antes y después de los
   campos modificados.
@@ -184,7 +185,7 @@ auditoría en la base de datos y verificar que la verificación de integridad se
   restablecimientos de contraseña, cambios de roles y permisos, y accesos denegados a áreas de
   administración.
 - **FR-016**: El sistema NUNCA DEBE guardar en la auditoría el valor de contraseñas ni de datos
-  clínicos.
+  clínicos (incluidos el motivo de consulta y las observaciones de una cita).
 - **FR-017**: Los registros de auditoría DEBEN ser de solo agregado y estar encadenados con un
   sello que dependa de una llave secreta, de modo que una alteración sea detectable.
 - **FR-018**: El sistema DEBE ofrecer una verificación de integridad que identifique el primer
