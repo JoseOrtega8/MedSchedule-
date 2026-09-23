@@ -28,4 +28,9 @@ class MetricasServiceProvider extends ServiceProvider
 			return new Metricas(new CollectorRegistry($almacen, false));
 		});
 	}
+
+	public function boot(): void
+	{
+		\App\Models\Appointment::observe(\App\Observers\ContadorCitasObserver::class);
+	}
 }
