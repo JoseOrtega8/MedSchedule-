@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
 		]);
 
 		$middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+		// Metricas de Prometheus de cada peticion (unidad 3)
+		$middleware->append(\App\Http\Middleware\RegistrarMetricasHttp::class);
 	})
 	->withExceptions(function (Exceptions $exceptions): void {
 		//

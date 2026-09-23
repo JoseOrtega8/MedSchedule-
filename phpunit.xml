@@ -31,5 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="METRICAS_ALMACEN" value="memoria"/>
+        <env name="METRICS_TOKEN" value="token-solo-para-pruebas"/>
     </php>
 </phpunit>
