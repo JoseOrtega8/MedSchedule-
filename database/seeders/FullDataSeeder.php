@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Carbon\Carbon;
@@ -164,7 +165,7 @@ class FullDataSeeder extends Seeder
 		// ─── ACTIVITY LOGS ────────────────────────────────────────
 		$admin = User::where('email', 'admin@test.com')->first();
 
-		DB::table('activity_logs')->insert([
+		$registros_actividad = [
 			[
 				'user_id'     => $patient->id,
 				'action'      => 'create',
@@ -174,7 +175,7 @@ class FullDataSeeder extends Seeder
 				'ip_address'  => '127.0.0.1',
 				'user_agent'  => 'Mozilla/5.0',
 				'old_values'  => null,
-				'new_values'  => json_encode(['status' => 'confirmed']),
+				'new_values'  => ['status' => 'confirmed'],
 				'created_at'  => now(),
 				'updated_at'  => now(),
 			],
@@ -186,8 +187,8 @@ class FullDataSeeder extends Seeder
 				'description' => 'Cita completada',
 				'ip_address'  => '127.0.0.1',
 				'user_agent'  => 'Mozilla/5.0',
-				'old_values'  => json_encode(['status' => 'confirmed']),
-				'new_values'  => json_encode(['status' => 'completed']),
+				'old_values'  => ['status' => 'confirmed'],
+				'new_values'  => ['status' => 'completed'],
 				'created_at'  => now(),
 				'updated_at'  => now(),
 			],
@@ -199,12 +200,16 @@ class FullDataSeeder extends Seeder
 				'description' => 'Cita cancelada por paciente',
 				'ip_address'  => '127.0.0.1',
 				'user_agent'  => 'Mozilla/5.0',
-				'old_values'  => json_encode(['status' => 'pending']),
-				'new_values'  => json_encode(['status' => 'cancelled']),
+				'old_values'  => ['status' => 'pending'],
+				'new_values'  => ['status' => 'cancelled'],
 				'created_at'  => now(),
 				'updated_at'  => now(),
 			],
-		]);
+		];
+
+		foreach ($registros_actividad as $registro) {
+			ActivityLog::create($registro);
+		}
 
 		$this->command->info('✅ FullDataSeeder completado con todas las tablas.');
 	}
