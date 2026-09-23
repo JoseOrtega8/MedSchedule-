@@ -10,6 +10,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\PatientProfileController;
+use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 
 Route::get('/', function () {
@@ -53,6 +54,11 @@ Route::middleware(['auth', 'auditar.denegado', 'role:admin', 'throttle:60,1'])->
 	Route::get('/admin/logs/data', [ActivityLogController::class, 'indexData'])->name('admin.logs.data');
 	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
 	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
+	// Visor de auditoria (unidad 3)
+	Route::get('/admin/auditoria', [AuditoriaController::class, 'index'])->name('admin.auditoria');
+	Route::get('/admin/auditoria/exportar', [AuditoriaController::class, 'exportar'])->name('admin.auditoria.exportar');
+	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->whereNumber('id')->name('admin.auditoria.entidad');
+	Route::get('/admin/auditoria/{registro}', [AuditoriaController::class, 'show'])->whereNumber('registro')->name('admin.auditoria.show');
 	Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');
 	Route::get('/admin/especialidades/data', [SpecialtyController::class, 'indexData'])->name('admin.specialties.data');
 	Route::post('/admin/especialidades', [SpecialtyController::class, 'store'])->name('admin.specialties.store');

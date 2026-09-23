@@ -133,6 +133,15 @@
                 </a>
             </div>
 
+            <div class="menu-item">
+                <a class="menu-link {{ $active === 'admin-auditoria' ? 'active' : '' }}" href="{{ route('admin.auditoria') }}">
+                    <div class="menu-link-content">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Auditoría</span>
+                    </div>
+                </a>
+            </div>
+
             <div class="menu-section-title">Sistema</div>
 
             <div class="menu-item">
