@@ -119,7 +119,8 @@ return [
      *
      * To enable, set to true, and then create listeners to watch these events.
      */
-    'events_enabled' => false,
+    // La auditoria (unidad 3) escucha la asignacion de roles y permisos
+    'events_enabled' => true,
 
     /*
      * Teams Feature.

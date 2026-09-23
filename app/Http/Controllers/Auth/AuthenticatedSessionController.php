@@ -58,18 +58,9 @@ class AuthenticatedSessionController extends Controller
 	 */
 	public function destroy(Request $request): RedirectResponse
 	{
-		$user = Auth::user();
-
-		if ($user) {
-			ActivityLog::create([
-				'user_id'     => $user->id,
-				'action'      => 'logout',
-				'description' => 'El usuario cerró sesión',
-				'ip_address'  => $request->ip(),
-				'user_agent'  => $request->userAgent(),
-			]);
-		}
-
+		// El cierre de sesion se audita via el listener AuditarCierreSesion
+		// (evento Illuminate\Auth\Events\Logout), que Auth::guard('web')->logout()
+		// dispara siempre; registrarlo aqui tambien duplicaria la fila.
 		Auth::guard('web')->logout();
 
 		$request->session()->invalidate();
