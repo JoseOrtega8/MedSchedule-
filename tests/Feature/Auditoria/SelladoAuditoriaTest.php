@@ -4,6 +4,7 @@ namespace Tests\Feature\Auditoria;
 
 use App\Exceptions\RegistroAuditoriaInmutable;
 use App\Models\ActivityLog;
+use App\Models\User;
 use App\Services\Auditoria\SelladorAuditoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -92,5 +93,25 @@ class SelladoAuditoriaTest extends TestCase
 
 		$this->assertSame('integra', $resultado['estado']);
 		$this->assertSame(1, $resultado['sin_sellar_historicos']);
+	}
+
+	public function test_borrar_usuario_conserva_la_auditoria_y_la_cadena_integra(): void
+	{
+		$usuario = User::factory()->create();
+		$registro = ActivityLog::create([
+			'action' => 'uno',
+			'description' => 'Registro uno',
+			'user_id' => $usuario->id,
+		]);
+		$usuario_id = $usuario->id;
+
+		$usuario->delete();
+
+		// Sin la FK con ON DELETE SET NULL, la fila conserva el user_id
+		// aunque el usuario ya no exista.
+		$this->assertSame($usuario_id, $registro->fresh()->user_id);
+
+		$resultado = app(SelladorAuditoria::class)->verificar();
+		$this->assertSame('integra', $resultado['estado']);
 	}
 }
