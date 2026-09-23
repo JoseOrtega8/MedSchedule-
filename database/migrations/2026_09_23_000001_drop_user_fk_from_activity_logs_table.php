@@ -19,6 +19,10 @@ return new class extends Migration
 		});
 	}
 
+	// Advertencia: restaurar la FK falla (MySQL 1452) si ya existen user_id
+	// huerfanos de usuarios borrados despues de up(). En ese caso el rollback
+	// exige decidir antes que hacer con esas filas selladas: ponerlas a NULL
+	// rompe su sello, y borrarlas elimina evidencia de auditoria.
 	public function down(): void
 	{
 		Schema::table('activity_logs', function (Blueprint $table) {
