@@ -3,8 +3,17 @@
 namespace App\Providers;
 
 use App\Observability\Trazas\Trazas;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 use OpenTelemetry\API\Trace\NoopTracerProvider;
+use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
 use OpenTelemetry\Contrib\Otlp\SpanExporter;
@@ -15,6 +24,7 @@ use OpenTelemetry\SDK\Trace\Sampler\ParentBased;
 use OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
 use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
 use OpenTelemetry\SDK\Trace\TracerProvider;
+use Throwable;
 
 class TrazasServiceProvider extends ServiceProvider
 {
@@ -42,5 +52,72 @@ class TrazasServiceProvider extends ServiceProvider
 		});
 
 		$this->app->singleton(Trazas::class, fn ($app) => new Trazas($app->make(TracerProviderInterface::class)));
+	}
+
+	public function boot(): void
+	{
+		$this->trazar_consultas();
+		$this->trazar_jobs();
+	}
+
+	// Cada consulta SQL es un span hijo del span activo. Solo la sentencia
+	// parametrizada: los bindings pueden contener PII y nunca se guardan.
+	private function trazar_consultas(): void
+	{
+		DB::listen(function (QueryExecuted $consulta) {
+			if (!Span::getCurrent()->isRecording()) {
+				return;
+			}
+
+			$fin = (int) (microtime(true) * 1e9);
+			$inicio = $fin - (int) ($consulta->time * 1e6);
+
+			$span = app(Trazas::class)->tracer()
+				->spanBuilder('db.query')
+				->setSpanKind(SpanKind::KIND_CLIENT)
+				->setStartTimestamp($inicio)
+				->setAttribute('db.system', $consulta->connection->getDriverName())
+				->setAttribute('db.statement', $consulta->sql)
+				->setAttribute('db.connection', $consulta->connectionName)
+				->startSpan();
+			$span->end($fin);
+		});
+	}
+
+	// Cada job de cola abre un span propio y lo envia al terminar
+	private function trazar_jobs(): void
+	{
+		$abiertos = [];
+
+		Queue::before(function (JobProcessing $evento) use (&$abiertos) {
+			if (!config('trazas.habilitadas')) {
+				return;
+			}
+			$span = app(Trazas::class)->tracer()
+				->spanBuilder('job ' . $evento->job->resolveName())
+				->setSpanKind(SpanKind::KIND_CONSUMER)
+				->setAttribute('messaging.destination.name', $evento->job->getQueue())
+				->startSpan();
+			$abiertos[$evento->job->getJobId() ?? spl_object_id($evento->job)] = [$span, $span->activate()];
+		});
+
+		$cerrar = function ($evento, ?Throwable $error = null) use (&$abiertos) {
+			$clave = $evento->job->getJobId() ?? spl_object_id($evento->job);
+			if (!isset($abiertos[$clave])) {
+				return;
+			}
+			[$span, $alcance] = $abiertos[$clave];
+			unset($abiertos[$clave]);
+			if ($error !== null) {
+				$span->recordException($error);
+				$span->setStatus(StatusCode::STATUS_ERROR);
+			}
+			$alcance->detach();
+			$span->end();
+			app(Trazas::class)->vaciar();
+		};
+
+		Queue::after(fn (JobProcessed $evento) => $cerrar($evento));
+		Queue::failing(fn (JobFailed $evento) => $cerrar($evento, $evento->exception));
 	}
 }
