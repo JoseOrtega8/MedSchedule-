@@ -35,8 +35,10 @@ Dos procesadores actúan sobre cada registro, en este orden:
 
 ## 7.3 Enmascarado de PII
 
-El enmascarado trabaja en cuatro frentes. Todo valor enmascarado se sustituye por
-`[redactado]`.
+El enmascarado trabaja en cuatro frentes. Las claves y los patrones se sustituyen por
+`[redactado]`; los literales que aparecen en una sentencia SQL se sustituyen por `'?'` o `?`, y
+una `QueryException` se reescribe como `QueryException: <sentencia> [SQLSTATE …]`. (En la
+auditoría, módulo c, el marcador es otro: `[protegido]`.)
 
 | Frente | Regla |
 |---|---|
@@ -67,7 +69,7 @@ Las trazas usan `open-telemetry/sdk` 1.15.0 y `open-telemetry/exporter-otlp` 1.4
 | Elemento | Cómo se genera | Qué guarda |
 |---|---|---|
 | Span raíz de la petición | Middleware `IniciarTraza`, el primero de la pila | Método, nombre de ruta, **plantilla** de la ruta (`url.template`), código de respuesta y, si hay sesión, el id del usuario. Estado de error en respuestas 5xx |
-| Consultas SQL | `DB::listen` | La sentencia parametrizada, **sin valores**; el inicio se calcula a partir de la duración que reporta Laravel |
+| Consultas SQL | `DB::listen` | La sentencia parametrizada, **sin bindings**; el inicio se calcula a partir de la duración que reporta Laravel. `db.statement` no pasa por el enmascarado de literales: un valor escrito directamente en SQL crudo, sin parámetro, llegaría al span (límite declarado) |
 | Jobs de cola | Eventos de la cola | Un span por job, abierto en `JobProcessing` y cerrado en `JobProcessed`, `JobFailed` o `JobExceptionOccurred` |
 | Google Calendar | `GoogleCalendarService` | Un span por llamada (`events.insert`, `events.delete`, `events.list`) con `peer.service=google-calendar` |
 
@@ -84,8 +86,10 @@ Detalles que salieron de las revisiones y quedaron en el diseño:
   `MensajeSeguro`.
 - **Tempo caído no frena la aplicación.** Los spans se acumulan en un `BatchSpanProcessor` y se
   envían en `terminate()`, después de responder. El transporte tiene timeout de 1 s y ningún
-  reintento: con los valores por defecto, un Tempo inalcanzable bloqueaba cerca de 40 s. Si el
-  envío falla, se pierden esos spans y queda una advertencia en el log.
+  reintento: con los valores por defecto, un Tempo inalcanzable bloqueaba cerca de 40 s. Así, un
+  Tempo caído acota el costo a 1 s por petición, después de responder; con `php artisan serve`,
+  que atiende una petición a la vez, ese segundo sí retrasa a la siguiente. Si el envío falla,
+  se pierden esos spans y queda una advertencia en el log.
 - **El scrape no se traza.** `/metrics` se consulta cada 15 s y solo generaría ruido.
 - **Propagación.** Se respeta la cabecera `traceparent` entrante y la respuesta incluye
   `X-Trace-Id`. El `traceparent` se acepta tal cual: un cliente podría fijar el `trace_id`. Es
@@ -134,7 +138,7 @@ de OpenTelemetry, sin Tempo. Entre ellas:
 | `test_query_exception_en_job_no_expone_bindings_en_su_span` | Una excepción de consulta en un job no expone valores |
 | `test_scrape_de_metricas_no_produce_spans` | `/metrics` no se traza |
 
-Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Trazas|RedactarDatosSensibles|MensajeSeguro" en la rama feat/107-trazabilidad]].
+Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Trazas|RedactarDatosSensibles|MensajeSeguro" en la rama feat/107-trazabilidad, de evidencia/pruebas-trazas.txt]].
 
 ## 7.8 Costo de la instrumentación
 

@@ -43,8 +43,8 @@ local y ninguno queda expuesto a la red.
 | Tempo (OTLP/HTTP) | `127.0.0.1:4318` | Receptor de trazas que envía la aplicación |
 | blackbox-exporter, mysqld-exporter, Loki, Alloy | Sin puerto publicado | Solo se comunican dentro de la red del compose |
 
-El stack de SonarQube de la Unidad 2 publica `9000:9000` sin restringir la interfaz; no se
-modificó en esta unidad.
+El stack de SonarQube (`infra/sonarqube/docker-compose.yml`) también se publica solo en
+`127.0.0.1:9000`.
 
 ## 3.4 Requisito de Docker Desktop en macOS
 
@@ -52,8 +52,8 @@ Alloy lee el log JSON de la aplicación montando `storage/logs` del proyecto
 (`../../storage/logs:/logs:ro`). En macOS, Docker Desktop solo puede montar rutas incluidas en
 **Settings → Resources → File sharing**. El proyecto vive en
 `/Applications/MAMP/htdocs/MedSchedule-`, fuera de las rutas compartidas por defecto, así que
-esa ruta debe agregarse. Sin ella, el contenedor de Alloy no ve el archivo y Loki queda vacío
-sin ningún error visible en la aplicación.
+esa ruta debe agregarse. Sin ella, `docker compose up` no puede crear el contenedor de Alloy y
+el servicio no levanta: Docker Desktop rechaza el montaje con un error "Mounts denied".
 
 ## 3.5 Variables de entorno
 
@@ -81,7 +81,7 @@ del control de versiones; los archivos `.env.example` llevan los secretos vacío
 |---|---|
 | `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` | Administrador de Grafana. El compose se niega a arrancar si faltan |
 | `MYSQL_EXPORTER_PASSWORD` | Contraseña del usuario de solo lectura `exporter` de MySQL |
-| `MYSQL_EXPORTER_HOST` | MySQL a vigilar: `host.docker.internal:8889` con MAMP local, `mysql:3306` en el Codespace |
+| `MYSQL_EXPORTER_HOST` | MySQL a vigilar: `host.docker.internal:8889` con MAMP local (valor por defecto) |
 
 ### Secretos de sesión o del repositorio
 
@@ -94,7 +94,13 @@ del control de versiones; los archivos `.env.example` llevan los secretos vacío
 
 ## 3.6 Las pruebas no necesitan el stack
 
-`phpunit.xml` fija `METRICAS_ALMACEN=memoria` y `OTEL_ENABLED=false`. La suite corre sin Redis,
-sin Tempo y sin Loki, igual que en el CI. Si alguno de esos servicios no está disponible en
-ejecución normal, la aplicación responde con normalidad y solo registra una advertencia: el
-monitoreo nunca puede tumbar la aplicación que vigila.
+`phpunit.xml` fija `METRICAS_ALMACEN=memoria` y `OTEL_ENABLED=false`, así que la suite corre sin
+Redis, sin Tempo y sin Loki. Las pruebas de los tres módulos se ejecutan localmente y su salida
+se guarda como evidencia (`evidencia/pruebas-*.txt`); en GitHub Actions, `release.yml` corre la
+suite completa en modo informativo y `ci.yml` solo un subconjunto de cuatro clases que no
+incluye las de esta unidad (apartado 11).
+
+En ejecución normal, si Redis o Tempo no están disponibles, la aplicación responde con
+normalidad y solo registra una advertencia. Loki no genera ni eso: la aplicación nunca habla con
+Loki, solo escribe su archivo de log, que Alloy lee por su cuenta. El monitoreo nunca puede
+tumbar la aplicación que vigila.

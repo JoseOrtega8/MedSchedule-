@@ -4,7 +4,7 @@
 
 | Workflow | Cuándo corre | Papel |
 |---|---|---|
-| `.github/workflows/ci.yml` | `push` a `main`, `develop`, `backend`, `frontend`; pull requests contra `main` y `develop` | Integración continua heredada del equipo: formato, pruebas de PHPUnit y, si hay instancia, análisis estático |
+| `.github/workflows/ci.yml` | `push` a `main`, `develop`, `backend`, `frontend`; pull requests contra `main` y `develop` | Integración continua heredada del equipo: ESLint y Prettier (ambos con `\|\| true`, así que no bloquean), un subconjunto de pruebas de PHPUnit y, si hay instancia, análisis estático |
 | `.github/workflows/release.yml` | `push` a `main` y `develop`; pull requests contra `main`, `develop` y `feat/**`; `workflow_dispatch` | Pipeline de liberación y despliegue (apartado 2), con las compuertas de esta unidad |
 
 ## 11.2 Cambios de esta unidad en los workflows
@@ -16,9 +16,18 @@
 | `release.yml` | Job nuevo `seguridad` (Snyk), `needs: integracion`, siempre corre | [[PR-109]] |
 | `release.yml` | El job `pruebas` pasa a `needs: [integracion, calidad, seguridad]` con su condición | [[PR-105]] y [[PR-109]] |
 
-Los módulos de monitoreo, trazabilidad y auditoría no modifican los workflows: su código se
-valida con la suite de PHPUnit que ya corre en el pipeline, con `METRICAS_ALMACEN=memoria` y
-`OTEL_ENABLED=false` fijados en `phpunit.xml`, sin Redis, Tempo ni Loki.
+Los módulos de monitoreo, trazabilidad y auditoría no modifican los workflows. Sus pruebas no
+necesitan Redis, Tempo ni Loki (`phpunit.xml` fija `METRICAS_ALMACEN=memoria` y
+`OTEL_ENABLED=false`), pero conviene precisar dónde corren:
+
+| Workflow | Qué corre de PHPUnit | ¿Incluye las pruebas de esta unidad? |
+|---|---|---|
+| `ci.yml` | Solo un subconjunto de cuatro clases: `--filter="AuthTest\|ActivityLogControllerTest\|ExampleTest\|EnsureAdminRoleTest" \|\| true` | No |
+| `release.yml` | La suite completa, en modo informativo (`PERMITIR_FALLO_FUNCIONAL`) | Sí, pero un fallo no detiene el pipeline |
+
+Por eso las pruebas de cada módulo se ejecutaron localmente y su salida se guarda como
+evidencia (`evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`,
+`evidencia/pruebas-auditoria.txt`).
 
 ## 11.3 Qué compuerta detiene qué
 
@@ -28,9 +37,9 @@ valida con la suite de PHPUnit que ya corre en el pipeline, con `METRICAS_ALMACE
 | Puerta de calidad de SonarQube | Pruebas y despliegue | GitHub Actions (`calidad`) o local con Docker (`scripts/sonarqube-escanear.sh`) | En Actions, solo con `SONAR_HABILITADO=true` y una instancia accesible; en local, siempre que se ejecuta el script |
 | Vulnerabilidades altas o críticas (Snyk) | Pruebas y despliegue | GitHub Actions (`seguridad`) o local (`npm run seguridad:snyk`) | Solo con `SNYK_TOKEN`; sin él, aviso visible y el job termina en éxito |
 | Umbrales de k6 | Despliegue | GitHub Actions (`pruebas`) | Siempre |
-| PHPUnit | Nada, por ahora | GitHub Actions (`pruebas` y `ci.yml`) | En modo informativo por `PERMITIR_FALLO_FUNCIONAL` en `release.yml` y con `\|\| true` en `ci.yml`, mientras siga abierto el issue #86 |
-| Pruebas de las reglas de alerta (`promtool test rules`) | Nada en el pipeline | Local, en la imagen `prom/prometheus:v3.14.0` | Se ejecutan a mano al cambiar `alertas.yml` |
-| Pruebas del script de Snyk (`npm run test:scripts`) | Nada en el pipeline | Local | Se ejecutan a mano al cambiar el script |
+| PHPUnit | Nada, por ahora | GitHub Actions (`pruebas` y `ci.yml`) y local | `release.yml` corre la suite completa en modo informativo por `PERMITIR_FALLO_FUNCIONAL`; `ci.yml` corre solo un subconjunto de cuatro clases con `\|\| true`; ambos mientras siga abierto el issue #86. Las pruebas de los módulos se ejecutan localmente |
+| Pruebas de las reglas de alerta (`promtool test rules`) | Nada en el pipeline | Local, en la imagen `prom/prometheus:v3.14.0` | Se ejecutan a mano al cambiar `alertas.yml`; salida en `evidencia/promtool-alertas.txt` |
+| Pruebas del script de Snyk (`npm run test:scripts`) | Nada en el pipeline | Local | Se ejecutan a mano al cambiar el script; salida en `evidencia/snyk-pruebas-script.txt` |
 
 Queda dicho de forma explícita: la compuerta funcional no es total mientras siga abierto el
 issue #86, que corresponde a fallos anteriores a esta unidad. `pruebas-liberacion.sh` imprime el
@@ -43,7 +52,7 @@ alcanza `localhost` de otra máquina, así que los jobs `analisis-estatico` y `c
 escritos y solo corren cuando la variable `SONAR_HABILITADO` vale `true` y los secretos
 `SONAR_TOKEN` y `SONAR_HOST_URL` apuntan a una instancia accesible. Mientras tanto, la misma
 compuerta se ejecuta con `scripts/sonarqube-escanear.sh`, que termina con código 1 si la puerta
-no se supera (evidencia en el apartado 0). La compuerta existe y funciona, pero mientras no haya
+no se supera (evidencia en el apartado 0.1). La compuerta existe y funciona, pero mientras no haya
 una instancia accesible se ejecuta fuera de GitHub Actions y depende de que alguien la corra.
 
 ## 11.5 Lo que corre fuera del pipeline, a propósito

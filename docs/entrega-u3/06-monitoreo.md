@@ -40,7 +40,8 @@ Tres decisiones de diseño:
 
 - **La etiqueta `route` es el nombre de la ruta, nunca la URL.** Una URL con identificadores
   (`/admin/auditoria/42`) crearía una serie temporal por cada id y haría crecer la cardinalidad
-  sin límite. Las rutas sin nombre se agrupan como `sin_nombre`.
+  sin límite. Las rutas sin nombre se agrupan como `sin_nombre`, y las peticiones que no
+  coinciden con ninguna ruta (un 404) como `sin_ruta`.
 - **Los buckets cubren el acuerdo y su doble.** El último bucket finito es 10 s, el doble del
   SLO de 5 s, para que el percentil 95 se pueda calcular aunque se incumpla el acuerdo.
 - **El scrape no cuenta como tráfico.** Las peticiones a la ruta `metricas` no se registran.
@@ -66,8 +67,9 @@ Todos los puntos donde la aplicación toca el monitoreo están dentro de `try/ca
 | Contar una cita agendada o cancelada | Se escribe una advertencia y la cita se guarda igual |
 | Exportar en `/metrics` | Responde 503 a Prometheus, que marca el objetivo como caído |
 
-Los clientes de Redis tienen timeout de 0.2 s de conexión y de lectura, para que un Redis
-caído no agregue más de eso a una petición.
+Los clientes de Redis tienen timeout de 0.2 s de conexión y de lectura. Una petición puede tocar
+Redis hasta dos veces (el middleware y, si crea o cancela una cita, el observer), así que un
+Redis caído agrega como máximo alrededor de 0.4 s a esa petición.
 
 ## 6.5 Tableros
 
@@ -98,7 +100,8 @@ servicio y sus pruebas con `promtool` se describen en el apartado 4. Resumen:
 
 Las pruebas de `promtool` incluyen casos negativos que discriminan umbrales y ventanas: por
 ejemplo, un p95 entre 2.5 y 5 s dispara el aviso temprano pero no la alerta crítica, y un 0.5 %
-de errores no dispara la alerta del 1 %.
+de errores no dispara la alerta del 1 %. El resultado de la corrida está en el apartado 4.5
+(`evidencia/promtool-alertas.txt`).
 
 ## 6.7 Pruebas de la aplicación
 
@@ -114,7 +117,7 @@ almacén en memoria:
 | `test_token_correcto_devuelve_metricas` | Con la credencial correcta devuelve el formato de Prometheus |
 | `test_cita_agendada_y_cancelada_incrementa_contadores` | Los contadores de negocio responden a los eventos de la cita |
 
-Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter=Metricas en la rama feat/106-monitoreo]].
+Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter=Metricas en la rama feat/106-monitoreo, de evidencia/pruebas-metricas.txt]].
 
 ## 6.8 Antes y después
 

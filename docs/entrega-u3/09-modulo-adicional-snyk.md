@@ -9,9 +9,10 @@ MedSchedule depende de paquetes de terceros declarados en `composer.lock` (PHP) 
 punto del pipeline: una dependencia con una vulnerabilidad conocida llegaba a producción y solo
 se sabía por un aviso externo. SonarQube analiza el código propio, no el de las dependencias.
 
-Este módulo no forma parte de los tres puntos del enunciado. Se agrega como historia de usuario
+Este módulo no forma parte de los tres módulos del alcance. Se agrega como historia de usuario
 propia (US5) en la especificación, en su propia rama (`feat/109-snyk`), sin modificar los otros
-módulos salvo el job nuevo de `release.yml`.
+módulos: agrega el job nuevo de `release.yml`, el archivo `.snyk` y dos scripts en
+`package.json` (`seguridad:snyk` y `test:scripts`).
 
 ## 9.2 Qué analiza
 
@@ -49,7 +50,8 @@ lo escribe en un archivo.
 El script tiene pruebas en bash puro, `tests/scripts/snyk-escanear.test.sh`, que ponen un
 `npx` falso al frente del `PATH` y comprueban cada código de salida, los argumentos exactos del
 CLI, la condición de `--monitor` y que un token falso reconocible no aparezca en la salida. Se
-ejecutan con `npm run test:scripts`; la corrida termina con `Resumen: 21/21 pruebas OK`.
+ejecutan con `npm run test:scripts`; el script contiene 21 comprobaciones. Resultado:
+[[PENDIENTE: resumen de la corrida de npm run test:scripts, de evidencia/snyk-pruebas-script.txt]].
 
 ## 9.4 Integración en `release.yml`
 
@@ -78,8 +80,11 @@ tiene excepciones.
 
 ### Antes: nadie revisa las dependencias
 
-Antes de este módulo, el pipeline no tenía ningún paso que leyera `composer.lock` ni
-`package-lock.json`; `release.yml` pasaba de la integración a las pruebas.
+En la rama `feat/105-u3-sdd`, que no tiene el job `seguridad`, se agregó a propósito una
+dependencia con una vulnerabilidad conocida y se corrió el pipeline: pasó de la integración a las
+pruebas sin ningún aviso, porque ningún paso leía `composer.lock` ni `package-lock.json`.
+
+[[PENDIENTE: dependencia vulnerable usada y resultado de la corrida sin compuerta, de evidencia/snyk-00-antes.txt]]
 
 ### Después: la compuerta decide
 
@@ -98,6 +103,7 @@ Corrida con una dependencia vulnerable agregada a propósito:
 ## 9.7 Límites
 
 - Sin `SNYK_TOKEN` no hay análisis: queda el aviso en la corrida, no una compuerta fallida.
-- El análisis se autentica con la cuenta gratuita de Snyk del autor; no hay cuenta de equipo.
+- El análisis se autentica con una cuenta gratuita de Snyk; no hay cuenta de equipo. Cualquier
+  integrante con cuenta puede configurar el secreto `SNYK_TOKEN` en el repositorio.
 - El umbral es alta o crítica: `--severity-threshold=high` deja fuera del reporte y de la
   compuerta las vulnerabilidades de severidad media y baja.

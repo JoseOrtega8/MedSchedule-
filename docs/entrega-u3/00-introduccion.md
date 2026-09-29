@@ -5,9 +5,9 @@
 **Repositorio:** [`github.com/JoseOrtega8/MedSchedule-`](https://github.com/JoseOrtega8/MedSchedule-) (público).
 **Materia:** Desarrollo Web Profesional — Grupo IDGS 8-2, Universidad Tecnológica de Hermosillo.
 **Profesor:** Iván Rogelio Chenoweth.
-**Fecha:** 2026-09.
+**Fecha:** septiembre de 2026.
 
-## Observación de la Unidad 2: dashboards de SonarQube
+## 0.1 Observación de la Unidad 2: dashboards de SonarQube
 
 La revisión de la Unidad 2 señaló que los dashboards de SonarQube no se localizaban en la
 entrega: aparecían como rutas de archivo al final del documento. En esta unidad se muestran
@@ -37,7 +37,7 @@ aquí, al inicio y como imágenes, tomadas sobre el análisis de la rama de la U
 
 **Medidas.** Resumen de todas las métricas del proyecto: tamaño, complejidad, fiabilidad, seguridad y mantenibilidad.
 
-### La puerta de calidad ahora detiene la liberación
+### 0.1.1 La puerta de calidad ahora detiene la liberación
 
 En la Unidad 2 el análisis estático era un reporte: el escáner terminaba en éxito sin importar
 el veredicto. En esta unidad `scripts/sonarqube-escanear.sh` ejecuta el escáner con
@@ -57,7 +57,7 @@ razón explicada en el apartado 8.5 de la Unidad 2 (el informe de cobertura no s
 análisis). [[PENDIENTE: métrica usada en la condición de la puerta estricta (new_coverage o coverage), de evidencia/sonar-puerta-falla.txt]]. Después de la corrida que falla, el proyecto se
 regresa a la puerta por defecto.
 
-## Método de verificación
+## 0.2 Método de verificación
 
 Las cifras de este documento provienen de ejecuciones reales o de los archivos del
 repositorio, no de estimaciones. Cada una se puede rastrear a su origen:
@@ -66,19 +66,20 @@ repositorio, no de estimaciones. Cada una se puede rastrear a su origen:
 |---|---|
 | Dashboards y puerta de calidad de SonarQube | `evidencia/sonar-*.png`, `evidencia/sonar-puerta-*.txt` |
 | Umbrales de alerta | `infra/monitoreo/prometheus/alertas.yml`, derivados de `docs/entrega-u2/03-niveles-de-servicio.md` |
-| Comportamiento de las alertas | `infra/monitoreo/prometheus/alertas.test.yml`, ejecutado con `promtool test rules` |
+| Comportamiento de las alertas | `infra/monitoreo/prometheus/alertas.test.yml`, ejecutado con `promtool test rules`; salida en `evidencia/promtool-alertas.txt` |
 | Tiempo de notificación de una caída | `evidencia/monitoreo-alerta-tiempos.txt` |
 | Tableros, trazas y visor de auditoría | Capturas `evidencia/monitoreo-*.png`, `evidencia/trazas-*.png`, `evidencia/auditoria-*.png` |
 | Costo de la instrumentación | `evidencia/k6-sin-instrumentacion.txt` y `evidencia/k6-con-instrumentacion.txt` |
+| Pruebas de PHPUnit de cada módulo | Ejecutadas localmente: `evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`, `evidencia/pruebas-auditoria.txt` |
 | Integridad de la auditoría | `evidencia/auditoria-verificar-integra.txt` y `evidencia/auditoria-verificar-rota.txt` |
-| Análisis de dependencias | `evidencia/snyk-*.png` y `evidencia/snyk-puerta-*.txt` |
+| Análisis de dependencias | `evidencia/snyk-00-antes.txt`, `evidencia/snyk-*.png`, `evidencia/snyk-puerta-*.txt` y `evidencia/snyk-pruebas-script.txt` |
 | Versiones de herramientas | Imagen fijada en `infra/monitoreo/docker-compose.yml`, `composer.lock` y scripts |
 | Diseño y cambios de diseño | `specs/003-observabilidad-auditoria/` (`spec.md`, `plan.md`, `tasks.md`) |
 
 Donde un dato no se midió, el documento lo dice. Los valores que dependen de una corrida se
 señalan con su archivo de evidencia.
 
-## Contenido
+## 0.3 Contenido
 
 | # | Documento | Contenido |
 |---|---|---|
@@ -95,7 +96,7 @@ señalan con su archivo de evidencia.
 | 10 | Parámetros de las herramientas | Cada parámetro, su valor, su archivo y su razón |
 | 11 | Integración en CI/CD | Qué compuerta detiene qué y dónde corre |
 
-## Pull requests de esta entrega
+## 0.4 Pull requests de esta entrega
 
 | Pull request | Contenido | Base |
 |---|---|---|

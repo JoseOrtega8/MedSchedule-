@@ -39,16 +39,17 @@ tenía forma de saber qué ocurría **después**. Concretamente:
 | ¿Las dependencias tienen vulnerabilidades conocidas? | `composer.lock` y `package-lock.json` no se analizaban en ningún punto del pipeline |
 | ¿La puerta de calidad detiene algo? | El análisis de SonarQube era un reporte; su veredicto no detenía la liberación |
 
-A esto se suma un hallazgo hecho al planear la auditoría: los dos `ActivityLog::create` de
-`PatientProfileController` guardaban alergias, padecimientos, tipo de sangre y CURP **en claro**
-en las columnas `old_values` y `new_values`. Es decir, el único registro de actividad existente
+A esto se suma un hallazgo hecho al planear la auditoría: el `ActivityLog::create` del método
+`update()` de `PatientProfileController` guardaba **en claro**, en las columnas `old_values` y
+`new_values`, la fecha de nacimiento, el tipo de sangre, las alergias, los padecimientos, los
+contactos de emergencia y la CURP del paciente. Es decir, el registro de actividad existente
 filtraba PII médica. Se corrigió en el módulo de auditoría (apartado 8).
 
 ## 1.4 Lo que esta entrega construye
 
 | Pregunta | Respuesta de esta unidad | Apartado |
 |---|---|---|
-| ¿La puerta de calidad detiene algo? | El escáner espera el veredicto y el pipeline se detiene si no se supera | 0 y 11 |
+| ¿La puerta de calidad detiene algo? | El escáner espera el veredicto y el pipeline se detiene si no se supera | 0.1 y 11 |
 | ¿Está arriba y responde a tiempo? | Prometheus, Grafana y Alertmanager con seis alertas ligadas a los niveles de servicio | 6 |
 | ¿Qué pasó en una petición? | Logs JSON con PII enmascarada y trazas OpenTelemetry, enlazados en Grafana | 7 |
 | ¿Quién cambió qué? | Auditoría automática de seis entidades con sello HMAC encadenado y visor propio | 8 |

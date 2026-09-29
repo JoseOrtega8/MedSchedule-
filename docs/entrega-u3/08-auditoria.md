@@ -30,7 +30,8 @@ Reglas de captura:
 - Solo se guardan los campos que cambiaron. Un cambio que solo toca `remember_token` o las
   marcas de tiempo no genera registro.
 - Cada registro guarda quién (`user_id`), qué (`action`, entidad e id), cuándo, desde qué IP,
-  con qué agente de usuario y, si la petición tenía traza, su `trace_id`.
+  con qué agente de usuario y, si la petición tenía traza, su `trace_id`. Este último solo se
+  llena cuando la rama de trazabilidad está integrada; sin ella la columna queda vacía.
 - Un intento de inicio de sesión fallido se registra con el correo enmascarado
   (`j***@dominio`), nunca completo.
 - El cierre de sesión lo registra solo el listener: el controlador también lo registraba y
@@ -47,9 +48,11 @@ valor.
 | `PatientProfile` | `birth_date`, `blood_type`, `allergies`, `chronic_conditions`, `emergency_contact_name`, `emergency_contact_phone`, `curp` |
 | `Appointment` | `reason` (motivo de la consulta) y `observaciones`: texto clínico libre |
 
-**Hallazgo corregido.** Los dos `ActivityLog::create` de `PatientProfileController` guardaban
-alergias, padecimientos, tipo de sangre y CURP en claro en `old_values` y `new_values`. Se
-eliminaron: el trait registra esos mismos cambios con los valores protegidos. De paso,
+**Hallazgo corregido.** El `ActivityLog::create` del método `update()` de
+`PatientProfileController` guardaba en claro, en `old_values` y `new_values`, la fecha de
+nacimiento, el tipo de sangre, las alergias, los padecimientos, los contactos de emergencia y la
+CURP. El de `updatePhoto()` solo registraba la acción, sin valores. Ambos se eliminaron: el trait
+registra esos mismos cambios con los valores protegidos. De paso,
 `FullDataSeeder` dejó de insertar auditoría con `DB::table()` (sin sello) y pasó a usar el
 modelo.
 
@@ -65,7 +68,7 @@ Cada registro se sella al insertarse:
 | JSON canónico | Claves ordenadas (`ksort` con `SORT_STRING`, también dentro de los valores), sin espacios. MySQL reordena las claves de las columnas JSON; sin ordenar, un registro íntegro parecería alterado |
 | Encadenamiento | `hash_anterior` es el sello del registro previo. Alterar o borrar una fila intermedia rompe la cadena desde ese punto |
 | Concurrencia | La inserción ocurre en una transacción con `lockForUpdate` sobre el último registro, para que dos cambios simultáneos no bifurquen la cadena; se reintenta hasta 3 veces ante un interbloqueo |
-| Solo agregado | El modelo `ActivityLog` lanza `RegistroAuditoriaInmutable` ante cualquier intento de modificar o eliminar un registro desde la aplicación |
+| Solo agregado | El modelo Eloquent `ActivityLog` lanza `RegistroAuditoriaInmutable` ante cualquier intento de modificar o eliminar un registro a través del modelo. Una operación masiva (`ActivityLog::query()->update()` o `->delete()`) o SQL directo no se bloquea, pero la verificación de integridad la detecta |
 | Llave | `AUDIT_HMAC_KEY` en `.env`. En producción, sin llave la aplicación no arranca. Fuera de producción se deriva de `APP_KEY` con una advertencia en el log, para no romper los entornos del equipo |
 
 La migración `2026_09_23_000000` agrega `trace_id`, `hash_anterior` y `hash`, y **sella en la
@@ -79,12 +82,18 @@ fila "histórica sin sello": toda fila con `hash` nulo cuenta como rota.
 | Modificar cualquier campo sellado de una fila | Borrar las **últimas** filas de la tabla: la cadena queda íntegra hasta donde llega |
 | Borrar una fila intermedia | A quien posee `AUDIT_HMAC_KEY`: puede recalcular toda la cadena de forma consistente. El sello protege contra quien no tiene la llave |
 | Insertar una fila sin sello | Cambios en `id` o `updated_at`, que no forman parte del contenido sellado |
-| Anular los sellos de forma masiva | — |
+| Anular los sellos de forma masiva | El vaciado completo de la tabla: la verificación la reporta íntegra con 0 registros revisados |
 
 Dos condiciones de operación completan los límites: rotar `AUDIT_HMAC_KEY` invalida la cadena
 existente y obliga a volver a sellar el histórico con la llave nueva, y la migración que sella
 debe correr en modo mantenimiento (`php artisan down`) para que nadie inserte auditoría a mitad
 del sellado.
+
+Esta última condición no la cumple hoy el despliegue automático: `scripts/despliegue.sh` ejecuta
+`php artisan migrate --force` sin poner la aplicación en modo mantenimiento. Por eso el primer
+despliegue que incluya la migración de integridad requiere un paso manual documentado: ejecutar
+`php artisan down`, luego `php artisan migrate --force` y después `php artisan up`. Incorporar
+el modo mantenimiento al script queda como mejora pendiente.
 
 ## 8.5 La auditoría sobrevive al usuario
 
@@ -116,7 +125,7 @@ está declarado en el repositorio y debe configurarse en el servidor donde se de
 | Listado | Paginado en el servidor, 25 registros por página |
 | Detalle | Diff lado a lado, campo por campo, con valores antes y después |
 | Línea de tiempo | Historial de una entidad concreta. La URL usa alias (`cita`, `usuario`, `perfil_paciente`…), nunca nombres de clase, y el id está limitado a 18 dígitos para evitar un desbordamiento que respondía 500 |
-| Integridad | Indicador verde ("Cadena íntegra") o rojo ("Cadena comprometida en el registro #n"), con el resultado de la última verificación |
+| Integridad | Tres estados: gris ("Integridad aún no verificada") si nunca se ha ejecutado la verificación, verde ("Cadena íntegra") o rojo ("Cadena comprometida en el registro #n"), con el resultado de la última verificación |
 | Enlace a traza | Si el registro tiene `trace_id`, enlace "Ver traza de la petición" a Grafana Explore sobre Tempo |
 | Exportación CSV | En streaming; toda celda que empieza con `=`, `+`, `-`, `@`, tabulador o retorno de carro se antepone con `'` para que una hoja de cálculo no la interprete como fórmula; `fputcsv` sin escape invertido; un error a mitad de la exportación se registra en el log y no se expone en el archivo; la exportación queda auditada |
 
@@ -134,12 +143,12 @@ El módulo agrega 40 métodos de prueba: 36 en `tests/Feature/Auditoria/` y 4 un
 | `test_detecta_eliminacion_intermedia` | Borrar una fila intermedia rompe la cadena |
 | `test_fila_sin_sello_rompe_la_cadena` y `test_anular_todos_los_hashes_rompe_la_cadena` | No hay forma de "perdonar" filas sin sello |
 | `test_borrar_usuario_conserva_la_auditoria_y_la_cadena_integra` | Quitar la llave foránea cumple su propósito |
-| `test_no_se_puede_modificar` y `test_no_se_puede_eliminar` | Solo agregado desde la aplicación |
+| `test_no_se_puede_modificar` y `test_no_se_puede_eliminar` | Solo agregado a través del modelo |
 | `test_no_admin_recibe_403` (y sus variantes en detalle, línea de tiempo y exportación) | Exclusivo del administrador |
 | `test_exportar_csv_escapa_formulas_y_queda_auditado` | CSV seguro y exportación auditada |
 | `test_login_fallido_se_audita_con_correo_enmascarado` | El correo no se guarda completo |
 
-Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Auditoria|CsvSeguro|Enmascarar" en la rama feat/108-auditoria]].
+Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Auditoria|CsvSeguro|Enmascarar" en la rama feat/108-auditoria, de evidencia/pruebas-auditoria.txt]].
 
 ## 8.9 Antes y después
 

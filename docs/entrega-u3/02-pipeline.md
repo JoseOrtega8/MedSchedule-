@@ -18,7 +18,7 @@ de dependencias con Snyk.
 | 1 | Integración (`integracion`) | Instala dependencias, revisa sintaxis PHP, formato de los archivos modificados y compila assets | `php -l`, `scripts/verificar-formato.sh`, `npm run build` | — | Falla la sintaxis, el formato o la compilación |
 | 2 | Calidad (`calidad`) | Análisis estático y espera del veredicto de la puerta | `SonarSource/sonarqube-scan-action@v5` con `sonar.qualitygate.wait=true`; en local, `scripts/sonarqube-escanear.sh` | `integracion` | La puerta de calidad no se supera |
 | 3 | Seguridad (`seguridad`) | Análisis de `composer.lock` y `package-lock.json` | `scripts/snyk-escanear.sh` | `integracion` | Hay una vulnerabilidad de severidad alta o crítica, o el análisis falla |
-| 4 | Pruebas en el entorno de liberación (`pruebas`) | Genera el entorno, corre PHPUnit y la prueba de carga de k6 | `scripts/entorno-liberacion.sh`, `scripts/pruebas-liberacion.sh` | `integracion`, `calidad`, `seguridad` | k6 incumple un umbral (código 99) |
+| 4 | Pruebas en el entorno de liberación (`pruebas`) | Genera el entorno, corre PHPUnit y la prueba de carga de k6 | `scripts/entorno-liberacion.sh`, `scripts/pruebas-liberacion.sh` | `integracion`, `calidad`, `seguridad` | k6 termina con un código distinto de 0 (99 cuando incumple un umbral) |
 | 5 | Despliegue (`despliegue`) | Dependencias de producción, migraciones, caché y verificación de salud | `scripts/despliegue.sh` | `pruebas` | El servicio no responde tras 15 intentos |
 
 Las etapas 2 y 3 corren en paralelo, ambas después de la integración. La etapa 4 exige que la
@@ -34,8 +34,8 @@ escritas en los archivos:
 |---|---|---|
 | Calidad (SonarQube) | El job solo corre si la variable del repositorio `SONAR_HABILITADO` vale `true` | Un SonarQube en `localhost` no es alcanzable desde un runner de GitHub. Sin una instancia accesible el job se omite y el pipeline continúa; la misma compuerta se ejecuta en local con `scripts/sonarqube-escanear.sh` |
 | Seguridad (Snyk) | El job siempre corre; el análisis solo si existe el secreto `SNYK_TOKEN` | Sin token, el análisis se omite con un aviso `::notice::` visible en la corrida y el job termina en éxito. Sin token no hay compuerta de dependencias, solo el aviso |
-| Pruebas funcionales (PHPUnit) | `release.yml` define `PERMITIR_FALLO_FUNCIONAL: 'true'` | La suite arrastra fallos anteriores documentados en el issue #86. Mientras siga abierto, un fallo de PHPUnit se reporta en el resumen como "informativo" pero no detiene el pipeline. En `ci.yml` las pruebas heredan además un `\|\| true`, que descarta el código de salida |
-| Pruebas de carga (k6) | Umbrales `p(95)<5000` y `rate<0.01` en `tests/carga/jri-prueba.js` | k6 termina con código 99 y `scripts/pruebas-liberacion.sh` sale con 1: el despliegue no corre |
+| Pruebas funcionales (PHPUnit) | `release.yml` define `PERMITIR_FALLO_FUNCIONAL: 'true'` | La suite arrastra fallos anteriores documentados en el issue #86. Mientras siga abierto, un fallo de PHPUnit se reporta en el resumen como "informativo" pero no detiene el pipeline. En `ci.yml` solo corre un subconjunto de cuatro clases, que además hereda un `\|\| true` que descarta el código de salida |
+| Pruebas de carga (k6) | Cuatro umbrales en `tests/carga/jri-prueba.js`: `http_req_duration` `p(95)<5000`, `http_req_failed` `rate<0.01`, `tasa_login_exitoso` `rate>0.99` y `duracion_panel` `p(95)<5000` | Si k6 termina con cualquier código distinto de 0 (99 al incumplir un umbral, u otro si la prueba misma falla), `scripts/pruebas-liberacion.sh` sale con 1 y el despliegue no corre |
 | Despliegue | Solo en `push` a `main` | En ramas de trabajo y pull requests el pipeline llega hasta las pruebas |
 
 Conviene decirlo sin rodeos: **la compuerta funcional no es total**. Hoy la que detiene la
@@ -44,6 +44,11 @@ calidad (cuando hay instancia) y el análisis de dependencias (cuando hay token)
 con el `|| true` de `ci.yml` es que `pruebas-liberacion.sh` no oculta el resultado: lo imprime
 en el resumen de compuertas y la excepción se activa con una variable explícita que debe
 quitarse al cerrar el issue #86.
+
+Una limitación más del despliegue: `scripts/despliegue.sh` ejecuta `php artisan migrate --force`
+sin poner antes la aplicación en modo mantenimiento. La migración de integridad de la auditoría
+necesita ese modo (apartado 8.4), así que su primer despliegue requiere un paso manual
+documentado; incorporarlo al script queda como mejora pendiente.
 
 ## 2.4 Diagrama del flujo
 

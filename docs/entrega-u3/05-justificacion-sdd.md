@@ -17,7 +17,7 @@ debe hacer nunca**, antes de decidir cómo. Tres ejemplos de esta unidad muestra
 | FR-011: las trazas no incluyen valores de parámetros | Los spans SQL guardan la sentencia parametrizada, nunca los bindings |
 | FR-005: el endpoint de métricas se comporta como inexistente sin credencial | `/metrics` responde 404 y no 401, para no revelar que existe |
 
-Además, la especificación define criterios medibles (SC-001 a SC-009) que después se
+Además, la especificación define resultados medibles (SC-001 a SC-009) que después se
 comprueban con evidencia: por ejemplo, que la notificación de una caída llegue en menos de
 3 minutos o que el 100 % de las alteraciones manuales de auditoría se detecten.
 
@@ -30,7 +30,7 @@ superar antes de implementarse:
 | Principio | Cómo lo cumple esta unidad |
 |---|---|
 | I. Estilo de código | Comentarios en español y `snake_case` en funciones y variables propias |
-| II. Manejo de errores | Fallos de Redis, Tempo o Loki capturados con `try/catch` explícito y registrados como advertencia; la escritura de auditoría no captura excepciones: si falla, falla la operación auditada |
+| II. Manejo de errores | Fallos de Redis y Tempo capturados con `try/catch` explícito y registrados como advertencia. La auditoría por trait corre en los eventos `created`, `updated` y `deleted`, después de la escritura y sin una transacción común: si la auditoría falla, la petición responde con error, pero el cambio ya puede estar guardado. `AuditarAccesoDenegado` sí captura el fallo y lo registra con `Log::error`, para no convertir un 403 en un 500 |
 | III. Gestión de secretos | `METRICS_TOKEN`, `AUDIT_HMAC_KEY`, credenciales de Grafana y del exporter solo en `.env` |
 | IV. Validación de entrada | Filtros del visor validados con `FiltrarAuditoriaRequest`; token de métricas comparado con `hash_equals` |
 | V. Exposición de errores al cliente | La página de error 500 muestra solo un folio |
@@ -43,7 +43,7 @@ Los tres artefactos viven en `specs/003-observabilidad-auditoria/`:
 
 | Archivo | Responde | Contenido |
 |---|---|---|
-| `spec.md` | Qué y por qué | Cinco historias de usuario (US1 dashboards de SonarQube, US2 monitoreo, US3 trazabilidad, US4 auditoría, US5 dependencias con Snyk), cada una con prueba independiente y escenarios de aceptación; requisitos FR-001 a FR-026; criterios de éxito SC-001 a SC-009; casos límite y supuestos |
+| `spec.md` | Qué y por qué | Cinco historias de usuario (US1 dashboards de SonarQube, US2 monitoreo, US3 trazabilidad, US4 auditoría, US5 dependencias con Snyk), cada una con prueba independiente y escenarios de aceptación; requisitos FR-001 a FR-026; resultados medibles SC-001 a SC-009; casos límite y supuestos |
 | `plan.md` | Cómo | Contexto técnico, verificación de la constitución, estructura de archivos, versiones fijadas y diseño por componente, incluidas las tablas de alertas y de códigos de salida |
 | `tasks.md` | En qué orden | Tareas T001 a T026 agrupadas por historia y por rama, con TDD: cada tarea de código escribe primero la prueba que falla, la ejecuta, implementa y la vuelve a ejecutar |
 
@@ -52,9 +52,9 @@ implementan, de modo que ningún requisito queda sin tarea.
 
 Cada módulo vive en su propia rama y su propio pull request, con su propio archivo de
 configuración (`config/metricas.php`, `config/trazas.php`, `config/auditoria.php`) y su propio
-service provider. Así las ramas paralelas coinciden en pocas líneas: en la práctica hubo tres
-conflictos, todos de líneas sueltas en `.env.example`, `bootstrap/providers.php` y
-`phpunit.xml`.
+service provider. Esa separación, decidida en el plan antes de escribir código, es la que permitió
+desarrollar cinco pull requests en paralelo con solo tres conflictos, todos triviales y de
+líneas sueltas en `.env.example`, `bootstrap/providers.php` y `phpunit.xml`.
 
 El pull request general de planeación, [[PR-105]], contiene la especificación, el plan, las
 tareas, la corrección de la puerta de calidad de SonarQube y este documento. Los módulos se
@@ -86,7 +86,6 @@ afecta al diseño, en `plan.md`. Los principales:
 | T018 | El cierre de sesión lo registra solo el listener | El controlador también lo registraba y duplicaba la fila |
 | T018/T020 | Orden `auth`, `throttle:60,1`, `auditar.denegado`, `role:admin` | El límite de tasa corta antes de escribir auditoría de accesos denegados |
 | T020 | `fputcsv` sin escape invertido, `try/catch` en la exportación, id de la línea de tiempo limitado a 18 dígitos | Evitar celdas desplazadas hacia fórmulas y un desbordamiento que respondía 500 |
-| T022 | El documento incluye File sharing de Docker Desktop, `LOG_STACK=single,json`, los límites de la auditoría y las condiciones reales del pipeline | Son requisitos que no eran evidentes en el plan |
 | US5 | Se agregó la historia de Snyk como módulo adicional, en su propia rama | Las dependencias no se analizaban en ningún punto del pipeline |
 
 Este registro es también la respuesta a la pregunta "¿el código hace lo que dice la

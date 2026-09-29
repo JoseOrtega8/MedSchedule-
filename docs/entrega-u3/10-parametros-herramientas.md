@@ -76,7 +76,7 @@ bibliotecas PHP, en `composer.lock`.
 | Herramienta | Parámetro | Valor | Archivo | Por qué |
 |---|---|---|---|---|
 | blackbox-exporter | Módulo | `http_2xx` | `prometheus.yml` | La sonda espera una respuesta 2xx de `/up` |
-| mysqld-exporter | `--mysqld.address` | `MYSQL_EXPORTER_HOST` (por defecto `host.docker.internal:8889`) | `docker-compose.yml` | MAMP local; en el Codespace, `mysql:3306` |
+| mysqld-exporter | `--mysqld.address` | `MYSQL_EXPORTER_HOST` (por defecto `host.docker.internal:8889`) | `docker-compose.yml` | MySQL de MAMP local, alcanzado desde el contenedor |
 | mysqld-exporter | `--mysqld.username` | `exporter` | El mismo | Usuario de solo lectura; su contraseña en `MYSQL_EXPORTER_PASSWORD` |
 | Redis | Puerto | `127.0.0.1:6380` | El mismo | No choca con otro Redis local en 6379 |
 | Mailpit | Puerto web | `127.0.0.1:8025` | El mismo | Buzón visible donde se comprueba la llegada de la alerta |
@@ -115,6 +115,7 @@ la Unidad 2 (`docs/entrega-u2/05-parametros-herramientas.md`, apartado 5.2). Est
 | `sonar.qualitygate.wait` | `true` | `scripts/sonarqube-escanear.sh`, `ci.yml`, `release.yml` | El escáner espera el veredicto y falla si la puerta no se supera |
 | `sonar.qualitygate.timeout` | `300` | Los mismos | Cinco minutos como máximo de espera del veredicto |
 | `SONAR_HABILITADO` | Variable del repositorio | `ci.yml`, `release.yml` | Los jobs solo corren cuando existe una instancia accesible desde Actions |
+| Puerto publicado | `127.0.0.1:9000` | `infra/sonarqube/docker-compose.yml` | Solo local, igual que el stack de observabilidad; en la Unidad 2 se publicaba en todas las interfaces |
 
 ## 10.11 Snyk CLI `1.1307.4`
 
@@ -129,6 +130,7 @@ la Unidad 2 (`docs/entrega-u2/05-parametros-herramientas.md`, apartado 5.2). Est
 ## 10.12 k6
 
 Los parámetros de `tests/carga/jri-prueba.js` son los de la Unidad 2 (apartado 5.1 de ese
-documento), con k6 v2.2.0 instalado por `scripts/instalar-k6.sh`. En esta unidad se usa la misma
+documento). `scripts/instalar-k6.sh` declara k6 2.2.0 como versión de referencia: si ya hay un
+k6 instalado lo usa tal cual, y si no, lo instala (repositorio oficial en Linux, con el binario publicado como reserva; Homebrew en macOS). En esta unidad se usa la misma
 prueba, sin cambios, para generar tráfico en los tableros y para medir el costo de la
 instrumentación (apartado 7.8).
