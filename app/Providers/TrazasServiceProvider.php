@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Observability\Trazas\ExportadorOtlpJson;
 use App\Observability\Trazas\Trazas;
 use App\Support\MensajeSeguro;
 use Illuminate\Database\Events\QueryExecuted;
@@ -18,7 +19,6 @@ use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory;
-use OpenTelemetry\Contrib\Otlp\SpanExporter;
 use OpenTelemetry\SDK\Common\Attribute\Attributes;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Resource\ResourceInfoFactory;
@@ -53,7 +53,9 @@ class TrazasServiceProvider extends ServiceProvider
 			);
 
 			return TracerProvider::builder()
-				->addSpanProcessor(BatchSpanProcessor::builder(new SpanExporter($transporte))->build())
+				// ExportadorOtlpJson en lugar de Otlp\SpanExporter: mismo OTLP/JSON sin
+				// pasar por google/protobuf en PHP puro (ver CodificadorOtlpJson)
+				->addSpanProcessor(BatchSpanProcessor::builder(new ExportadorOtlpJson($transporte))->build())
 				->setResource($recurso)
 				->setSampler(new ParentBased(new TraceIdRatioBasedSampler((float) config('trazas.muestreo'))))
 				->build();
