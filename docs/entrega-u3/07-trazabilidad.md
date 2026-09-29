@@ -50,20 +50,38 @@ auditoría, módulo c, el marcador es otro: `[protegido]`.)
 Las subcadenas `key` y `hash` no se agregaron solas a propósito: enmascararían claves inocentes
 como `cache_key`.
 
+Cuatro piezas completan el enmascarado en la versión final:
+
+| Pieza | Qué cubre |
+|---|---|
+| Excepciones encadenadas | `MensajeSeguro` recorre `getPrevious()` hasta el final de la cadena. Por cada `QueryException` que encuentra sustituye su mensaje completo y el mensaje crudo de su `PDOException` por el texto seguro, aunque la excepción visible sea otra (una `RuntimeException` que la envuelve o una `ViewException` de Blade) |
+| Literales en `getSql()` | Si una sentencia trae valores escritos directamente (entre comillas, números tras `=` o dentro de `IN (...)`), se sustituyen por `'?'` o `?` antes de escribirla |
+| Canales `single` y `daily` | El tap `App\Logging\AplicarRedaccion` les aplica los mismos procesadores que al canal `json`, así que `laravel.log` también sale enmascarado |
+| Log interno de OpenTelemetry | Con las trazas activas, los avisos del propio SDK (un envío fallido a Tempo, por ejemplo) se dirigen al log de Laravel con `Psr3LogWriter`, en lugar de escribirse por su cuenta en la salida de errores de PHP; así pasan por los mismos procesadores |
+
+Las expresiones regulares usan cuantificadores posesivos con límite superior para que su costo
+sea lineal: un texto largo y malicioso no puede disparar un retroceso catastrófico.
+
 Límites declarados en el propio código:
 
 - Una contraseña escrita en texto libre, sin clave propia (por ejemplo, interpolada en el
   mensaje), no tiene un patrón detectable y **no se enmascara**. La regla del equipo es pasar
   cualquier secreto en el contexto con su clave (`password`, `token`), que sí se enmascara por
   nombre.
-- El enmascarado de literales en SQL (comillas y números tras `=` o dentro de `IN (...)`) es
-  una red de seguridad con expresiones acotadas, no un analizador de SQL. Una sentencia bien
-  parametrizada no tiene nada que enmascarar.
+- La sustitución de excepciones encadenadas busca el mensaje original **tal cual**. Si la
+  excepción que envuelve a la `QueryException` transforma ese mensaje (lo recorta, lo traduce o
+  lo reformatea), ya no hay coincidencia y los valores de la consulta podrían quedar en el texto.
+- El patrón de correo acepta hasta ocho etiquetas de dominio antes del dominio de primer nivel,
+  para mantener el costo lineal. Un correo con nueve subdominios o más no se reconoce.
+- El enmascarado de literales en SQL es una red de seguridad con expresiones acotadas, no un
+  analizador de SQL. Una sentencia bien parametrizada no tiene nada que enmascarar.
 
 ## 7.4 Trazas OpenTelemetry
 
-Las trazas usan `open-telemetry/sdk` 1.15.0 y `open-telemetry/exporter-otlp` 1.4.0, en PHP puro
-(sin extensión C), y se envían a Tempo por OTLP/HTTP. Están apagadas por defecto
+Las trazas usan `open-telemetry/sdk` 1.15.0 y el transporte de `open-telemetry/exporter-otlp`
+1.4.0, en PHP puro (sin extensión C), y se envían a Tempo por OTLP/HTTP con JSON. La
+serialización la hace un exportador propio, `App\Observability\Trazas\ExportadorOtlpJson`, en
+lugar del `SpanExporter` oficial (apartado 7.8). Están apagadas por defecto
 (`OTEL_ENABLED=false`): apagadas, el proveedor es nulo y no hay costo ni conexiones.
 
 | Elemento | Cómo se genera | Qué guarda |
@@ -125,9 +143,9 @@ de 100 ms y las peticiones con error, estas dos con consultas TraceQL.
 
 ## 7.7 Pruebas
 
-El módulo agrega 40 métodos de prueba: 22 en `tests/Feature/Trazas/` y 18 unitarios en
-`tests/Unit/Logging/` y `tests/Unit/Support/`. Las pruebas de trazas usan el `InMemoryExporter`
-de OpenTelemetry, sin Tempo. Entre ellas:
+El módulo agrega pruebas en `tests/Feature/Trazas/`, `tests/Unit/Logging/`,
+`tests/Unit/Support/` y, con el exportador propio, `tests/Unit/Observability/`. Las pruebas de
+trazas usan el `InMemoryExporter` de OpenTelemetry, sin Tempo. Entre ellas:
 
 | Prueba | Qué verifica |
 |---|---|
@@ -137,54 +155,156 @@ de OpenTelemetry, sin Tempo. Entre ellas:
 | `test_reintento_de_job_cierra_su_span_via_exception_occurred` | El span del job no queda abierto al reintentar |
 | `test_query_exception_en_job_no_expone_bindings_en_su_span` | Una excepción de consulta en un job no expone valores |
 | `test_scrape_de_metricas_no_produce_spans` | `/metrics` no se traza |
+| `CodificadorOtlpJsonTest` | El JSON del exportador propio es idéntico al del exportador oficial para spans con padre remoto, enlaces, eventos, estados y atributos de todos los tipos |
 
-Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Trazas|RedactarDatosSensibles|MensajeSeguro" en la rama feat/107-trazabilidad, de evidencia/pruebas-trazas.txt]].
+Resultado registrado en `evidencia/pruebas-trazas.txt` (filtro
+`Trazas|Redactar|MensajeSeguro|AplicarRedaccion`, commit `e2327f0`): **43 pruebas aprobadas,
+119 aserciones, 0 fallos**. El comando termina con código 1 por un aviso de PHPUnit anterior a
+esta unidad (`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas
+pruebas; el archivo lo anota. Las pruebas del exportador propio se agregaron después de esa
+corrida y no forman parte de ese archivo.
 
 ## 7.8 Costo de la instrumentación
 
-El plan fijó como meta que la instrumentación no mueva el p95 medido en la Unidad 2 más de un
-10 %. Se corrió la misma prueba de k6 de la Unidad 2 (`tests/carga/jri-prueba.js`), en la misma
-máquina, sin instrumentación (métricas en memoria, trazas apagadas) y con ella (métricas en
-Redis, trazas activas):
+El plan fijó como meta que la instrumentación completa (métricas en Redis, trazas y log JSON)
+no suba el p95 más de un 10 %. **La meta no se cumplió.** Este apartado explica cuánto cuesta,
+de dónde viene el costo y qué se corrigió. El detalle completo está en
+`evidencia/k6-atribucion.txt`.
 
-| Corrida | p95 de `http_req_duration` | Evidencia |
+### Primera medición
+
+Con la prueba de k6 de la Unidad 2 (`tests/carga/jri-prueba.js`, 10 usuarios virtuales,
+2 minutos, `php artisan serve`) sobre la primera versión del módulo, el p95 pasó de 29.83 ms sin
+instrumentación a 56.15 ms con ella: +88 %. En los dos casos hubo 0 % de errores.
+
+### De dónde viene el costo
+
+Para atribuirlo se usó una microprueba de bajo ruido (`ab -n 400 -c 1`, una petición a la vez),
+encendiendo un componente cada vez. Tiempo medio por petición, en ms:
+
+| Configuración | Portada, antes | Portada, después | Panel, antes | Panel, después |
+|---|---|---|---|---|
+| Sin instrumentación | 4.39 | 4.32 | 6.50 | 6.53 |
+| Solo métricas en Redis | 5.60 (+1.2) | 5.35 (+1.0) | 8.01 (+1.5) | 8.07 (+1.5) |
+| Solo trazas | 8.45 (+4.1) | 6.23 (+1.9) | 11.56 (+5.1) | 8.71 (+2.2) |
+| Solo log JSON | 4.33 (+0.0) | 4.50 (+0.2) | 6.49 (+0.0) | 6.61 (+0.1) |
+| Todo | 9.29 (+112 %) | 7.07 (+64 %) | 12.83 (+97 %) | 9.71 (+49 %) |
+
+Las trazas dominaban, con cerca del 80 % del sobrecosto. Dentro de ellas, `forceFlush()` costaba
+3.2 ms (p50): unos 0.6 ms eran el envío HTTP a Tempo y el resto era serializar los spans con
+`google/protobuf` en PHP puro, cargando sus descriptores en cada petición.
+
+### Qué se corrigió
+
+- **Exportador OTLP/JSON propio.** `ExportadorOtlpJson` y `CodificadorOtlpJson` producen el
+  mismo JSON OTLP que el exportador oficial, construido con arreglos y `json_encode`, sin
+  `google/protobuf`. Usan el mismo transporte (1 s de timeout, sin reintentos) y el mismo manejo
+  de éxitos parciales y errores, y no cambian qué se exporta: la redacción de PII sigue igual.
+  Una prueba compara su salida con la del exportador oficial. `forceFlush()` bajó de 3.2 ms a
+  0.96 ms (p50). Enviar protobuf binario no era alternativa: medido sin `ext-protobuf`, es más
+  lento que JSON (1.8 frente a 1.5 ms para 6 spans).
+- **Conexión persistente de Predis** (`METRICAS_REDIS_PERSISTENTE`, activa por defecto): ahorra
+  de 0.2 a 0.5 ms por petición. Quedan las dos operaciones en Redis de cada petición (contador e
+  histograma).
+- El log JSON no se tocó: su costo no es medible.
+
+**Por qué no se quitó `forceFlush()`.** Sin él el costo de las trazas cae casi a cero, pero Tempo
+no recibe la traza. En PHP cada petición arranca de cero y el proveedor de trazas no registra un
+apagado, así que el `BatchSpanProcessor` nunca acumula spans entre peticiones: si no se envían al
+terminar la petición, se pierden. Se comprobó consultando a Tempo con y sin el envío.
+
+### Resultado en k6
+
+La máquina de medición era compartida (carga media de 3 a 14) y el p95 de k6 variaba unos ±8 ms
+entre corridas idénticas, más que la meta misma (unos 3 ms). Por eso las medianas y la
+microprueba son la referencia más confiable:
+
+| Medida de k6 | Antes de corregir | Después de corregir |
 |---|---|---|
-| Sin instrumentación | [[PENDIENTE: p95 de http_req_duration, de evidencia/k6-sin-instrumentacion.txt]] | `evidencia/k6-sin-instrumentacion.txt` |
-| Con instrumentación | [[PENDIENTE: p95 de http_req_duration, de evidencia/k6-con-instrumentacion.txt]] | `evidencia/k6-con-instrumentacion.txt` |
-| Diferencia | [[PENDIENTE: diferencia porcentual entre ambos p95, calculada de los dos archivos k6-*-instrumentacion.txt]] | — |
+| Mediana de `http_req_duration`, diferencia con y sin instrumentación | +54 % | +32 % |
+| p95, pares medidos el mismo día | +30 % y +37 % | de +28 % a +70 % |
 
-[[PENDIENTE: lectura del resultado frente a la meta del 10 %; si la supera, causa probable, a partir de los dos archivos k6-*-instrumentacion.txt]]
+Los archivos de evidencia son el último par medido después de corregir:
+
+| Corrida | Mediana | p95 de `http_req_duration` | p95 de `duracion_panel` | Carga del sistema al iniciar | Evidencia |
+|---|---|---|---|---|---|
+| Sin instrumentación | 21.48 ms | 40.95 ms | 37.10 ms | 3.93 | `evidencia/k6-sin-instrumentacion.txt` |
+| Con instrumentación | 27.62 ms | 53.23 ms | 48.97 ms | 13.81 | `evidencia/k6-con-instrumentacion.txt` |
+| Diferencia | +28.6 % | +30 % | +32 % | — | — |
+
+En las dos corridas hubo 0 % de errores. En valores absolutos, la instrumentación completa suma
+hoy cerca de 2.7 ms por petición en la portada y 3.2 ms en el panel. Ese costo viene de tres
+fuentes: el envío a Tempo en cada petición (cerca de 1 ms), la creación de un span por cada
+consulta SQL y las dos operaciones en Redis. Todo corre en el único hilo de `php artisan serve`.
+El p95 sigue muy por debajo del acuerdo de 5 s.
+
+### Medición complementaria
+
+Con php-fpm, Symfony entrega la respuesta con `fastcgi_finish_request()` antes de `terminate()`,
+así que el envío a Tempo queda fuera del tiempo que ve el cliente. Para estimarlo se midió
+además con `tests/carga/servidor-fin-respuesta.php`, un enrutador para `php -S` que emula esa
+función. Con él la diferencia de medianas fue de +21 % y la de p95 de +37 %. Es una medición
+complementaria, no la oficial: el servidor sigue atendiendo una petición a la vez y el envío
+retrasa a la siguiente.
+
+**Conclusión:** la corrección reduce el costo de forma medible (microprueba y medianas), pero la
+meta de +10 % en p95 no se cumple, y este documento no la ajusta. Para acercarse quedan opciones
+que cambian funcionalidad o dependencias: medir en php-fpm real, muestrear menos trazas
+(`OTEL_TRACES_SAMPLER_ARG`), dejar de trazar cada consulta o instalar `ext-protobuf` o
+`phpredis` en el servidor.
 
 ## 7.9 Antes y después
 
 ### Antes: un log de texto plano
 
-Con las trazas apagadas y solo el canal `single`, se llamó al panel del paciente
-(`/patient/dashboard/data`), el endpoint con más consultas por petición medido en la Unidad 2.
-`laravel.log` no permite saber qué parte de la petición tarda ni relacionar sus líneas entre sí.
+Con las trazas apagadas y solo el canal `single` (`OTEL_ENABLED=false`, `LOG_STACK=single`), se
+llamó al panel del paciente (`/patient/dashboard/data`), el endpoint con más consultas por
+petición medido en la Unidad 2. La petición respondió 200 en unos 8 ms y no dejó ninguna línea
+en `laravel.log`, porque Laravel solo escribe ante un error o un `Log::` explícito. No había
+forma de saber qué consultas corrieron ni cuánto tardó cada una, y la respuesta no traía ningún
+identificador para seguirla.
 
-![Archivo laravel.log en texto plano sin identificador de petición ni desglose de tiempos](evidencia/trazas-01-antes-laravel-log.png)
+![Salida de terminal: el panel responde 200 sin cabecera X-Trace-Id y laravel.log no registra nada de la petición](evidencia/trazas-01-antes-laravel-log.png)
 
 ### Después: la cascada de la petición
 
 Con `OTEL_ENABLED=true` y `LOG_STACK=single,json` se repitió la llamada y se abrió su traza en
 Grafana a partir del `X-Trace-Id` de la respuesta.
 
-![Cascada de la traza de /patient/dashboard/data en Tempo con el span raíz y un span por cada consulta SQL](evidencia/trazas-02-cascada.png)
+![Cascada de la traza de GET /patient/dashboard/data en Tempo: span raíz de 9.98 ms y siete spans db.query](evidencia/trazas-02-cascada.png)
 
-[[PENDIENTE: consulta o patrón que domina el tiempo de la petición y su duración, leídos de la traza de evidencia/trazas-02-cascada.png]]
+La traza responde la pregunta que el log no podía responder, y la respuesta es que **ninguna
+consulta domina y no hay N+1**. La petición dura 9.98 ms y ejecuta 7 consultas que suman unos
+2.6 ms (1.03, 0.24, 0.27, 0.29, 0.17, 0.21 y 0.40 ms). El resto es PHP y el framework. Otras
+tres trazas del mismo endpoint, consultadas en Tempo por su API, muestran el mismo patrón:
+siempre 7 consultas y entre 1.8 y 2.5 ms de base de datos. En la primera de ellas, la más lenta fue la
+lectura de la sesión (`select * from sessions where id = ? limit 1`, 0.70 ms); las cuatro
+propias del panel tardaron entre 0.17 y 0.23 ms cada una. Es la misma conclusión de la Unidad 2 (el panel
+es rápido), ahora con el desglose que la demuestra.
+
+**Hallazgo previo.** Al preparar esta evidencia se encontró que la página `/patient/dashboard`
+responde 500: `resources/js/patient-dashboard.js` no está en los `input` de `vite.config.js` y
+Laravel no lo encuentra en el manifiesto de Vite. El endpoint de datos (`/patient/dashboard/data`)
+funciona. El defecto es anterior a esta unidad y ajeno a sus módulos; se reporta y no se corrige
+aquí.
 
 ### Después: del log a la traza y de vuelta
 
-![Línea de log en Loki con el campo trace_id convertido en enlace a Tempo](evidencia/trazas-03-log-a-traza.png)
+![Línea de log JSON en Loki, buscada por trace_id: QueryException sin valores, con trace_id, span_id, request_id, ruta y método](evidencia/trazas-03-log-a-traza.png)
 
-![Traza en Tempo con el acceso a las líneas de log de la misma petición en Loki](evidencia/trazas-04-traza-a-logs.png)
+La línea de log muestra además el enmascarado funcionando: la excepción aparece como
+`QueryException: select * from sessions where id = ? limit 1 [SQLSTATE 2002]`, sin el valor del
+identificador de sesión.
+
+![Vista dividida en Grafana: la traza del folio en Tempo a la izquierda y sus líneas de log en Loki a la derecha](evidencia/trazas-04-traza-a-logs.png)
 
 ### Después: el folio de un error localiza su traza
 
-Se provocó un error 500 controlado en local. El usuario ve el folio y nada más; ese folio
-localiza la traza en Grafana.
+Se provocó un error 500 controlado en local: se detuvo MySQL y se abrió `/login`. El usuario ve
+el folio `5c7bcfc35f642827f45fec343aab198b` y nada más. Ese folio localiza en Tempo la traza
+`GET /login` con estado 500. Tiene un solo span porque la base de datos no respondía y no llegó a
+ejecutarse ninguna consulta.
 
-![Página de error 500 con el folio de seguimiento y sin detalle interno](evidencia/trazas-05-folio-500.png)
+![Página de error 500 con el folio 5c7bcfc35f642827f45fec343aab198b y sin detalle interno](evidencia/trazas-05-folio-500.png)
 
-![Traza localizada en Grafana a partir del folio mostrado en la página de error](evidencia/trazas-06-folio-en-grafana.png)
+![Traza GET /login con estado 500 localizada en Tempo con el folio de la página de error](evidencia/trazas-06-folio-en-grafana.png)

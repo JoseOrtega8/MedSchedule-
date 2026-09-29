@@ -67,6 +67,7 @@ del control de versiones; los archivos `.env.example` llevan los secretos vacío
 | `METRICS_TOKEN` | Monitoreo | Credencial Bearer que Prometheus presenta a `/metrics`. Sin ella el endpoint responde 404 |
 | `METRICAS_ALMACEN` | Monitoreo | `redis` en ejecución normal, `memoria` en pruebas |
 | `METRICAS_REDIS_HOST`, `METRICAS_REDIS_PORT` | Monitoreo | Redis del stack (por defecto `127.0.0.1:6380`) |
+| `METRICAS_REDIS_PERSISTENTE` | Monitoreo | Conexión persistente a Redis (por defecto `true`) |
 | `OTEL_ENABLED` | Trazabilidad | Enciende las trazas. Por defecto `false` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Trazabilidad | Receptor OTLP de Tempo (`http://127.0.0.1:4318`) |
 | `OTEL_TRACES_SAMPLER_ARG` | Trazabilidad | Proporción de peticiones muestreadas (por defecto `1.0`) |

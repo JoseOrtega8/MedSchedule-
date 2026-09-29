@@ -148,40 +148,68 @@ El módulo agrega 40 métodos de prueba: 36 en `tests/Feature/Auditoria/` y 4 un
 | `test_exportar_csv_escapa_formulas_y_queda_auditado` | CSV seguro y exportación auditada |
 | `test_login_fallido_se_audita_con_correo_enmascarado` | El correo no se guarda completo |
 
-Resultado de la suite: [[PENDIENTE: resultado de php artisan test --filter="Auditoria|CsvSeguro|Enmascarar" en la rama feat/108-auditoria, de evidencia/pruebas-auditoria.txt]].
+Resultado registrado en `evidencia/pruebas-auditoria.txt` (rama `feat/108-auditoria`, commit
+`366f585`): **40 pruebas aprobadas, 211 aserciones, 0 fallos**. El comando termina con código 1
+por un aviso de PHPUnit anterior a esta unidad
+(`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas pruebas.
 
 ## 8.9 Antes y después
 
+El "antes" se reprodujo en la rama `feat/105-u3-sdd`, que todavía no tiene este módulo, y el
+"después" en la rama `feat/108-auditoria`, cada una con su propia base de datos de prueba
+sembrada con los mismos datos. Se agregó a esas bases una segunda cuenta de doctor de prueba,
+porque el sembrado trae un solo doctor y la prueba necesita cambiar el doctor de una cita.
+
+La aplicación no tiene una pantalla para que el administrador edite la fecha o el doctor de una
+cita: la única ruta que modifica citas es la del doctor, y solo cambia su estado. Por eso el
+cambio se hizo en las dos ramas de forma idéntica, con `php artisan tinker`: se autenticó la
+sesión como el administrador (`Auth::login`) y se actualizó la cita con Eloquent, el mismo camino
+que usaría un controlador. Por esa razón el registro muestra la IP 127.0.0.1 y el agente
+"Symfony", propios de una ejecución de consola.
+
 ### Antes: un cambio sin rastro y una alteración inadvertida
 
-En la rama de la Unidad 2, como administrador se cambió la fecha y el doctor de una cita. La
-tabla `activity_logs` no registró nada.
+En `feat/105-u3-sdd`, como administrador, se cambió la cita 2 de fecha (2026-09-29 → 2026-10-06)
+y de doctor (2 → 4). La tabla `activity_logs` siguió con sus 3 filas y ninguna habla de la cita 2.
 
-![Consulta a activity_logs sin ningún registro del cambio de fecha y doctor de la cita](evidencia/auditoria-01-antes-sin-rastro.png)
+![Salida de terminal: cambio de fecha y doctor de la cita 2 y activity_logs sin ningún registro del cambio](evidencia/auditoria-01-antes-sin-rastro.png)
 
-Después se alteró a mano una fila de `activity_logs` directamente en MySQL. Nada lo detectó.
+Después se alteró a mano la fila 1 de `activity_logs` en MySQL (usuario 3 → 1 y descripción
+cambiada). Nada lo detectó: la tabla no tiene columnas de sello y el comando
+`auditoria:verificar` no existe en esa rama.
 
-![Fila de activity_logs alterada a mano en MySQL sin ninguna señal de manipulación](evidencia/auditoria-02-antes-alteracion.png)
+![Salida de terminal: UPDATE manual de la fila 1 de activity_logs sin ninguna señal de manipulación](evidencia/auditoria-02-antes-alteracion.png)
 
 ### Después: quién, qué, cuándo y desde dónde
 
-En la rama de auditoría se repitió el mismo cambio en la cita.
+En `feat/108-auditoria` se repitió el mismo cambio en la cita 2. Después, la cuenta de doctor
+confirmó la cita con una petición HTTP real (`PATCH /appointments/2`), que genera un segundo
+evento en la línea de tiempo.
 
-![Listado del visor de auditoría con filtros, el registro del cambio de la cita y el indicador de integridad](evidencia/auditoria-03-listado.png)
+![Visor de auditoría con el indicador verde "Cadena íntegra · 12 registros" y el registro #12: Admin actualizó la cita #2](evidencia/auditoria-03-listado.png)
 
-![Detalle del registro con el diff de fecha y doctor, antes y después, usuario, fecha e IP](evidencia/auditoria-04-diff.png)
+![Detalle del registro #12: Admin, 05:25:46 UTC, desde 127.0.0.1; doctor_id 2 → 4 y appointment_date 2026-09-29 → 2026-10-06](evidencia/auditoria-04-diff.png)
 
-![Línea de tiempo de la cita con todos sus registros de auditoría en orden](evidencia/auditoria-05-linea-tiempo.png)
+![Línea de tiempo de la cita #2: actualización del administrador (05:25:46) y confirmación de la doctora por HTTP (05:27:35)](evidencia/auditoria-05-linea-tiempo.png)
 
 ### Después: la alteración se detecta
 
-Con la cadena íntegra, la verificación termina en éxito:
+Con la cadena íntegra, la verificación termina en éxito (`evidencia/auditoria-verificar-integra.txt`):
 
-[[PENDIENTE: salida de php artisan auditoria:verificar con la cadena íntegra (registros revisados y "Cadena íntegra."), de evidencia/auditoria-verificar-integra.txt]]
+| Salida de `php artisan auditoria:verificar` | Código de salida |
+|---|---|
+| `Registros revisados: 15` / `Cadena íntegra.` | 0 |
 
-Se volvió a alterar a mano la misma fila en MySQL (la migración la había sellado como válida al
-adoptarse) y se repitió la verificación:
+En la base de la rama de auditoría, ya migrada y sellada, se alteró a mano la fila equivalente a
+la del "antes": la id 7, "Cita agendada con Dr. Test" (en esta base el id es otro porque la
+migración y el sembrado registraron antes la creación de usuarios). Se cambió su usuario de 3 a 1
+y su descripción a "Cita agendada por el administrador", y se repitió la verificación
+(`evidencia/auditoria-verificar-rota.txt`):
 
-[[PENDIENTE: salida de php artisan auditoria:verificar con la cadena rota (id del registro roto y código de salida), de evidencia/auditoria-verificar-rota.txt]]
+| Salida de `php artisan auditoria:verificar` | Código de salida |
+|---|---|
+| `Registros revisados: 7` / `Cadena rota. Registro roto: 7 (2026-09-29T04:48:21+00:00)` | 1 |
 
-![Visor de auditoría con el indicador rojo de cadena comprometida señalando el registro alterado](evidencia/auditoria-06-alteracion-detectada.png)
+La verificación se detiene en el primer eslabón roto y señala exactamente la fila alterada.
+
+![Visor de auditoría con el indicador rojo "Cadena comprometida en el registro #7" y la fila 7 alterada](evidencia/auditoria-06-alteracion-detectada.png)

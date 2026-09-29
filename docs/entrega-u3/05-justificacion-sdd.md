@@ -78,6 +78,7 @@ afecta al diseño, en `plan.md`. Los principales:
 | T012 | Redacción ampliada a patrones en el texto, excepciones del contexto y claves por subcadena | Correos, credenciales Bearer y CURP aparecían dentro de los mensajes |
 | T012 | `MensajeSeguro` recorre toda la cadena de excepciones | Una `QueryException` directa, envuelta o dentro de una vista exponía los valores de la consulta en el mensaje del log y en los eventos de los spans |
 | T012 | Tap `AplicarRedaccion` en los canales `single` y `daily` | `laravel.log` se escribía sin enmascarar porque esos drivers no aplican `processors` |
+| T015 | Exportador OTLP/JSON propio, conexión persistente de Predis y log interno de OpenTelemetry hacia Laravel | La medición del costo de la instrumentación no cumplió la meta de +10 % en p95; la atribución (`evidencia/k6-atribucion.txt`) señaló la serialización con `google/protobuf` en PHP puro como la causa principal. La meta sigue sin cumplirse y se documenta así (apartado 7.8) |
 | T013 | Folio de respaldo con el `request_id` | Con las trazas apagadas el folio decía "no disponible" |
 | T016 | La migración sella las filas existentes; toda fila sin sello cuenta como rota | Una fila sin sello "perdonada" sería un hueco para insertar registros falsos |
 | T016 | Se quitó la llave foránea `activity_logs.user_id` | Su `ON DELETE SET NULL` alteraba filas ya selladas al borrar un usuario |

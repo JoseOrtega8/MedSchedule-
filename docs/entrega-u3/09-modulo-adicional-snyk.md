@@ -51,7 +51,8 @@ El script tiene pruebas en bash puro, `tests/scripts/snyk-escanear.test.sh`, que
 `npx` falso al frente del `PATH` y comprueban cada código de salida, los argumentos exactos del
 CLI, la condición de `--monitor` y que un token falso reconocible no aparezca en la salida. Se
 ejecutan con `npm run test:scripts`; el script contiene 21 comprobaciones. Resultado:
-[[PENDIENTE: resumen de la corrida de npm run test:scripts, de evidencia/snyk-pruebas-script.txt]].
+`Resumen: 21/21 pruebas OK`, código de salida 0 (`evidencia/snyk-pruebas-script.txt`, commit
+`f1e3512`). Estas pruebas no necesitan token ni contactan a Snyk.
 
 ## 9.4 Integración en `release.yml`
 
@@ -84,17 +85,17 @@ En la rama `feat/105-u3-sdd`, que no tiene el job `seguridad`, se agregó a prop
 dependencia con una vulnerabilidad conocida y se corrió el pipeline: pasó de la integración a las
 pruebas sin ningún aviso, porque ningún paso leía `composer.lock` ni `package-lock.json`.
 
-[[PENDIENTE: dependencia vulnerable usada y resultado de la corrida sin compuerta, de evidencia/snyk-00-antes.txt]]
+[[PENDIENTE-SNYK: dependencia vulnerable usada y resultado de la corrida sin compuerta, de evidencia/snyk-00-antes.txt]]
 
 ### Después: la compuerta decide
 
 Corrida con las dependencias actuales del proyecto:
 
-[[PENDIENTE: resultado y código de salida de la corrida limpia, de evidencia/snyk-puerta-pasa.txt]]
+[[PENDIENTE-SNYK: resultado y código de salida de la corrida limpia, de evidencia/snyk-puerta-pasa.txt]]
 
 Corrida con una dependencia vulnerable agregada a propósito:
 
-[[PENDIENTE: dependencia agregada, vulnerabilidad reportada, severidad y código de salida, de evidencia/snyk-puerta-falla.txt]]
+[[PENDIENTE-SNYK: dependencia agregada, vulnerabilidad reportada, severidad y código de salida, de evidencia/snyk-puerta-falla.txt]]
 
 ![Reporte del análisis de Snyk sobre composer.lock y package-lock.json](evidencia/snyk-01-reporte.png)
 

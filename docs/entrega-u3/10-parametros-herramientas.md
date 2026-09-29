@@ -87,12 +87,15 @@ bibliotecas PHP, en `composer.lock`.
 |---|---|---|---|---|---|
 | `promphp/prometheus_client_php` | 2.15.1 | Almacén | `redis` (`memoria` en pruebas) | `config/metricas.php` | Los contadores deben sobrevivir entre peticiones |
 | | | Timeouts de Redis | `0.2` s de conexión y de lectura | El mismo | Un Redis caído no frena la petición |
+| | | Conexión persistente | `METRICAS_REDIS_PERSISTENTE`, por defecto `true` (opción `persistent` de Predis) | `config/metricas.php`, `MetricasServiceProvider` | Reutiliza el socket entre peticiones del mismo proceso; ahorra de 0.2 a 0.5 ms por petición (`evidencia/k6-atribucion.txt`) |
 | | | Métrica `php_info` | desactivada | `MetricasServiceProvider` | Serie sin valor para el monitoreo |
 | `predis/predis` | 3.6.0 | Adaptador | `Predis` | El mismo | No requiere la extensión `phpredis` |
 | `open-telemetry/sdk` | 1.15.0 | `habilitadas` | `OTEL_ENABLED`, por defecto `false` | `config/trazas.php` | Pruebas y CI sin Tempo |
 | | | Muestreo | `ParentBased(TraceIdRatioBased(OTEL_TRACES_SAMPLER_ARG))`, por defecto `1.0` | `TrazasServiceProvider` | Respeta la decisión del llamador; en local se muestrea todo |
 | | | Procesador | `BatchSpanProcessor` con envío en `terminate()` | El mismo | El envío ocurre después de responder |
-| `open-telemetry/exporter-otlp` | 1.4.0 | Transporte | OTLP/HTTP JSON, `timeout: 1.0`, `maxRetries: 0` | El mismo | Un Tempo inalcanzable no bloquea (con los valores por defecto, cerca de 40 s) |
+| `open-telemetry/exporter-otlp` | 1.4.0 | Transporte | OTLP/HTTP con `application/json`, `timeout: 1.0`, `maxRetries: 0` | El mismo | Con los valores por defecto (10 s de timeout y 3 reintentos) un Tempo inalcanzable bloqueaba cerca de 40 s; así el costo queda acotado a 1 s |
+| Exportador propio | — | Exportador de spans | `App\Observability\Trazas\ExportadorOtlpJson` con `CodificadorOtlpJson`, en lugar de `OpenTelemetry\Contrib\Otlp\SpanExporter` | `TrazasServiceProvider` | El oficial serializa con `google/protobuf` en PHP puro (sin `ext-protobuf`). El propio produce el mismo JSON OTLP con arreglos y `json_encode`, verificado contra el oficial en `CodificadorOtlpJsonTest`: `forceFlush()` bajó de 3.2 a 0.96 ms (p50) |
+| | | Log interno de OpenTelemetry | `Psr3LogWriter` sobre el log de Laravel | `TrazasServiceProvider` | Los avisos del SDK (envío fallido, éxito parcial) quedan en el log de la aplicación y pasan por el enmascarado |
 | Monolog | 3.10.0 | Canal `json` | Driver `monolog`, `StreamHandler`, `JsonFormatter` | `config/logging.php` | El driver `single` ignora `processors` |
 | | | Procesadores | `AgregarContextoTraza`, `RedactarDatosSensibles` | El mismo | Contexto de traza y PII enmascarada |
 | | | `LOG_STACK` | `single,json` | `.env.example` | Conserva `laravel.log` y agrega el archivo para Loki |
