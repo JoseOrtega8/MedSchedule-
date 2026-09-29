@@ -104,8 +104,71 @@ class RedactarDatosSensiblesTest extends TestCase
 		$serializado = json_encode($resultado->context);
 		$this->assertStringNotContainsString('Penicilina-Grave', $serializado);
 		$this->assertSame(QueryException::class, $resultado->context['exception']['class']);
-		$this->assertSame('update patient_profiles set allergies = ? where id = ?', $resultado->context['exception']['message']);
+		$this->assertSame(
+			'QueryException: update patient_profiles set allergies = ? where id = ?',
+			$resultado->context['exception']['message']
+		);
 		$this->assertArrayHasKey('file', $resultado->context['exception']);
 		$this->assertArrayHasKey('line', $resultado->context['exception']);
+	}
+
+	// El mensaje principal del registro (LogRecord::message) es lo que
+	// Illuminate\Foundation\Exceptions\Handler::reportThrowable escribe con
+	// $e->getMessage(): en una QueryException trae los bindings interpolados
+	// y debe quedar sustituido por el texto seguro, no solo pasado por PATRONES
+	public function test_mensaje_del_registro_igual_al_de_la_query_exception_queda_seguro(): void
+	{
+		$excepcion = new QueryException(
+			'mysql',
+			'update patient_profiles set allergies = ? where id = ?',
+			['Penicilina-Grave', 5],
+			new PDOException('dup')
+		);
+
+		$resultado = (new RedactarDatosSensibles())($this->registro(
+			['exception' => $excepcion],
+			$excepcion->getMessage()
+		));
+
+		$this->assertStringNotContainsString('Penicilina-Grave', $resultado->message);
+		$this->assertSame(
+			'QueryException: update patient_profiles set allergies = ? where id = ?',
+			$resultado->message
+		);
+	}
+
+	// Una excepcion generica que encadena una QueryException como causa
+	// (getPrevious()) tambien debe quedar sustituida en el mensaje del registro
+	public function test_mensaje_del_registro_con_query_exception_encadenada_como_causa(): void
+	{
+		$consulta = new QueryException(
+			'mysql',
+			'update patient_profiles set allergies = ? where id = ?',
+			['Penicilina-Grave', 5],
+			new PDOException('dup')
+		);
+		$externa = new \RuntimeException('fallo guardando perfil: ' . $consulta->getMessage(), 0, $consulta);
+
+		$resultado = (new RedactarDatosSensibles())($this->registro(
+			['exception' => $externa],
+			$externa->getMessage()
+		));
+
+		$this->assertStringNotContainsString('Penicilina-Grave', $resultado->message);
+	}
+
+	public function test_enmascara_claves_nuevas_api_key_credential_phone(): void
+	{
+		$resultado = (new RedactarDatosSensibles())($this->registro([
+			'api_key' => 'abc123',
+			'credential' => 'xyz',
+			'phone' => '555-0100',
+			'cache_key' => 'valor-inocente',
+		]));
+
+		$this->assertSame('[redactado]', $resultado->context['api_key']);
+		$this->assertSame('[redactado]', $resultado->context['credential']);
+		$this->assertSame('[redactado]', $resultado->context['phone']);
+		$this->assertSame('valor-inocente', $resultado->context['cache_key']);
 	}
 }

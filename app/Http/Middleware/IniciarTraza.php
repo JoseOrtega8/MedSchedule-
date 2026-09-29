@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Observability\Trazas\Trazas;
+use App\Support\MensajeSeguro;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -77,7 +78,12 @@ class IniciarTraza
 
 			return $respuesta;
 		} catch (Throwable $error) {
-			$span->recordException($error);
+			// Ver Trazas::en_span: addEvent() + MensajeSeguro en lugar de
+			// recordException() para no exportar valores de consulta a Tempo.
+			$span->addEvent('exception', [
+				'exception.type' => $error::class,
+				'exception.message' => MensajeSeguro::de_excepcion($error),
+			]);
 			$span->setStatus(StatusCode::STATUS_ERROR);
 			throw $error;
 		} finally {

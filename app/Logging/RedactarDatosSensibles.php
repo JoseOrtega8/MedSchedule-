@@ -2,6 +2,7 @@
 
 namespace App\Logging;
 
+use App\Support\MensajeSeguro;
 use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
@@ -25,10 +26,14 @@ class RedactarDatosSensibles implements ProcessorInterface
 	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
 	// (asi 'remember_token', 'access_token', 'api_secret' o
 	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
+	// 'key' y 'hash' sueltos NO se agregan como subcadena: romperian claves
+	// inocentes como 'cache_key' (debe quedar intacta). Por eso se listan
+	// formas mas especificas: 'api_key' y 'apikey'.
 	public const CLAVES = [
 		'token', 'password', 'secret', 'authorization', 'cookie',
 		'curp', 'email',
 		'allergies', 'chronic_conditions', 'blood_type', 'emergency_contact',
+		'api_key', 'apikey', 'credential', 'phone', 'telefono', 'signature',
 	];
 
 	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
@@ -47,11 +52,62 @@ class RedactarDatosSensibles implements ProcessorInterface
 
 	public function __invoke(LogRecord $registro): LogRecord
 	{
+		// Primero se sustituyen los mensajes de QueryException encontrados en
+		// el contexto (getMessage() trae los bindings interpolados, ver
+		// resumir_excepcion): esto debe pasar ANTES de convertir los Throwable
+		// del contexto a su resumen seguro, porque usa los objetos originales.
+		$mensaje = $this->redactar_mensaje_de_query_exceptions($registro->message, $registro->context);
+
 		return $registro->with(
-			message: $this->redactar_texto($registro->message),
+			message: $this->redactar_texto($mensaje),
 			context: $this->redactar($registro->context),
 			extra: $this->redactar($registro->extra),
 		);
+	}
+
+	// Illuminate\Foundation\Exceptions\Handler::reportThrowable usa
+	// $e->getMessage() como mensaje principal del log; en una QueryException
+	// ese mensaje trae los valores de la consulta incrustados (ver
+	// QueryException::formatMessage). Se busca, a cualquier profundidad del
+	// contexto, cada QueryException (directa o como causa encadenada de otra
+	// excepcion via getPrevious()) y se reemplaza toda ocurrencia de su
+	// getMessage() por el texto seguro de MensajeSeguro.
+	private function redactar_mensaje_de_query_exceptions(string $mensaje, array $contexto): string
+	{
+		foreach ($this->query_exceptions_en_contexto($contexto) as $consulta) {
+			$mensaje = str_replace($consulta->getMessage(), MensajeSeguro::de_excepcion($consulta), $mensaje);
+		}
+
+		return $mensaje;
+	}
+
+	private function query_exceptions_en_contexto(array $contexto): array
+	{
+		$encontradas = [];
+		foreach ($contexto as $valor) {
+			if ($valor instanceof Throwable) {
+				$encontradas = array_merge($encontradas, $this->query_exceptions_en_cadena($valor));
+			} elseif (is_array($valor)) {
+				$encontradas = array_merge($encontradas, $this->query_exceptions_en_contexto($valor));
+			}
+		}
+
+		return $encontradas;
+	}
+
+	// Recorre getPrevious() de una excepcion buscando QueryException: cubre
+	// tanto la excepcion directa como una QueryException encadenada como causa
+	private function query_exceptions_en_cadena(Throwable $excepcion): array
+	{
+		$encontradas = [];
+		do {
+			if ($excepcion instanceof QueryException) {
+				$encontradas[] = $excepcion;
+			}
+			$excepcion = $excepcion->getPrevious();
+		} while ($excepcion !== null);
+
+		return $encontradas;
 	}
 
 	private function redactar(array $datos): array
@@ -83,15 +139,13 @@ class RedactarDatosSensibles implements ProcessorInterface
 		return false;
 	}
 
-	// Reduce una excepcion a datos sin PII. De una QueryException se toma la
-	// sentencia SIN bindings (getSql), porque getMessage() los interpola.
+	// Reduce una excepcion a datos sin PII: mensaje seguro (MensajeSeguro),
+	// clase, archivo y linea. Nunca el trace con argumentos.
 	private function resumir_excepcion(Throwable $excepcion): array
 	{
-		$mensaje = $excepcion instanceof QueryException ? $excepcion->getSql() : $excepcion->getMessage();
-
 		return [
 			'class' => $excepcion::class,
-			'message' => $this->redactar_texto($mensaje),
+			'message' => MensajeSeguro::de_excepcion($excepcion),
 			'file' => $excepcion->getFile(),
 			'line' => $excepcion->getLine(),
 		];

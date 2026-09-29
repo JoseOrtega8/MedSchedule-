@@ -2,6 +2,7 @@
 
 namespace App\Observability\Trazas;
 
+use App\Support\MensajeSeguro;
 use Illuminate\Support\Facades\Log;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -50,7 +51,14 @@ class Trazas
 		try {
 			return $accion();
 		} catch (Throwable $error) {
-			$span->recordException($error);
+			// No se usa recordException(): guarda el stacktrace con argumentos
+			// y, en una QueryException, exception.message trae los bindings
+			// (getMessage() los interpola). addEvent() con MensajeSeguro deja
+			// el mismo evento 'exception' pero sin esos valores.
+			$span->addEvent('exception', [
+				'exception.type' => $error::class,
+				'exception.message' => MensajeSeguro::de_excepcion($error),
+			]);
 			$span->setStatus(StatusCode::STATUS_ERROR);
 			throw $error;
 		} finally {

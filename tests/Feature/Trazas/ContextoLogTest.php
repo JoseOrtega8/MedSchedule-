@@ -5,9 +5,11 @@ namespace Tests\Feature\Trazas;
 use App\Logging\AgregarContextoTraza;
 use App\Observability\Trazas\Trazas;
 use DateTimeImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use Monolog\LogRecord;
+use PDOException;
 use RuntimeException;
 
 class ContextoLogTest extends TrazasTestCase
@@ -86,6 +88,43 @@ class ContextoLogTest extends TrazasTestCase
 			$this->assertSame(__FILE__, $ultima['context']['exception']['file']);
 			$this->assertIsInt($ultima['context']['exception']['line']);
 			$this->assertArrayNotHasKey('trace', $ultima['context']['exception']);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// Imita lo que hace Handler::reportThrowable: report() escribe el log con
+	// $e->getMessage() como mensaje principal. En una QueryException ese
+	// mensaje trae los bindings interpolados (SQL: ... allergies = Penicilina-Grave
+	// ...); la linea escrita no debe contenerlos, solo la sentencia con '?'
+	public function test_report_de_query_exception_no_expone_bindings_en_el_canal_json(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			config(['logging.default' => 'json']);
+			Log::forgetChannel('json');
+
+			$excepcion = new QueryException(
+				'mysql',
+				'update patient_profiles set allergies = ? where id = ?',
+				['Penicilina-Grave', 5],
+				new PDOException('dup')
+			);
+
+			report($excepcion);
+
+			$lineas = file($archivo);
+			$linea = end($lineas);
+
+			$this->assertStringNotContainsString('Penicilina-Grave', $linea);
+			$this->assertStringContainsString(
+				'update patient_profiles set allergies = ? where id = ?',
+				$linea
+			);
 		} finally {
 			if (file_exists($archivo)) {
 				unlink($archivo);
