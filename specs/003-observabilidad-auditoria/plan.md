@@ -63,9 +63,12 @@ de alerta; 4 dashboards de Grafana; 4 PRs (general + uno por punto).
 
 - **Principio I (Estilo de código)**: PASA con condición: comentarios en español y `snake_case`
   en variables y funciones propias; las clases siguen PascalCase de Laravel.
-- **Principio II (Manejo de errores)**: PASA. Los fallos de Redis, Tempo o Loki se capturan con
-  `try/catch` explícito y se registran como advertencia; no se silencian. La escritura de
-  auditoría no captura excepciones: si falla, falla la operación auditada.
+- **Principio II (Manejo de errores)**: PASA. Los fallos de Redis y Tempo se capturan con
+  `try/catch` explícito y se registran como advertencia; no se silencian (la aplicación no habla
+  con Loki: Alloy lee el archivo de log). La auditoría por trait corre en los eventos
+  `created`/`updated`/`deleted`, después de la escritura y sin transacción común: si la
+  auditoría falla, la petición responde error, pero el cambio ya puede estar guardado.
+  `AuditarAccesoDenegado` sí captura y registra con `Log::error`, para no convertir un 403 en 500.
 - **Principio III (Gestión de secretos)**: PASA. `METRICS_TOKEN`, `AUDIT_HMAC_KEY`, credenciales
   de Grafana y del exporter de MySQL viven en `.env` (gitignored); `.env.example` con valores
   vacíos.
@@ -283,9 +286,11 @@ registra `AuthenticatedSessionController` (`login`), así que no se agrega liste
 no duplicarlo; ese `ActivityLog::create` sigue funcionando porque el sello se calcula en el hook
 `creating`.
 
-**Hallazgo al planear:** los dos `ActivityLog::create` de `PatientProfileController` guardan
-alergias, padecimientos, tipo de sangre y CURP **en claro** en `old_values`/`new_values`, lo que
-viola FR-016. Se eliminan: el trait registra esos mismos cambios con los valores protegidos.
+**Hallazgo al planear:** el `ActivityLog::create` de `PatientProfileController::update()` guarda
+**en claro** en `old_values`/`new_values` la fecha de nacimiento, tipo de sangre, alergias,
+padecimientos, contactos de emergencia y CURP, lo que viola FR-016; el de `updatePhoto()` solo
+registra la acción. Se eliminan ambos: el trait registra esos mismos cambios con los valores
+protegidos.
 `FullDataSeeder` inserta auditoría con `DB::table()` (sin sello); pasa a usar el modelo.
 
 **Integridad:** `ActivityLog` lanza excepción en `update`/`delete`.
