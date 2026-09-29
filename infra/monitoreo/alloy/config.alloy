@@ -1,0 +1,28 @@
+// Lee el log JSON de Laravel y lo envia a Loki
+local.file_match "medschedule" {
+	path_targets = [{"__path__" = "/logs/medschedule.json", "job" = "medschedule"}]
+}
+
+loki.source.file "medschedule" {
+	targets    = local.file_match.medschedule.targets
+	forward_to = [loki.process.medschedule.receiver]
+}
+
+loki.process "medschedule" {
+	// Nivel y ruta como etiquetas (baja cardinalidad); trace_id se queda en la linea
+	stage.json {
+		expressions = { level = "level_name", route = "extra.route" }
+	}
+
+	stage.labels {
+		values = { level = "", route = "" }
+	}
+
+	forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

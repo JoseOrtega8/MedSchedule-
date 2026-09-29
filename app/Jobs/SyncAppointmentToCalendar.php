@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Appointment;
 use App\Services\GoogleCalendarService;
+use App\Support\MensajeSeguro;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -63,6 +64,6 @@ class SyncAppointmentToCalendar implements ShouldQueue
 	 */
 	public function failed(\Throwable $exception): void
 	{
-		Log::error("SyncAppointmentToCalendar falló definitivamente para la cita {$this->appointmentId}: {$exception->getMessage()}");
+		Log::error("SyncAppointmentToCalendar falló definitivamente para la cita {$this->appointmentId}: " . MensajeSeguro::de_excepcion($exception));
 	}
 }

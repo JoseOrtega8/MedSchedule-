@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
 		},
 	)
 	->withMiddleware(function (Middleware $middleware): void {
+		// Span raiz de cada peticion (unidad 3); va primero para envolver al resto
+		$middleware->prepend(\App\Http\Middleware\IniciarTraza::class);
+
 		$middleware->alias([
 			'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
 			'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

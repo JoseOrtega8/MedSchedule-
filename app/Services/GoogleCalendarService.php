@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Appointment;
+use App\Observability\Trazas\Trazas;
 use Google\Client;
 use Google\Service\Calendar;
 use Google\Service\Calendar\Event;
@@ -64,9 +65,13 @@ class GoogleCalendarService
 			]);
 
 			$calendarId   = config('services.google.calendar_id', 'primary');
-			$createdEvent = $service->events->insert($calendarId, $event, [
-				'sendUpdates' => 'none',
-			]);
+			$createdEvent = app(Trazas::class)->en_span(
+				'google_calendar.events.insert',
+				fn () => $service->events->insert($calendarId, $event, [
+					'sendUpdates' => 'none',
+				]),
+				['peer.service' => 'google-calendar']
+			);
 
 			return $createdEvent->getId();
 		} catch (\Exception $e) {
@@ -82,7 +87,11 @@ class GoogleCalendarService
 		try {
 			$service    = new Calendar($this->client);
 			$calendarId = config('services.google.calendar_id', 'primary');
-			$service->events->delete($calendarId, $eventId);
+			app(Trazas::class)->en_span(
+				'google_calendar.events.delete',
+				fn () => $service->events->delete($calendarId, $eventId),
+				['peer.service' => 'google-calendar']
+			);
 		} catch (\Exception $e) {
 			Log::error('Google Calendar deleteEvent error: ' . $e->getMessage());
 		}
@@ -95,12 +104,16 @@ class GoogleCalendarService
 			$service = new Calendar($this->client);
 			$calendarId = config('services.google.calendar_id', 'primary');
 
-			$events = $service->events->listEvents($calendarId, [
-				'timeMin' => $startDate instanceof \DateTimeInterface ? $startDate->format(\DateTime::ATOM) : $startDate,
-				'timeMax' => $endDate instanceof \DateTimeInterface ? $endDate->format(\DateTime::ATOM) : $endDate,
-				'singleEvents' => true,
-				'orderBy' => 'startTime',
-			]);
+			$events = app(Trazas::class)->en_span(
+				'google_calendar.events.list',
+				fn () => $service->events->listEvents($calendarId, [
+					'timeMin' => $startDate instanceof \DateTimeInterface ? $startDate->format(\DateTime::ATOM) : $startDate,
+					'timeMax' => $endDate instanceof \DateTimeInterface ? $endDate->format(\DateTime::ATOM) : $endDate,
+					'singleEvents' => true,
+					'orderBy' => 'startTime',
+				]),
+				['peer.service' => 'google-calendar']
+			);
 
 			return $events->getItems() ?? [];
 		} catch (\Exception $e) {

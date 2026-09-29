@@ -14,5 +14,7 @@ return [
 		'port' => (int) env('METRICAS_REDIS_PORT', 6380),
 		'timeout' => 0.2,
 		'read_write_timeout' => 0.2,
+		// Reutiliza el socket entre peticiones del mismo proceso PHP
+		'persistente' => (bool) env('METRICAS_REDIS_PERSISTENTE', true),
 	],
 ];

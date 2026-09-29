@@ -63,6 +63,25 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            // El driver 'single' ignora 'processors': este tap agrega
+            // contexto de traza y enmascara PII igual que el canal 'json'
+            'tap' => [App\Logging\AplicarRedaccion::class],
+        ],
+
+        // Logs estructurados para Loki (unidad 3): una linea JSON por registro,
+        // con contexto de traza y PII enmascarada
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'handler_with' => [
+                'stream' => storage_path('logs/medschedule.json'),
+            ],
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'processors' => [
+                App\Logging\AgregarContextoTraza::class,
+                App\Logging\RedactarDatosSensibles::class,
+            ],
         ],
 
         'daily' => [
@@ -71,6 +90,8 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            // Ver 'single': el driver 'daily' tampoco lee 'processors'
+            'tap' => [App\Logging\AplicarRedaccion::class],
         ],
 
         'slack' => [
