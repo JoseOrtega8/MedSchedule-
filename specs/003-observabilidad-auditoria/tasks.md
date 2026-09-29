@@ -34,7 +34,7 @@ Este archivo describe lo que realmente se implementó. Decisiones que cambiaron 
 - **T011**: el span del job se cierra también en `JobExceptionOccurred`: si al job le quedan reintentos, Laravel no dispara `JobProcessed` ni `JobFailed` y el span quedaba abierto.
 - **T012**: el canal `json` usa driver `monolog` + `StreamHandler`: el driver `single` ignora `processors` en Laravel 12.53 y los logs salían sin redactar ni contexto de traza.
 - **T012**: la redacción se amplió a `PATRONES` en el texto (correo, `Bearer`/`Basic`, CURP), a excepciones del contexto (clase, mensaje redactado, archivo y línea; `QueryException` sin bindings) y a claves por subcadena (`remember_token`, `access_token`, `api_secret`…).
-- **T012**: hueco residual (repo público, datos clínicos): `Handler::reportThrowable` escribe el log con `$e->getMessage()` como mensaje principal, y en una `QueryException` ese mensaje trae los bindings interpolados (`SQL: ... allergies = Penicilina-Grave ...`); `RedactarDatosSensibles` solo pasaba el mensaje por `PATRONES` (correo/Bearer/CURP), no por eso. Se agregó `App\Support\MensajeSeguro::de_excepcion()` (para `QueryException`, `'QueryException: ' . getSql()` + SQLSTATE si `getCode()` no está vacío; para el resto, el mensaje por los mismos `PATRONES`), usado en `RedactarDatosSensibles` (contexto y ahora también el `message` del registro, buscando `QueryException` a cualquier profundidad, incluida una encadenada como `getPrevious()`) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que cambiaron `$span->recordException($error)` por `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])` (mismo evento, sin bindings ni stacktrace con argumentos). Se agregaron a `CLAVES` las subcadenas `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature` (no `key` ni `hash` sueltos: romperían claves inocentes como `cache_key`). El `catch` de `TrazasServiceProvider::trazar_jobs` (cierre de span de job fallido) conserva `recordException()`: queda fuera del alcance de esta corrección.
+- **T012**: hueco residual (repo público, datos clínicos): `Handler::reportThrowable` escribe el log con `$e->getMessage()` como mensaje principal, y en una `QueryException` ese mensaje trae los bindings interpolados (`SQL: ... allergies = Penicilina-Grave ...`); `RedactarDatosSensibles` solo pasaba el mensaje por `PATRONES` (correo/Bearer/CURP), no por eso. Se agregó `App\Support\MensajeSeguro::de_excepcion()` (para `QueryException`, `'QueryException: ' . getSql()` + SQLSTATE si `getCode()` no está vacío; para el resto, el mensaje por los mismos `PATRONES`), usado en `RedactarDatosSensibles` (contexto y ahora también el `message` del registro, buscando `QueryException` a cualquier profundidad, incluida una encadenada como `getPrevious()`) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que cambiaron `$span->recordException($error)` por `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])` (mismo evento, sin bindings ni stacktrace con argumentos). Se agregaron a `CLAVES` las subcadenas `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature` (no `key` ni `hash` sueltos: romperían claves inocentes como `cache_key`). El `catch` de `TrazasServiceProvider::trazar_jobs` (cierre de span de job fallido, ver T011) tenía el mismo `recordException()`; en una ronda posterior se corrigió con el mismo patrón (`addEvent` + `MensajeSeguro`), cubierto por `SpansHijosTest::test_query_exception_en_job_no_expone_bindings_en_su_span`.
 - **T013**: el folio usa el `request_id` como respaldo cuando las trazas están apagadas (antes decía "no disponible").
 - **T016**: no existe el concepto de fila histórica sin sello: la migración sella las filas existentes y `verificar()` trata como rota cualquier fila con `hash` nulo (se quitó `sin_sellar_historicos`).
 - **T016**: se quitó la FK `activity_logs.user_id` (conservando el índice): su `ON DELETE SET NULL` alteraba filas selladas al borrar un usuario.
@@ -2313,7 +2313,12 @@ Agregar a `TrazasServiceProvider`:
 			[$span, $alcance] = $abiertos[$clave];
 			unset($abiertos[$clave]);
 			if ($error !== null) {
-				$span->recordException($error);
+				// Ver Trazas::en_span: addEvent() + MensajeSeguro en lugar de
+				// recordException() para no exportar valores de consulta a Tempo.
+				$span->addEvent('exception', [
+					'exception.type' => $error::class,
+					'exception.message' => \App\Support\MensajeSeguro::de_excepcion($error),
+				]);
 				$span->setStatus(\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR);
 			}
 			$alcance->detach();
@@ -2354,7 +2359,7 @@ Expected: mismo resultado que en la línea base de T002.
 - [ ] **Paso 5: Correr las pruebas y verificar que pasan**
 
 Run: `pruebas --filter="SpansHijosTest|IniciarTrazaTest"`
-Expected: PASS (8 pruebas). El span del job se cierra en `JobProcessed`, `JobFailed` y `JobExceptionOccurred` (reintento pendiente). Si `getStatus()->getCode()` devuelve la constante en otro formato, comparar con `\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR`.
+Expected: PASS (9 pruebas). El span del job se cierra en `JobProcessed`, `JobFailed` y `JobExceptionOccurred` (reintento pendiente). Si `getStatus()->getCode()` devuelve la constante en otro formato, comparar con `\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR`. El cierre de un job fallido ya no usa `recordException()` sino `addEvent('exception', [...])` + `App\Support\MensajeSeguro::de_excepcion($error)` (mismo patrón que `Trazas::en_span` e `IniciarTraza::handle`): una `QueryException` en un job no expone los bindings de la consulta en su span.
 
 - [ ] **Paso 6: Commit**
 
