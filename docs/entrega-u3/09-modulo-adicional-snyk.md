@@ -79,25 +79,70 @@ tiene excepciones.
 
 ## 9.6 Antes y después
 
-### Antes: nadie revisa las dependencias
+No hizo falta agregar una dependencia vulnerable a propósito: el `composer.lock` del proyecto ya
+tenía vulnerabilidades conocidas. Las corridas se hicieron el 2026-09-29 con el CLI fijado
+(`snyk@1.1307.4`); el token se pasó por variable de entorno y no aparece en ninguna salida.
 
-En la rama `feat/105-u3-sdd`, que no tiene el job `seguridad`, se agregó a propósito una
-dependencia con una vulnerabilidad conocida y se corrió el pipeline: pasó de la integración a las
-pruebas sin ningún aviso, porque ningún paso leía `composer.lock` ni `package-lock.json`.
+### Antes: las vulnerabilidades pasaban sin aviso
 
-[[PENDIENTE-SNYK: dependencia vulnerable usada y resultado de la corrida sin compuerta, de evidencia/snyk-00-antes.txt]]
+En la rama `feat/105-u3-sdd` (commit `2eb69e7`), que no tiene la compuerta, `release.yml` no
+contiene ningún paso de seguridad: `grep -n "seguridad\|snyk" .github/workflows/release.yml` no
+encuentra nada. Sobre ese mismo código, Snyk con el umbral de la compuerta (alta o crítica)
+encontró en `composer.lock` **16 vulnerabilidades en 22 rutas: 1 crítica y 15 altas**
+(`evidencia/snyk-00-antes.txt`). `package-lock.json` salió limpio. Nada en el pipeline lo
+impedía.
 
-### Después: la compuerta decide
+| Paquete (versión) | Severidad | Vulnerabilidades |
+|---|---|---|
+| `symfony/mailer` 7.4.6 | Crítica | 1: inyección de argumentos arbitrarios |
+| `league/commonmark` 2.8.0 | Alta | 7: complejidad algorítmica y consumo excesivo de recursos |
+| `guzzlehttp/guzzle` 7.10.0 | Alta | 3: manejo de información sensible |
+| `phpseclib/phpseclib` 3.0.49 | Alta | 3: ataques de temporización y deserialización |
+| `symfony/http-kernel` 7.4.6 | Alta | 1: autorización incorrecta |
+| `symfony/routing` 7.4.6 | Alta | 1: expresión regular incorrecta |
 
-Corrida con las dependencias actuales del proyecto:
+Un análisis del mismo código sin umbral dio 1 crítica, 15 altas, 19 medias y 3 bajas. Esa corrida
+no se conservó como archivo de evidencia; los archivos de `evidencia/` solo registran las
+severidades alta y crítica.
 
-[[PENDIENTE-SNYK: resultado y código de salida de la corrida limpia, de evidencia/snyk-puerta-pasa.txt]]
+![Reporte de Snyk del proyecto: 16 vulnerabilidades conocidas, 22 rutas vulnerables, 108 dependencias; la crítica en symfony/mailer](evidencia/snyk-01-reporte.png)
 
-Corrida con una dependencia vulnerable agregada a propósito:
+### Después, primero: la compuerta falla
 
-[[PENDIENTE-SNYK: dependencia agregada, vulnerabilidad reportada, severidad y código de salida, de evidencia/snyk-puerta-falla.txt]]
+En la rama `feat/109-snyk` (commit `f1e3512`), `scripts/snyk-escanear.sh` encontró las mismas
+16 vulnerabilidades (1 crítica y 15 altas), imprimió "Se encontraron vulnerabilidades de
+severidad alta o critica" y terminó con **código 1** (`evidencia/snyk-puerta-falla.txt`). En el
+pipeline, ese código detiene el job `seguridad` y, con él, las pruebas y el despliegue.
 
-![Reporte del análisis de Snyk sobre composer.lock y package-lock.json](evidencia/snyk-01-reporte.png)
+### Corrección
+
+Se actualizaron en `composer.lock` los paquetes señalados, sin cambiar `composer.json`
+(commit `dcc2648`, `fix(deps): actualizar dependencias con vulnerabilidades altas reportadas por Snyk`):
+
+| Paquete | De | A |
+|---|---|---|
+| `symfony/mailer` | 7.4.6 | 7.4.19 |
+| `symfony/http-kernel` | 7.4.6 | 7.4.20 |
+| `symfony/routing` | 7.4.6 | 7.4.20 |
+| `league/commonmark` | 2.8.0 | 2.10.3 |
+| `guzzlehttp/guzzle` | 7.10.0 | 7.15.5 |
+| `phpseclib/phpseclib` | 3.0.49 | 3.0.57 |
+
+Con ellos subieron sus dependencias directas (otros componentes de Symfony, sus polyfills,
+`guzzlehttp/psr7`, `guzzlehttp/promises`, `nette/schema`, `nette/utils` y `doctrine/lexer`). Una
+actualización sin restricciones llevaba `symfony/event-dispatcher` a la versión 8, que exige
+PHP 8.4; el proyecto y el CI usan PHP 8.2. Para conservar la compatibilidad, la actualización se
+repitió fijando temporalmente `symfony/event-dispatcher` en `^7.4` (queda en 7.4.17), sin tocar
+`composer.json`. Después de actualizar, la suite completa mostró exactamente los mismos fallos
+previos del issue #86, sin fallos nuevos.
+
+### Después: la compuerta pasa
+
+Sobre el commit corregido, el mismo script terminó con "Tested 7 projects, no vulnerable paths
+were found", "Sin vulnerabilidades altas o criticas" y **código 0**
+(`evidencia/snyk-puerta-pasa.txt`). En la corrida sin umbral (tampoco conservada como archivo) quedaron
+0 críticas, 0 altas, 1 media y 1 baja, las dos en `laravel/framework` 12.53.0; no bloquean. El envío de la instantánea al dashboard de Snyk
+con `--monitor` terminó con código 0 (`evidencia/snyk-monitor.txt`).
 
 ![Dashboard de Snyk con la instantánea del proyecto subida con --monitor](evidencia/snyk-02-dashboard.png)
 
@@ -108,3 +153,8 @@ Corrida con una dependencia vulnerable agregada a propósito:
   integrante con cuenta puede configurar el secreto `SNYK_TOKEN` en el repositorio.
 - El umbral es alta o crítica: `--severity-threshold=high` deja fuera del reporte y de la
   compuerta las vulnerabilidades de severidad media y baja.
+- Las fuentes de vulnerabilidades no siempre coinciden en la severidad. `composer audit`
+  clasifica como **alta** la inyección CRLF en la regla de correo por defecto de
+  `laravel/framework` anterior a 12.60.0, que Snyk clasifica como media y por eso no bloquea.
+  Se corrige subiendo `laravel/framework` dentro de `^12.0`; queda recomendado como mejora
+  aparte, fuera de este módulo, que solo corrige lo que Snyk marca como alto o crítico.
