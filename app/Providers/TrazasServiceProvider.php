@@ -11,8 +11,11 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
+use OpenTelemetry\API\Behavior\Internal\Logging;
+use OpenTelemetry\API\Behavior\Internal\LogWriter\Psr3LogWriter;
 use OpenTelemetry\API\Trace\NoopTracerProvider;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -37,6 +40,10 @@ class TrazasServiceProvider extends ServiceProvider
 			if (!config('trazas.habilitadas')) {
 				return new NoopTracerProvider();
 			}
+
+			// Los avisos internos de OpenTelemetry (p. ej. fallos de exportacion a
+			// Tempo) van al log de Laravel, con su redaccion, y no a error_log/stderr
+			Logging::setLogWriter(new Psr3LogWriter(Log::getLogger()));
 
 			// Tempo inalcanzable no debe frenar la peticion: con los valores por
 			// defecto (timeout 10 s, 3 reintentos) vaciar() bloqueaba ~40 s.

@@ -26,7 +26,7 @@ class MetricasServiceProvider extends ServiceProvider
 
 	// Parametros de Predis. Con 'persistent' el socket sobrevive entre peticiones
 	// del mismo proceso PHP (php-fpm o el servidor embebido) y no se reconecta a
-	// Redis en cada peticion: medido, ahorraba ~0.5 ms por peticion.
+	// Redis en cada peticion: medido en la microprueba, ahorra 0.2 a 0.5 ms por peticion.
 	public static function parametros_redis(array $redis): array
 	{
 		return [

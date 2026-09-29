@@ -13,10 +13,11 @@ use Throwable;
 
 // Exportador OTLP/HTTP con JSON. Mismo contrato que
 // OpenTelemetry\Contrib\Otlp\SpanExporter, pero codifica con CodificadorOtlpJson
-// en lugar de los mensajes de google/protobuf en PHP puro (~0.15 ms por span mas
-// ~1 ms fijo por peticion para cargar descriptores, medido).
-// Los errores se registran con el logger interno de OpenTelemetry, igual que el
-// exportador oficial; Trazas::vaciar() atiende las excepciones que escapen.
+// en lugar de los mensajes de google/protobuf en PHP puro. Medido en la
+// microprueba (k6-atribucion.txt): forceFlush() bajo de 3.2 ms a 0.96 ms (p50).
+// Los errores no se lanzan: se registran con el logger interno de OpenTelemetry
+// (TrazasServiceProvider lo dirige al log de Laravel) y export() devuelve false;
+// el BatchSpanProcessor atrapa cualquier excepcion que aun escape del exportador.
 final class ExportadorOtlpJson implements SpanExporterInterface
 {
 	use LogsMessagesTrait;
@@ -34,8 +35,18 @@ final class ExportadorOtlpJson implements SpanExporterInterface
 			->send(CodificadorOtlpJson::codificar($batch), $cancellation)
 			->map(function (?string $respuesta): bool {
 				// El colector responde ExportTraceServiceResponse; un cuerpo vacio es exito
-				$datos = ($respuesta === null || $respuesta === '') ? [] : json_decode($respuesta, true);
-				$parcial = is_array($datos) ? ($datos['partialSuccess'] ?? null) : null;
+				if ($respuesta === null || $respuesta === '') {
+					return true;
+				}
+				$datos = json_decode($respuesta, true);
+				if (json_last_error() !== JSON_ERROR_NONE || !is_array($datos)) {
+					// Respuesta 2xx que no es JSON: los spans probablemente llegaron, pero
+					// no se puede confirmar; se avisa en lugar de callar
+					self::logWarning('Export response is not valid JSON', ['json_error' => json_last_error_msg()]);
+
+					return true;
+				}
+				$parcial = $datos['partialSuccess'] ?? null;
 
 				if (is_array($parcial) && (int) ($parcial['rejectedSpans'] ?? 0) > 0) {
 					self::logError('Export partial success', [
