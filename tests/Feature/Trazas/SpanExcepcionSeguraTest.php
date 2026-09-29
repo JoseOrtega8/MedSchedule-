@@ -78,4 +78,46 @@ class SpanExcepcionSeguraTest extends TrazasTestCase
 		$this->assertSame(RuntimeException::class, $eventos[0]->getAttributes()->get('exception.type'));
 		$this->assertSame('fallo generico', $eventos[0]->getAttributes()->get('exception.message'));
 	}
+
+	// Una QueryException ENVUELTA (RuntimeException que reenvia su mensaje
+	// completo como causa) no debe exponer los bindings en el evento del span
+	public function test_excepcion_que_envuelve_query_exception_en_span_no_expone_bindings(): void
+	{
+		$trazas = app(Trazas::class);
+
+		try {
+			$trazas->en_span('prueba.envuelta', function () {
+				$consulta = new QueryException(
+					'mysql',
+					'update patient_profiles set allergies = ? where id = ?',
+					['Penicilina-Grave', 5],
+					new PDOException('dup')
+				);
+
+				throw new RuntimeException('fallo guardando perfil: ' . $consulta->getMessage(), 0, $consulta);
+			});
+			$this->fail('Se esperaba que la excepcion se propagara');
+		} catch (RuntimeException $e) {
+			// Se espera
+		}
+
+		$span = $this->spans_que_empiezan_con('prueba.envuelta')[0];
+
+		foreach ($span->getAttributes()->toArray() as $valor) {
+			$this->assertStringNotContainsString('Penicilina-Grave', (string) $valor);
+		}
+
+		$eventos = $span->getEvents();
+		$this->assertNotEmpty($eventos);
+
+		foreach ($eventos as $evento) {
+			$this->assertStringNotContainsString('Penicilina-Grave', json_encode($evento->getAttributes()->toArray()));
+		}
+
+		$this->assertSame(RuntimeException::class, $eventos[0]->getAttributes()->get('exception.type'));
+		$this->assertStringContainsString(
+			'update patient_profiles set allergies = ? where id = ?',
+			(string) $eventos[0]->getAttributes()->get('exception.message')
+		);
+	}
 }

@@ -7,6 +7,7 @@ use App\Observability\Trazas\Trazas;
 use DateTimeImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\ViewException;
 use Monolog\Level;
 use Monolog\LogRecord;
 use PDOException;
@@ -124,6 +125,121 @@ class ContextoLogTest extends TrazasTestCase
 			$this->assertStringContainsString(
 				'update patient_profiles set allergies = ? where id = ?',
 				$linea
+			);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// Una QueryException ENVUELTA (ej. un catch generico que reenvia el
+	// mensaje) tambien debe quedar segura: MensajeSeguro::de_excepcion debe
+	// recorrer getPrevious() y no solo mirar el mensaje propio de la excepcion
+	// reportada. Se verifica la LINEA COMPLETA (json_encode de todo el
+	// registro), no solo el campo 'message'.
+	public function test_report_de_excepcion_que_envuelve_query_exception_no_expone_bindings_en_el_canal_json(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			config(['logging.default' => 'json']);
+			Log::forgetChannel('json');
+
+			$consulta = new QueryException(
+				'mysql',
+				'update patient_profiles set allergies = ? where id = ?',
+				['Penicilina-Grave', 5],
+				new PDOException('dup')
+			);
+			$envoltura = new RuntimeException('fallo guardando perfil: ' . $consulta->getMessage(), 0, $consulta);
+
+			report($envoltura);
+
+			$lineas = file($archivo);
+			$linea = end($lineas);
+
+			$this->assertStringNotContainsString('Penicilina-Grave', $linea);
+			$this->assertStringContainsString(
+				'update patient_profiles set allergies = ? where id = ?',
+				$linea
+			);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// Illuminate\View\ViewException REAL (una consulta que falla dentro de
+	// Blade): su mensaje es $e->getMessage().' (View: ...)' (ver vendor
+	// Illuminate\View\Engines\CompilerEngine::getMessage())
+	public function test_report_de_view_exception_no_expone_bindings_en_el_canal_json(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-json-'.uniqid().'.json');
+
+		try {
+			config(['logging.channels.json.handler_with.stream' => $archivo]);
+			config(['logging.default' => 'json']);
+			Log::forgetChannel('json');
+
+			$consulta = new QueryException(
+				'mysql',
+				'update patient_profiles set allergies = ? where id = ?',
+				['Penicilina-Grave', 5],
+				new PDOException('dup')
+			);
+			$vista = new ViewException(
+				$consulta->getMessage() . ' (View: /ruta/vista.blade.php)',
+				0,
+				1,
+				__FILE__,
+				__LINE__,
+				$consulta
+			);
+
+			report($vista);
+
+			$lineas = file($archivo);
+			$linea = end($lineas);
+
+			$this->assertStringNotContainsString('Penicilina-Grave', $linea);
+			$this->assertStringContainsString('(View: /ruta/vista.blade.php)', $linea);
+		} finally {
+			if (file_exists($archivo)) {
+				unlink($archivo);
+			}
+		}
+	}
+
+	// Los canales 'single'/'daily' (driver homonimo) no leen 'processors' de
+	// config/logging.php: sin el tap AplicarRedaccion, storage/logs/laravel.log
+	// quedaba sin redactar
+	public function test_report_de_query_exception_no_expone_bindings_en_el_canal_single(): void
+	{
+		$archivo = storage_path('logs/prueba-canal-single-'.uniqid().'.log');
+
+		try {
+			config(['logging.channels.single.path' => $archivo]);
+			config(['logging.default' => 'single']);
+			Log::forgetChannel('single');
+
+			$excepcion = new QueryException(
+				'mysql',
+				'update patient_profiles set allergies = ? where id = ?',
+				['Penicilina-Grave', 5],
+				new PDOException('dup')
+			);
+
+			report($excepcion);
+
+			$contenido = file_get_contents($archivo);
+
+			$this->assertStringNotContainsString('Penicilina-Grave', $contenido);
+			$this->assertStringContainsString(
+				'update patient_profiles set allergies = ? where id = ?',
+				$contenido
 			);
 		} finally {
 			if (file_exists($archivo)) {

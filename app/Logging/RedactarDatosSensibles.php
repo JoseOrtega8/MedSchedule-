@@ -3,7 +3,6 @@
 namespace App\Logging;
 
 use App\Support\MensajeSeguro;
-use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
 use Throwable;
@@ -19,10 +18,11 @@ use Throwable;
 //
 // Las excepciones (Laravel las pone en context['exception']) se reducen a
 // clase, mensaje redactado, archivo y linea: nunca el trace con argumentos.
+// La logica de PATRONES/MASCARA y de "una QueryException encadenada como
+// causa" vive una sola vez en App\Support\MensajeSeguro: esta clase solo la
+// usa (redactar_texto delega en MensajeSeguro::redactar_texto()).
 class RedactarDatosSensibles implements ProcessorInterface
 {
-	public const MASCARA = '[redactado]';
-
 	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
 	// (asi 'remember_token', 'access_token', 'api_secret' o
 	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
@@ -36,27 +36,15 @@ class RedactarDatosSensibles implements ProcessorInterface
 		'api_key', 'apikey', 'credential', 'phone', 'telefono', 'signature',
 	];
 
-	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
-	// del log y los valores string de context/extra cuya clave no es sensible
-	// (p.ej. un correo interpolado dentro de 'mensaje' => "reset para a@b.c").
-	// La coincidencia completa se reemplaza por MASCARA, incluida la palabra
-	// Bearer/Basic en el segundo patron: asi no se filtra ni el esquema de auth.
-	public const PATRONES = [
-		// correos electronicos
-		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/',
-		// credenciales Bearer/Basic en texto (se enmascara la coincidencia completa)
-		'/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]+/i',
-		// CURP mexicana (18 caracteres)
-		'/\b[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d\b/',
-	];
-
 	public function __invoke(LogRecord $registro): LogRecord
 	{
-		// Primero se sustituyen los mensajes de QueryException encontrados en
-		// el contexto (getMessage() trae los bindings interpolados, ver
-		// resumir_excepcion): esto debe pasar ANTES de convertir los Throwable
-		// del contexto a su resumen seguro, porque usa los objetos originales.
-		$mensaje = $this->redactar_mensaje_de_query_exceptions($registro->message, $registro->context);
+		// Los Throwable del contexto (a cualquier profundidad, antes de
+		// convertirlos a su resumen) pueden coincidir textualmente con el
+		// 'message' principal del registro: Handler::reportThrowable escribe
+		// el log con $e->getMessage() como mensaje. MensajeSeguro::de_excepcion
+		// ya recorre toda la cadena de causas (getPrevious()) buscando
+		// QueryException encadenadas, directas o envueltas por otra excepcion.
+		$mensaje = $this->redactar_mensaje_de_excepciones($registro->message, $registro->context);
 
 		return $registro->with(
 			message: $this->redactar_texto($mensaje),
@@ -65,47 +53,25 @@ class RedactarDatosSensibles implements ProcessorInterface
 		);
 	}
 
-	// Illuminate\Foundation\Exceptions\Handler::reportThrowable usa
-	// $e->getMessage() como mensaje principal del log; en una QueryException
-	// ese mensaje trae los valores de la consulta incrustados (ver
-	// QueryException::formatMessage). Se busca, a cualquier profundidad del
-	// contexto, cada QueryException (directa o como causa encadenada de otra
-	// excepcion via getPrevious()) y se reemplaza toda ocurrencia de su
-	// getMessage() por el texto seguro de MensajeSeguro.
-	private function redactar_mensaje_de_query_exceptions(string $mensaje, array $contexto): string
+	private function redactar_mensaje_de_excepciones(string $mensaje, array $contexto): string
 	{
-		foreach ($this->query_exceptions_en_contexto($contexto) as $consulta) {
-			$mensaje = str_replace($consulta->getMessage(), MensajeSeguro::de_excepcion($consulta), $mensaje);
+		foreach ($this->excepciones_en_contexto($contexto) as $excepcion) {
+			$mensaje = str_replace($excepcion->getMessage(), MensajeSeguro::de_excepcion($excepcion), $mensaje);
 		}
 
 		return $mensaje;
 	}
 
-	private function query_exceptions_en_contexto(array $contexto): array
+	private function excepciones_en_contexto(array $contexto): array
 	{
 		$encontradas = [];
 		foreach ($contexto as $valor) {
 			if ($valor instanceof Throwable) {
-				$encontradas = array_merge($encontradas, $this->query_exceptions_en_cadena($valor));
+				$encontradas[] = $valor;
 			} elseif (is_array($valor)) {
-				$encontradas = array_merge($encontradas, $this->query_exceptions_en_contexto($valor));
+				$encontradas = array_merge($encontradas, $this->excepciones_en_contexto($valor));
 			}
 		}
-
-		return $encontradas;
-	}
-
-	// Recorre getPrevious() de una excepcion buscando QueryException: cubre
-	// tanto la excepcion directa como una QueryException encadenada como causa
-	private function query_exceptions_en_cadena(Throwable $excepcion): array
-	{
-		$encontradas = [];
-		do {
-			if ($excepcion instanceof QueryException) {
-				$encontradas[] = $excepcion;
-			}
-			$excepcion = $excepcion->getPrevious();
-		} while ($excepcion !== null);
 
 		return $encontradas;
 	}
@@ -114,7 +80,7 @@ class RedactarDatosSensibles implements ProcessorInterface
 	{
 		foreach ($datos as $clave => $valor) {
 			if (is_string($clave) && $this->es_clave_sensible($clave)) {
-				$datos[$clave] = self::MASCARA;
+				$datos[$clave] = MensajeSeguro::MASCARA;
 			} elseif ($valor instanceof Throwable) {
 				$datos[$clave] = $this->resumir_excepcion($valor);
 			} elseif (is_array($valor)) {
@@ -151,9 +117,11 @@ class RedactarDatosSensibles implements ProcessorInterface
 		];
 	}
 
-	// Enmascara, dentro de un texto libre, cualquier coincidencia de los PATRONES
+	// Enmascara, dentro de un texto libre, cualquier coincidencia de los
+	// PATRONES de MensajeSeguro (correo, Bearer/Basic, CURP): un unico lugar
+	// para esa logica, sin duplicarla ni depender en circulo de MensajeSeguro.
 	private function redactar_texto(string $texto): string
 	{
-		return preg_replace(self::PATRONES, self::MASCARA, $texto);
+		return MensajeSeguro::redactar_texto($texto);
 	}
 }
