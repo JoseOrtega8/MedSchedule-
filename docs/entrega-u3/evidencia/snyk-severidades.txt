@@ -1,0 +1,20 @@
+# Conteo de vulnerabilidades por severidad (Snyk CLI 1.1307.4, sin umbral, composer.lock y package-lock.json)
+# Fecha (UTC): 2026-09-29T20:29:45Z
+
+## antes: feat/105-u3-sdd (089dea2)
+composer.lock: criticas 1, altas 15, medias 19, bajas 3 (vulnerabilidades unicas: 38)
+package-lock.json: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/mockery/mockery/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/phar-io/manifest/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/phpunit/phpunit/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/theseer/tokenizer/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+
+## despues: feat/109-snyk (dcc2648)
+composer.lock: criticas 0, altas 0, medias 1, bajas 1 (vulnerabilidades unicas: 2)
+package-lock.json: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/mockery/mockery/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/phar-io/manifest/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/phpunit/phpunit/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)
+vendor/theseer/tokenizer/composer.lock: criticas 0, altas 0, medias 0, bajas 0 (vulnerabilidades unicas: 0)

@@ -101,9 +101,8 @@ impedía.
 | `symfony/http-kernel` 7.4.6 | Alta | 1: autorización incorrecta |
 | `symfony/routing` 7.4.6 | Alta | 1: expresión regular incorrecta |
 
-Un análisis del mismo código sin umbral dio 1 crítica, 15 altas, 19 medias y 3 bajas. Esa corrida
-no se conservó como archivo de evidencia; los archivos de `evidencia/` solo registran las
-severidades alta y crítica.
+Un análisis del mismo código sin umbral dio 1 crítica, 15 altas, 19 medias y 3 bajas en
+`composer.lock`, y ninguna en `package-lock.json` (`evidencia/snyk-severidades.txt`).
 
 ![Reporte de Snyk del proyecto: 16 vulnerabilidades conocidas, 22 rutas vulnerables, 108 dependencias; la crítica en symfony/mailer](evidencia/snyk-01-reporte.png)
 
@@ -140,8 +139,9 @@ previos del issue #86, sin fallos nuevos.
 
 Sobre el commit corregido, el mismo script terminó con "Tested 7 projects, no vulnerable paths
 were found", "Sin vulnerabilidades altas o criticas" y **código 0**
-(`evidencia/snyk-puerta-pasa.txt`). En la corrida sin umbral (tampoco conservada como archivo) quedaron
-0 críticas, 0 altas, 1 media y 1 baja, las dos en `laravel/framework` 12.53.0; no bloquean. El envío de la instantánea al dashboard de Snyk
+(`evidencia/snyk-puerta-pasa.txt`). En la corrida sin umbral quedaron 0 críticas, 0 altas,
+1 media y 1 baja, las dos en `laravel/framework` 12.53.0; no bloquean
+(`evidencia/snyk-severidades.txt`). El envío de la instantánea al dashboard de Snyk
 con `--monitor` terminó con código 0 (`evidencia/snyk-monitor.txt`).
 
 ![Dashboard de Snyk con la instantánea del proyecto subida con --monitor](evidencia/snyk-02-dashboard.png)
