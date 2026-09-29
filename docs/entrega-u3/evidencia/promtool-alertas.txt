@@ -1,0 +1,5 @@
+$ docker run --rm --entrypoint promtool -v "$HOME/.medschedule-evidencia/trazabilidad/infra/monitoreo/prometheus:/w" prom/prometheus:v3.14.0 test rules /w/alertas.test.yml
+# fecha (UTC): 2026-09-29T04:52:37Z - rama feat/107-trazabilidad (e2327f0)
+  SUCCESS
+
+codigo de salida: 0

@@ -1,0 +1,63 @@
+$ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Auditoria|CsvSeguro|Enmascarar
+# fecha (UTC): 2026-09-29T04:52:48Z - rama feat/108-auditoria (366f585)
+
+   PASS  Tests\Unit\CsvSeguroTest
+  ✓ neutraliza celdas que parecen formula
+  ✓ deja igual el texto normal y serializa arreglos
+
+   PASS  Tests\Unit\EnmascararTest
+  ✓ enmascara la parte local del correo
+  ✓ valor que no es correo se oculta completo
+
+   PASS  Tests\Feature\Auditoria\AuditableTest
+  ✓ crear actualizar y eliminar generan diff                             0.33s  
+  ✓ password se registra como protegido                                  0.01s  
+  ✓ campos clinicos se registran como protegidos                         0.01s  
+  ✓ cambio solo de campos excluidos no registra                          0.01s  
+  ✓ motivo y observaciones de la cita se registran como protegidos       0.01s  
+
+   PASS  Tests\Feature\Auditoria\ComandosAuditoriaTest
+  ✓ verificar cadena integra termina en cero y guarda resultado          0.01s  
+  ✓ verificar cadena rota termina en uno y senala el registro            0.01s  
+
+   PASS  Tests\Feature\Auditoria\EventosAuditadosTest
+  ✓ login fallido se audita con correo enmascarado                       0.24s  
+  ✓ logout se audita                                                     0.02s  
+  ✓ asignar y retirar rol se audita                                      0.02s  
+  ✓ acceso denegado a admin se audita                                    0.02s  
+  ✓ accesos denegados repetidos se limitan antes de auditarse            0.08s  
+
+   PASS  Tests\Feature\Auditoria\SelladoAuditoriaTest
+  ✓ registro nuevo queda sellado y encadenado                            0.01s  
+  ✓ no se puede modificar                                                0.01s  
+  ✓ no se puede eliminar
+  ✓ cadena intacta es integra                                            0.01s  
+  ✓ detecta alteracion manual en la base                                 0.01s  
+  ✓ detecta eliminacion intermedia                                       0.01s  
+  ✓ fila sin sello rompe la cadena
+  ✓ anular todos los hashes rompe la cadena                              0.01s  
+  ✓ borrar usuario conserva la auditoria y la cadena integra             0.01s  
+  ✓ migracion sella las filas preexistentes                              0.01s  
+
+   PASS  Tests\Feature\Auditoria\VisorAuditoriaTest
+  ✓ admin ve el listado                                                  0.02s  
+  ✓ no admin recibe 403                                                  0.01s  
+  ✓ filtra por entidad                                                   0.01s  
+  ✓ filtro invalido se rechaza                                           0.01s  
+  ✓ detalle muestra antes y despues                                      0.02s  
+  ✓ linea de tiempo de una entidad                                       0.01s  
+  ✓ exportar csv escapa formulas y queda auditado                        0.01s  
+  ✓ exportar csv no invierte comillas por el escape de fputcsv           0.01s  
+  ✓ linea tiempo con id desbordado responde 404                          0.01s  
+  ✓ linea tiempo con entidad inexistente responde 404                    0.01s  
+  ✓ show con id inexistente responde 404                                 0.01s  
+  ✓ no admin recibe 403 en show                                          0.01s  
+  ✓ no admin recibe 403 en linea tiempo                                  0.01s  
+  ✓ no admin recibe 403 en exportar                                      0.01s  
+
+  Tests:    40 passed (211 assertions)
+  Duration: 1.05s
+
+codigo de salida: 1
+# Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit
+# anterior a la unidad: "No tests found in class Tests\Feature\Auth\RegistrationTest" (vendor/bin/phpunit --display-warnings lo muestra: "OK, but there were issues! ... PHPUnit Warnings: 1").

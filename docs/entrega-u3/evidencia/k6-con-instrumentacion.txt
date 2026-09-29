@@ -1,0 +1,72 @@
+$ K6_PASSWORD=<contrasena de prueba del seeder> k6 run tests/carga/jri-prueba.js
+# con instrumentacion: METRICAS_ALMACEN=redis, OTEL_ENABLED=true, LOG_STACK=single,json; stack de monitoreo arriba; php artisan serve reiniciado
+# fecha (UTC): 2026-09-29T05:02:30Z - rama feat/107-trazabilidad (e2327f0) - Apple M4, k6 v2.2.0
+# (se omitieron las lineas de progreso que k6 imprime cada segundo: 121 "running (...)" y 120 "default [ n% ]"; el resto es la salida tal cual)
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: tests/carga/jri-prueba.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 2m30s max duration (incl. graceful stop):
+              * default: Up to 10 looping VUs for 2m0s over 3 stages (gracefulRampDown: 30s, gracefulStop: 30s)
+
+  █ THRESHOLDS 
+
+    duracion_panel
+    ✓ 'p(95)<5000' p(95)=50.74ms
+
+    http_req_duration
+    ✓ 'p(95)<5000' p(95)=56.15ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+    tasa_login_exitoso
+    ✓ 'rate>0.99' rate=100.00%
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2522    20.906328/s
+    checks_succeeded...: 100.00% 2522 out of 2522
+    checks_failed......: 0.00%   0 out of 2522
+
+    ✓ portada responde 200
+    ✓ about responde (200 esperado, 500 con el defecto abierto)
+    ✓ login redirige con 302
+    ✓ panel responde 200
+    ✓ panel devuelve JSON
+
+    CUSTOM
+    duracion_about.................: avg=35.5ms   min=9.25ms  med=31.63ms max=601.15ms p(90)=48.22ms  p(95)=58.24ms  p(99)=209.91ms
+    duracion_login_get.............: avg=25.19ms  min=10.41ms med=24.97ms max=40.44ms  p(90)=34.4ms   p(95)=35.76ms  p(99)=39.38ms 
+    duracion_login_post............: avg=103.98ms min=11.86ms med=31.9ms  max=246.33ms p(90)=229.81ms p(95)=242.68ms p(99)=246.04ms
+    duracion_panel.................: avg=31.61ms  min=11.14ms med=31.08ms max=249.28ms p(90)=45.41ms  p(95)=50.74ms  p(99)=65.42ms 
+    duracion_portada...............: avg=33.75ms  min=9.2ms   med=32.51ms max=256.07ms p(90)=45.85ms  p(95)=55.49ms  p(99)=106.12ms
+    respuestas_limitadas...........: 15      0.124344/s
+    tasa_about_correcto............: 98.40%  618 out of 628
+    tasa_login_exitoso.............: 100.00% 10 out of 10
+
+    HTTP
+    http_req_duration..............: avg=34.42ms  min=9.2ms   med=31.71ms max=601.15ms p(90)=46.29ms  p(95)=56.15ms  p(99)=206.93ms
+      { expected_response:true }...: avg=34.42ms  min=9.2ms   med=31.71ms max=601.15ms p(90)=46.29ms  p(95)=56.15ms  p(99)=206.93ms
+    http_req_failed................: 0.00%   0 out of 1935
+    http_reqs......................: 1935    16.040343/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.46s    min=1.03s   med=1.09s   max=46.75s   p(90)=1.13s    p(95)=1.18s    p(99)=1.52s   
+    iterations.....................: 628     5.205858/s
+    vus............................: 1       min=1          max=10
+    vus_max........................: 10      min=10         max=10
+
+    NETWORK
+    data_received..................: 22 MB   182 kB/s
+    data_sent......................: 1.5 MB  13 kB/s
+
+default ✓ [ 100% ] 00/10 VUs  2m0s
+codigo de salida: 0

@@ -1,0 +1,22 @@
+$ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Metricas
+# fecha (UTC): 2026-09-29T04:52:46Z - rama feat/107-trazabilidad (e2327f0)
+
+   PASS  Tests\Feature\Metricas\EndpointMetricasTest
+  ✓ sin token responde 404                                               0.51s  
+  ✓ token incorrecto responde 404                                        0.01s  
+  ✓ token correcto devuelve metricas                                     0.01s  
+  ✓ cita agendada y cancelada incrementa contadores                      0.03s  
+
+   PASS  Tests\Feature\Metricas\MetricasHttpTest
+  ✓ peticion registra contador e histograma                              0.02s  
+  ✓ redis caido no afecta la respuesta                                   0.02s  
+
+   PASS  Tests\Feature\Trazas\IniciarTrazaTest
+  ✓ scrape de metricas no produce spans                                  0.03s  
+
+  Tests:    7 passed (15 assertions)
+  Duration: 0.69s
+
+codigo de salida: 1
+# Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit
+# anterior a la unidad: "No tests found in class Tests\Feature\Auth\RegistrationTest" (vendor/bin/phpunit --display-warnings lo muestra: "OK, but there were issues! ... PHPUnit Warnings: 1").

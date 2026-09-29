@@ -1,0 +1,70 @@
+$ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Trazas|Redactar|MensajeSeguro|AplicarRedaccion
+# fecha (UTC): 2026-09-29T04:52:47Z - rama feat/107-trazabilidad (e2327f0)
+
+   PASS  Tests\Unit\Logging\AplicarRedaccionTest
+  ✓ logger psr sin pushprocessor no lanza
+
+   PASS  Tests\Unit\Logging\RedactarDatosSensiblesTest
+  ✓ enmascara claves sensibles a cualquier profundidad
+  ✓ enmascara correo dentro del mensaje
+  ✓ enmascara credencial bearer dentro del mensaje
+  ✓ enmascara curp dentro del mensaje
+  ✓ no modifica texto sin pii
+  ✓ enmascara correo en valor de context con clave no sensible
+  ✓ enmascara claves que contienen token por subcadena
+  ✓ query exception no expone los valores de binding
+  ✓ mensaje del registro igual al de la query exception queda seguro
+  ✓ mensaje del registro con query exception encadenada como causa
+  ✓ enmascara claves nuevas api key credential phone
+
+   PASS  Tests\Unit\Support\MensajeSeguroTest
+  ✓ query exception directa da texto seguro sin bindings
+  ✓ excepcion que envuelve query exception con mensaje completo queda segura
+  ✓ excepcion que copia solo el mensaje del driver previo queda segura
+  ✓ view exception real queda segura
+  ✓ excepcion generica sin query exception pasa por patrones
+  ✓ enmascara literales incrustados en getsql
+  ✓ enmascara lista numerica en in
+  ✓ enmascara literales es lineal con espacios en in
+  ✓ patron de correo es lineal con dominio largo
+
+   PASS  Tests\Feature\Trazas\ContextoLogTest
+  ✓ agrega trace id y span id del span activo                            0.07s  
+  ✓ sin span activo no agrega trace id                                   0.02s  
+  ✓ canal json escribe linea redactada con contexto de traza             0.02s  
+  ✓ canal json redacta la excepcion del contexto                         0.02s  
+  ✓ report de query exception no expone bindings en el canal json        0.02s  
+  ✓ report de excepcion que envuelve query exception no expone bindings… 0.02s  
+  ✓ report de view exception no expone bindings en el canal json         0.02s  
+  ✓ report de query exception no expone bindings en el canal single      0.02s  
+
+   PASS  Tests\Feature\Trazas\IniciarTrazaTest
+  ✓ peticion genera span raiz y cabecera x trace id                      0.37s  
+  ✓ respeta traceparent entrante                                         0.02s  
+  ✓ ningun span guarda la ruta real con tokens                           0.02s  
+  ✓ scrape de metricas no produce spans                                  0.02s  
+
+   PASS  Tests\Feature\Trazas\PaginaErrorSinTrazasTest
+  ✓ error 500 sin trazas muestra request id como folio                   0.01s  
+
+   PASS  Tests\Feature\Trazas\PaginaErrorTest
+  ✓ error 500 muestra folio sin detalle interno                          0.02s  
+
+   PASS  Tests\Feature\Trazas\SpanExcepcionSeguraTest
+  ✓ query exception en span no expone bindings y registra evento except… 0.02s  
+  ✓ excepcion generica en span registra evento exception                 0.02s  
+  ✓ excepcion que envuelve query exception en span no expone bindings    0.02s  
+
+   PASS  Tests\Feature\Trazas\SpansHijosTest
+  ✓ consultas de la peticion son spans hijos sin bindings                0.03s  
+  ✓ job genera su propio span                                            0.03s  
+  ✓ en span registra y propaga excepciones                               0.03s  
+  ✓ reintento de job cierra su span via exception occurred               0.02s  
+  ✓ query exception en job no expone bindings en su span                 0.02s  
+
+  Tests:    43 passed (119 assertions)
+  Duration: 0.88s
+
+codigo de salida: 1
+# Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit
+# anterior a la unidad: "No tests found in class Tests\Feature\Auth\RegistrationTest" (vendor/bin/phpunit --display-warnings lo muestra: "OK, but there were issues! ... PHPUnit Warnings: 1").

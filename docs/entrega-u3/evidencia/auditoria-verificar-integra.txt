@@ -1,0 +1,5 @@
+$ php artisan auditoria:verificar
+# fecha (UTC): 2026-09-29T05:28:13Z - rama feat/108-auditoria (366f585) - base medschedule_ev_auditoria
+Registros revisados: 15
+Cadena íntegra.
+codigo: 0
