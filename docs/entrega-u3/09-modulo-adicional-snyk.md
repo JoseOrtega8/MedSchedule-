@@ -1,6 +1,6 @@
 # 9. Módulo adicional: compuerta de vulnerabilidades en dependencias con Snyk
 
-**Pull request:** [[PR-109]]
+**Pull request:** [PR #114](https://github.com/JoseOrtega8/MedSchedule-/pull/114)
 
 ## 9.1 Qué resuelve
 

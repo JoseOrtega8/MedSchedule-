@@ -11,10 +11,10 @@
 
 | Archivo | Cambio | Pull request |
 |---|---|---|
-| `ci.yml` | El job `analisis-estatico` pasa `-Dsonar.qualitygate.wait=true` y `-Dsonar.qualitygate.timeout=300` | [[PR-105]] |
-| `release.yml` | Job nuevo `calidad` (puerta de calidad de SonarQube), `needs: integracion`, condicionado a `SONAR_HABILITADO` | [[PR-105]] |
-| `release.yml` | Job nuevo `seguridad` (Snyk), `needs: integracion`, siempre corre | [[PR-109]] |
-| `release.yml` | El job `pruebas` pasa a `needs: [integracion, calidad, seguridad]` con su condición | [[PR-105]] y [[PR-109]] |
+| `ci.yml` | El job `analisis-estatico` pasa `-Dsonar.qualitygate.wait=true` y `-Dsonar.qualitygate.timeout=300` | [PR #110](https://github.com/JoseOrtega8/MedSchedule-/pull/110) |
+| `release.yml` | Job nuevo `calidad` (puerta de calidad de SonarQube), `needs: integracion`, condicionado a `SONAR_HABILITADO` | [PR #110](https://github.com/JoseOrtega8/MedSchedule-/pull/110) |
+| `release.yml` | Job nuevo `seguridad` (Snyk), `needs: integracion`, siempre corre | [PR #114](https://github.com/JoseOrtega8/MedSchedule-/pull/114) |
+| `release.yml` | El job `pruebas` pasa a `needs: [integracion, calidad, seguridad]` con su condición | [PR #110](https://github.com/JoseOrtega8/MedSchedule-/pull/110) y [PR #114](https://github.com/JoseOrtega8/MedSchedule-/pull/114) |
 
 Los módulos de monitoreo, trazabilidad y auditoría no modifican los workflows. Sus pruebas no
 necesitan Redis, Tempo ni Loki (`phpunit.xml` fija `METRICAS_ALMACEN=memoria` y

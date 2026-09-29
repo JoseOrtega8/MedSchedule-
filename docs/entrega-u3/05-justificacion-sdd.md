@@ -56,7 +56,7 @@ service provider. Esa separación, decidida en el plan antes de escribir código
 desarrollar cinco pull requests en paralelo con solo tres conflictos, todos triviales y de
 líneas sueltas en `.env.example`, `bootstrap/providers.php` y `phpunit.xml`.
 
-El pull request general de planeación, [[PR-105]], contiene la especificación, el plan, las
+El pull request general de planeación, [PR #110](https://github.com/JoseOrtega8/MedSchedule-/pull/110), contiene la especificación, el plan, las
 tareas, la corrección de la puerta de calidad de SonarQube y este documento. Los módulos se
 revisan en sus propios pull requests.
 

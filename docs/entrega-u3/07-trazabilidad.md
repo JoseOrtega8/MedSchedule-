@@ -1,6 +1,6 @@
 # 7. Módulo b: visor de trazabilidad con registros (logs) y trazas
 
-**Pull request:** [[PR-107]]
+**Pull request:** [PR #112](https://github.com/JoseOrtega8/MedSchedule-/pull/112)
 
 ## 7.1 Qué resuelve
 

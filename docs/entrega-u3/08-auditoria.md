@@ -1,6 +1,6 @@
 # 8. Módulo c: visor de auditoría
 
-**Pull request:** [[PR-108]]
+**Pull request:** [PR #113](https://github.com/JoseOrtega8/MedSchedule-/pull/113)
 
 ## 8.1 Qué resuelve
 

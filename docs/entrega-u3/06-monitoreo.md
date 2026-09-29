@@ -1,6 +1,6 @@
 # 6. Módulo a: métricas para el monitoreo, con alarmas y alertas
 
-**Pull request:** [[PR-106]]
+**Pull request:** [PR #111](https://github.com/JoseOrtega8/MedSchedule-/pull/111)
 
 ## 6.1 Arquitectura
 

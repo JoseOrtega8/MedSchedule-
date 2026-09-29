@@ -106,8 +106,8 @@ señalan con su archivo de evidencia.
 
 | Pull request | Contenido | Base |
 |---|---|---|
-| [[PR-105]] | Especificación, plan, tareas, puerta de calidad de SonarQube y este documento | `feat/100-sonarqube` (Unidad 2) |
-| [[PR-106]] | Módulo a: monitoreo con métricas y alertas | `feat/105-u3-sdd` |
-| [[PR-107]] | Módulo b: visor de trazabilidad | `feat/106-monitoreo` |
-| [[PR-108]] | Módulo c: visor de auditoría | `feat/105-u3-sdd` |
-| [[PR-109]] | Módulo adicional: análisis de dependencias con Snyk | `feat/105-u3-sdd` |
+| [PR #110](https://github.com/JoseOrtega8/MedSchedule-/pull/110) | Especificación, plan, tareas, puerta de calidad de SonarQube y este documento | `feat/100-sonarqube` (Unidad 2) |
+| [PR #111](https://github.com/JoseOrtega8/MedSchedule-/pull/111) | Módulo a: monitoreo con métricas y alertas | `feat/105-u3-sdd` |
+| [PR #112](https://github.com/JoseOrtega8/MedSchedule-/pull/112) | Módulo b: visor de trazabilidad | `feat/106-monitoreo` |
+| [PR #113](https://github.com/JoseOrtega8/MedSchedule-/pull/113) | Módulo c: visor de auditoría | `feat/105-u3-sdd` |
+| [PR #114](https://github.com/JoseOrtega8/MedSchedule-/pull/114) | Módulo adicional: análisis de dependencias con Snyk | `feat/105-u3-sdd` |
