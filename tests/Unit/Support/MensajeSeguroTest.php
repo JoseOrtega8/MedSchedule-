@@ -119,4 +119,31 @@ class MensajeSeguroTest extends TestCase
 		$this->assertStringNotContainsString('1,2,3', $resultado);
 		$this->assertStringContainsString('IN (?)', $resultado);
 	}
+
+	// Entradas adversariales: espacios dentro de 'IN (...)' o un dominio muy
+	// largo en un correo provocaban backtracking cuadratico (~2.7s) porque
+	// \s* se solapaba con [\d,\s]+ / el patron de correo no era lineal. Con
+	// cuantificadores posesivos ambas deben resolverse en menos de 200 ms.
+	public function test_enmascara_literales_es_lineal_con_espacios_en_in(): void
+	{
+		$sql = 'delete from patient_profiles where id IN (' . str_repeat(' ', 120000) . 'x)';
+		$consulta = new QueryException('mysql', $sql, [], new PDOException('dup'));
+
+		$inicio = hrtime(true);
+		MensajeSeguro::de_excepcion($consulta);
+		$duracion_ms = (hrtime(true) - $inicio) / 1e6;
+
+		$this->assertLessThan(200, $duracion_ms, "Tardo {$duracion_ms} ms, se esperaba backtracking lineal");
+	}
+
+	public function test_patron_de_correo_es_lineal_con_dominio_largo(): void
+	{
+		$texto = 'fallo para a@' . str_repeat('a.', 60000);
+
+		$inicio = hrtime(true);
+		MensajeSeguro::redactar_texto($texto);
+		$duracion_ms = (hrtime(true) - $inicio) / 1e6;
+
+		$this->assertLessThan(200, $duracion_ms, "Tardo {$duracion_ms} ms, se esperaba backtracking lineal");
+	}
 }

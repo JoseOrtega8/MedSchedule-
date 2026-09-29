@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Appointment;
 use App\Observability\Metricas\Metricas;
+use App\Support\MensajeSeguro;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -32,7 +33,7 @@ class ContadorCitasObserver
 			$this->metricas->contar_cita($evento);
 		} catch (Throwable $error) {
 			// Un fallo de metricas no debe impedir agendar o cancelar
-			Log::warning('No se pudo contar la cita', ['evento' => $evento, 'error' => $error->getMessage()]);
+			Log::warning('No se pudo contar la cita', ['evento' => $evento, 'error' => MensajeSeguro::de_excepcion($error)]);
 		}
 	}
 }

@@ -19,11 +19,24 @@ class MensajeSeguro
 	// Patrones para detectar PII/credenciales dentro de texto libre. La
 	// coincidencia completa se reemplaza por MASCARA, incluida la palabra
 	// Bearer/Basic en el segundo patron: asi no se filtra ni el esquema de auth.
+	// Cuantificadores posesivos con limite superior (RFC 5321: max 64 en la
+	// parte local, max 63 por etiqueta de dominio) para que el motor no
+	// intente retroceder. No basta con '++' sin limite: aunque evita el
+	// backtracking DENTRO de un intento, la clase de la parte local
+	// ([A-Za-z0-9._%+-]) tambien coincide con las letras/puntos del dominio,
+	// asi que sobre un dominio muy largo el motor sigue intentando un
+	// "posible email" desde cada posicion dentro de el, y cada intento
+	// consume-y-falla en O(resto de la cadena): eso es lo que da O(n^2). Con
+	// el limite {1,64}+ cada intento fallido cuesta O(1), y el barrido total
+	// vuelve a ser O(n). El dominio ademas se reescribe como
+	// '(?:etiqueta\.){1,8}+TLD' en vez de una sola clase con '.' seguida de
+	// '\.', para que la clase de la etiqueta y el punto literal no compitan
+	// por el mismo caracter.
 	public const PATRONES = [
 		// correos electronicos
-		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/',
+		'/[A-Za-z0-9._%+-]{1,64}+@(?:[A-Za-z0-9-]{1,63}+\.){1,8}+[A-Za-z]{2,24}+/',
 		// credenciales Bearer/Basic en texto (se enmascara la coincidencia completa)
-		'/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]+/i',
+		'/\b(Bearer|Basic)\s++[A-Za-z0-9._~+\/=-]++/i',
 		// CURP mexicana (18 caracteres)
 		'/\b[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d\b/',
 	];
@@ -102,7 +115,12 @@ class MensajeSeguro
 	// o dobles ('...' o "...") y numeros sueltos tras '=' o dentro de
 	// 'IN (...)'. Regex acotadas (clase de caracteres negada sin
 	// cuantificadores anidados: [^'\\]*, no (a|b)*) para evitar backtracking
-	// catastrofico.
+	// catastrofico. El patron de 'IN (...)' usa cuantificadores posesivos
+	// tanto en el prefijo ('\s*+', '\(\s*+') como en el cuerpo ('[\d,\s]++'):
+	// sin esto, el '\s*' del prefijo y el espacio dentro de la clase
+	// '[\d,\s]+' se solapan y el motor prueba todas las formas de repartir
+	// los espacios entre ambos antes de fallar, lo que es cuadratico en la
+	// cantidad de espacios.
 	//
 	// Limite conocido: no es un parser SQL. Una sentencia bien parametrizada
 	// (con '?') no deberia tener nada que enmascarar aqui; esto es una red de
@@ -114,7 +132,7 @@ class MensajeSeguro
 		$sql = preg_replace('/\'[^\'\\\\]*\'/', "'?'", $sql);
 		$sql = preg_replace('/"[^"\\\\]*"/', '"?"', $sql);
 		$sql = preg_replace('/(=\s*)\d+(\.\d+)?/', '$1?', $sql);
-		$sql = preg_replace('/(\bIN\s*\(\s*)[\d,\s]+(\))/i', '$1?$2', $sql);
+		$sql = preg_replace('/(\bIN\s*+\(\s*+)[\d,\s]++(\))/i', '$1?$2', $sql);
 
 		return $sql;
 	}
