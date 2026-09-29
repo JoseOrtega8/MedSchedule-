@@ -1,0 +1,144 @@
+# Snyk - la compuerta PASA (rama feat/109-snyk, tras la correccion)
+Fecha (UTC): 2026-09-29T20:22:12Z
+Rama / commit: feat/109-snyk @ dcc2648 (fix(deps): actualizar dependencias con vulnerabilidades altas reportadas por Snyk)
+Comando: SNYK_TOKEN=<TOKEN> SNYK_SALIDA=<tmp>/pasa.json bash scripts/snyk-escanear.sh
+
+### Salida completa
+~/.medschedule-evidencia/snyk/vendor/mockery/mockery/docs/requirements.txt:
+  Something went wrong getting dependencies
+✗ 1/8 potential projects failed to get dependencies.
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   composer
+Target file:       composer.lock
+Project name:      laravel/laravel
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Local Snyk policy: found
+Licenses:          enabled
+
+✔ Tested 108 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   npm
+Target file:       package-lock.json
+Project name:      package.json
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Local Snyk policy: found
+Licenses:          enabled
+
+✔ Tested ~/.medschedule-evidencia/snyk for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   npm
+Target file:       vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json
+Project name:      package.json
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Licenses:          enabled
+
+✔ Tested 51 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   composer
+Target file:       vendor/mockery/mockery/composer.lock
+Project name:      mockery/mockery
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Licenses:          enabled
+
+✔ Tested 3 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   composer
+Target file:       vendor/phar-io/manifest/composer.lock
+Project name:      phar-io/manifest
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Licenses:          enabled
+
+✔ Tested 6 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   composer
+Target file:       vendor/phpunit/phpunit/composer.lock
+Project name:      phpunit/phpunit
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Licenses:          enabled
+
+✔ Tested 36 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+-------------------------------------------------------
+
+Testing ~/.medschedule-evidencia/snyk...
+
+Organization:      ramonibr
+Package manager:   composer
+Target file:       vendor/theseer/tokenizer/composer.lock
+Project name:      theseer/tokenizer
+Open source:       no
+Project path:      ~/.medschedule-evidencia/snyk
+Licenses:          enabled
+
+✔ Tested 4 dependencies for known issues, no vulnerable paths found.
+
+Next steps:
+- Run `snyk monitor` to be notified about new related vulnerabilities.
+- Run `snyk test` as part of your CI/test.
+
+
+Tested 7 projects, no vulnerable paths were found.
+
+
+
+Sin vulnerabilidades altas o criticas.
+
+codigo de salida: 0
