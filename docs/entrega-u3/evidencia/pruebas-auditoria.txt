@@ -1,12 +1,12 @@
 $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Auditoria|CsvSeguro|Enmascarar
-# fecha (UTC): 2026-09-29T04:52:48Z - rama feat/108-auditoria (366f585)
+# fecha (UTC): 2026-09-29T17:12:56Z - rama feat/108-auditoria (366f585)
 
    PASS  Tests\Unit\CsvSeguroTest
   ✓ neutraliza celdas que parecen formula
   ✓ deja igual el texto normal y serializa arreglos
 
    PASS  Tests\Unit\EnmascararTest
-  ✓ enmascara la parte local del correo
+  ✓ enmascara la parte local del correo                                  0.01s  
   ✓ valor que no es correo se oculta completo
 
    PASS  Tests\Feature\Auditoria\AuditableTest
@@ -44,7 +44,7 @@ $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php ar
   ✓ no admin recibe 403                                                  0.01s  
   ✓ filtra por entidad                                                   0.01s  
   ✓ filtro invalido se rechaza                                           0.01s  
-  ✓ detalle muestra antes y despues                                      0.02s  
+  ✓ detalle muestra antes y despues                                      0.01s  
   ✓ linea de tiempo de una entidad                                       0.01s  
   ✓ exportar csv escapa formulas y queda auditado                        0.01s  
   ✓ exportar csv no invierte comillas por el escape de fputcsv           0.01s  
@@ -56,7 +56,7 @@ $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php ar
   ✓ no admin recibe 403 en exportar                                      0.01s  
 
   Tests:    40 passed (211 assertions)
-  Duration: 1.05s
+  Duration: 1.08s  
 
 codigo de salida: 1
 # Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit

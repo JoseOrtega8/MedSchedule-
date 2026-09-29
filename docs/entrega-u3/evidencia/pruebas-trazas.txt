@@ -1,5 +1,5 @@
 $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Trazas|Redactar|MensajeSeguro|AplicarRedaccion
-# fecha (UTC): 2026-09-29T04:52:47Z - rama feat/107-trazabilidad (e2327f0)
+# fecha (UTC): 2026-09-29T17:12:56Z - rama feat/107-trazabilidad (22056c3)
 
    PASS  Tests\Unit\Logging\AplicarRedaccionTest
   ✓ logger psr sin pushprocessor no lanza
@@ -39,10 +39,13 @@ $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php ar
   ✓ report de query exception no expone bindings en el canal single      0.02s  
 
    PASS  Tests\Feature\Trazas\IniciarTrazaTest
-  ✓ peticion genera span raiz y cabecera x trace id                      0.37s  
+  ✓ peticion genera span raiz y cabecera x trace id                      0.27s  
   ✓ respeta traceparent entrante                                         0.02s  
   ✓ ningun span guarda la ruta real con tokens                           0.02s  
   ✓ scrape de metricas no produce spans                                  0.02s  
+
+   PASS  Tests\Feature\Trazas\LogExportacionTest
+  ✓ trazas habilitadas dirigen el log interno a laravel                  0.02s  
 
    PASS  Tests\Feature\Trazas\PaginaErrorSinTrazasTest
   ✓ error 500 sin trazas muestra request id como folio                   0.01s  
@@ -62,8 +65,8 @@ $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php ar
   ✓ reintento de job cierra su span via exception occurred               0.02s  
   ✓ query exception en job no expone bindings en su span                 0.02s  
 
-  Tests:    43 passed (119 assertions)
-  Duration: 0.88s
+  Tests:    44 passed (120 assertions)
+  Duration: 0.78s  
 
 codigo de salida: 1
 # Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit

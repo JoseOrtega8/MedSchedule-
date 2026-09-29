@@ -118,14 +118,13 @@ almacén en memoria:
 | `test_token_correcto_devuelve_metricas` | Con la credencial correcta devuelve el formato de Prometheus |
 | `test_cita_agendada_y_cancelada_incrementa_contadores` | Los contadores de negocio responden a los eventos de la cita |
 
-Resultado registrado en `evidencia/pruebas-metricas.txt`: **7 pruebas aprobadas, 15 aserciones,
+Resultado registrado en `evidencia/pruebas-metricas.txt`: **9 pruebas aprobadas, 21 aserciones,
 0 fallos**. Se corrió con `--filter=Metricas` sobre la rama `feat/107-trazabilidad` (commit
-`e2327f0`), que contiene la de monitoreo; por eso el filtro también toma una prueba de trazas cuyo
-nombre incluye "metricas" (`test_scrape_de_metricas_no_produce_spans`). El comando termina con
-código 1 por un aviso de PHPUnit anterior a esta unidad
-(`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas pruebas. Más tarde,
-con la conexión persistente de Redis, se agregó `tests/Unit/Providers/MetricasServiceProviderTest.php`
-(2 pruebas), que no forma parte de esa corrida.
+`22056c3`), que contiene la de monitoreo; por eso el filtro también toma una prueba de trazas cuyo
+nombre incluye "metricas" (`test_scrape_de_metricas_no_produce_spans`) y las dos pruebas de
+`tests/Unit/Providers/MetricasServiceProviderTest.php` sobre la conexión persistente de Redis. El
+comando termina con código 1 por un aviso de PHPUnit anterior a esta unidad
+(`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas pruebas.
 
 ## 6.8 Antes y después
 

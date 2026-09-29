@@ -1,8 +1,12 @@
 $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Metricas
-# fecha (UTC): 2026-09-29T04:52:46Z - rama feat/107-trazabilidad (e2327f0)
+# fecha (UTC): 2026-09-29T17:12:56Z - rama feat/107-trazabilidad (22056c3)
+
+   PASS  Tests\Unit\Providers\MetricasServiceProviderTest
+  ✓ conexion redis persistente por defecto
+  ✓ conexion persistente se puede desactivar
 
    PASS  Tests\Feature\Metricas\EndpointMetricasTest
-  ✓ sin token responde 404                                               0.51s  
+  ✓ sin token responde 404                                               0.38s  
   ✓ token incorrecto responde 404                                        0.01s  
   ✓ token correcto devuelve metricas                                     0.01s  
   ✓ cita agendada y cancelada incrementa contadores                      0.03s  
@@ -14,8 +18,8 @@ $ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php ar
    PASS  Tests\Feature\Trazas\IniciarTrazaTest
   ✓ scrape de metricas no produce spans                                  0.03s  
 
-  Tests:    7 passed (15 assertions)
-  Duration: 0.69s
+  Tests:    9 passed (21 assertions)
+  Duration: 0.57s  
 
 codigo de salida: 1
 # Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit

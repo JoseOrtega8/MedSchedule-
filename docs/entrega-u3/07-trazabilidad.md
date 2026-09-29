@@ -158,8 +158,8 @@ trazas usan el `InMemoryExporter` de OpenTelemetry, sin Tempo. Entre ellas:
 | `CodificadorOtlpJsonTest` | El JSON del exportador propio es idéntico al del exportador oficial para spans con padre remoto, enlaces, eventos, estados y atributos de todos los tipos |
 
 Resultado registrado en `evidencia/pruebas-trazas.txt` (filtro
-`Trazas|Redactar|MensajeSeguro|AplicarRedaccion`, commit `e2327f0`): **43 pruebas aprobadas,
-119 aserciones, 0 fallos**. El comando termina con código 1 por un aviso de PHPUnit anterior a
+`Trazas|Redactar|MensajeSeguro|AplicarRedaccion`, commit `22056c3`): **44 pruebas aprobadas,
+120 aserciones, 0 fallos**. El comando termina con código 1 por un aviso de PHPUnit anterior a
 esta unidad (`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas
 pruebas; el archivo lo anota. Las pruebas del exportador propio se agregaron después de esa
 corrida y no forman parte de ese archivo.
@@ -275,12 +275,8 @@ Grafana a partir del `X-Trace-Id` de la respuesta.
 
 La traza responde la pregunta que el log no podía responder, y la respuesta es que **ninguna
 consulta domina y no hay N+1**. La petición dura 9.98 ms y ejecuta 7 consultas que suman unos
-2.6 ms (1.03, 0.24, 0.27, 0.29, 0.17, 0.21 y 0.40 ms). El resto es PHP y el framework. Otras
-tres trazas del mismo endpoint, consultadas en Tempo por su API, muestran el mismo patrón:
-siempre 7 consultas y entre 1.8 y 2.5 ms de base de datos. En la primera de ellas, la más lenta fue la
-lectura de la sesión (`select * from sessions where id = ? limit 1`, 0.70 ms); las cuatro
-propias del panel tardaron entre 0.17 y 0.23 ms cada una. Es la misma conclusión de la Unidad 2 (el panel
-es rápido), ahora con el desglose que la demuestra.
+2.6 ms (1.03, 0.24, 0.27, 0.29, 0.17, 0.21 y 0.40 ms). El resto es PHP y el framework. Es la
+misma conclusión de la Unidad 2 (el panel es rápido), ahora con el desglose que la demuestra.
 
 **Hallazgo previo.** Al preparar esta evidencia se encontró que la página `/patient/dashboard`
 responde 500: `resources/js/patient-dashboard.js` no está en los `input` de `vite.config.js` y
