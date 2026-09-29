@@ -16,7 +16,7 @@ services:
             # la aplicacion: ni un solo secreto de produccion pasa por aqui.
             SONAR_JDBC_PASSWORD: sonar
         ports:
-            - '9000:9000'
+            - '127.0.0.1:9000:9000'
         volumes:
             - datos_sonarqube:/opt/sonarqube/data
             - extensiones_sonarqube:/opt/sonarqube/extensions
