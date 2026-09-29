@@ -29,6 +29,8 @@ configuración de los stacks; Bash para los scripts del pipeline.
   mysqld-exporter, Redis y Mailpit, todos con versión de imagen fijada en el compose. Las
   versiones exactas se consultan al implementar y se registran en `05-parametros-herramientas.md`.
 - Análisis estático: SonarQube de la unidad 2 (`infra/sonarqube/`, `sonar-project.properties`).
+- Análisis de dependencias: CLI `snyk@1.1307.4`, fijado por versión y ejecutado vía `npx --yes`
+  (sin instalación global ni en `package.json`).
 
 **Storage**: MySQL 8.0 (aplicación y `activity_logs` ampliada); Redis (almacén de métricas);
 almacenamiento local de Prometheus, Loki y Tempo en volúmenes Docker.
@@ -132,7 +134,10 @@ infra/monitoreo/
 ├── grafana/dashboards/*.json
 ├── loki/, tempo/, alloy/
 scripts/monitoreo-local.sh
+scripts/snyk-escanear.sh                  # modulo adicional: compuerta de Snyk
+.snyk                                     # politica de excepciones (raiz del repo)
 tests/Feature/{Metricas,Trazas,Auditoria}/
+tests/scripts/snyk-escanear.test.sh
 ```
 
 ## Diseño por componente
@@ -313,7 +318,41 @@ validación de filtros; CSV escapado y exportación auditada.
 **Evidencia:** antes, cambio de cita sin rastro y alteración de `activity_logs` inadvertida;
 después, diff con quién/qué/cuándo/IP e indicador rojo señalando el registro alterado.
 
-### 5. Documento de entrega (`docs/entrega-u3/`)
+### 5. Módulo adicional — Snyk
+
+**Piezas:**
+- `scripts/snyk-escanear.sh`: corre `npx --yes snyk@1.1307.4 test --all-projects --severity-threshold=high --json-file-output=<salida>` (CLI fijado por versión, sin instalación global). `<salida>` es
+  `${SNYK_SALIDA:-docs/entrega-u3/evidencia/snyk-resultado.json}`. Con `--monitor` corre además
+  `npx --yes snyk@1.1307.4 monitor --all-projects` (sube una instantánea al dashboard de Snyk), solo
+  si el `test` terminó en 0 o 1; su fallo no cambia el código de salida del análisis.
+- `.snyk` (raíz del repo): política de excepciones, versión `v1.25.0`, `ignore: {}` por defecto;
+  cada excepción que se agregue lleva `reason` y `expires` obligatorios (FR-025).
+- Job `seguridad` en `.github/workflows/release.yml` (T025).
+
+**Códigos de salida del script** (traducidos desde el CLI de Snyk):
+
+| Código de Snyk | Significado | Traducción del script |
+|---|---|---|
+| 0 | Sin vulnerabilidades que superen el umbral | exit 0 |
+| 1 | Vulnerabilidades de severidad alta o crítica encontradas | exit 1 |
+| 2 | Error de ejecución o autenticación | exit 2 |
+| 3 | No se encontraron proyectos soportados | exit 2 |
+| otro | No documentado por Snyk | exit 2 |
+| sin `SNYK_TOKEN` | No se intenta ejecutar el CLI | exit 1 |
+
+**Integración en `release.yml`:** job `seguridad` (`needs: integracion`) corre siempre; un paso
+previo detecta si `secrets.SNYK_TOKEN` existe y expone `hay=true|false`; el análisis solo se ejecuta
+si `hay == 'true'`, y sin token el job termina en éxito con un `::notice::` visible en la corrida
+(FR-024, FR-026). El job de pruebas agrega `seguridad` a su `needs` y a su condición: exige que
+`seguridad` termine en éxito (que incluye el caso "omitido con aviso"), igual que ya hace con
+`calidad`.
+
+**Límites:** sin `SNYK_TOKEN` el análisis no corre (queda documentado como advertencia, no como
+compuerta fallida); la cuenta gratuita de Snyk del autor es la que autentica el análisis (no hay
+cuenta de equipo); `--monitor` es opcional y depende del dashboard de Snyk, fuera del alcance de
+esta unidad más allá de subir la instantánea.
+
+### 6. Documento de entrega (`docs/entrega-u3/`)
 
 | # | Documento |
 |---|---|
@@ -330,10 +369,12 @@ después, diff con quién/qué/cuándo/IP e indicador rojo señalando el registr
 Liga al PR en cada punto; cada cifra rastreable a `evidencia/`; DOCX con pandoc, reinclusión de
 `/docs/entrega-u3/` y exclusión de `/docs/entrega-u3/*.docx` en `.gitignore`.
 
-### 6. Fuera de alcance
+### 7. Fuera de alcance
 
 Despliegue productivo del stack de monitoreo; node-exporter y cAdvisor; notificaciones reales
-(Slack, Telegram, correo); reentrega de la U2; issues de otros integrantes (#97, EQ2 #65).
+(Slack, Telegram, correo); reentrega de la U2; issues de otros integrantes (#97, EQ2 #65); crear
+cuentas o equipos en Snyk; correr el análisis real de Snyk fuera de la sesión del autor con su
+token.
 
 ## Complexity Tracking
 

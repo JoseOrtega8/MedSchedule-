@@ -46,6 +46,7 @@ Este archivo describe lo que realmente se implementó. Decisiones que cambiaron 
 - **T020**: `fputcsv` con escape `''`, `try/catch` en el stream de exportación, `id` de la línea de tiempo con `[0-9]{1,18}` (evita el desbordamiento a 500) y pruebas 404/403.
 - **T021**: sin sellado histórico; `migrate` sella la fila alterada del "antes", hay que alterarla de nuevo después; `AUDIT_HMAC_KEY` antes de migrar, modo mantenimiento, no alternar ramas sobre la misma base.
 - **T022**: el documento recoge File sharing de Docker Desktop, `LOG_STACK=single,json`, los límites completos de la auditoría y la condición `SONAR_HABILITADO` con el `|| true` heredado del CI.
+- **Módulo adicional (issue #109)**: se agrega la User Story 5 (compuerta de vulnerabilidades en dependencias con Snyk), fuera de las cuatro del enunciado original, en su propia rama `feat/109-snyk` derivada de `feat/105-u3-sdd`; no depende de US1-US4 y no las modifica salvo el job nuevo `seguridad` en `release.yml`.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -5502,6 +5503,121 @@ Mover R17–R20 a "In review" (mismos comandos de T001 paso 4). Comentar en cada
 
 ---
 
+## Phase 7: User Story 5 — Compuerta de vulnerabilidades en dependencias (Priority: P5) — rama `feat/109-snyk` (sale de `feat/105-u3-sdd`)
+
+**Goal**: Que una vulnerabilidad de severidad alta o crítica en `composer.lock` o `package-lock.json` detenga la liberación antes de las pruebas y el despliegue.
+
+**Independent Test**: Sin `SNYK_TOKEN`, el job se omite con aviso y no bloquea; con el CLI simulado (`npx` falso en las pruebas del script) devolviendo cada código documentado, el script traduce al código de salida esperado.
+
+```bash
+git switch -c feat/109-snyk feat/105-u3-sdd
+```
+
+### T024 [US5] Script `scripts/snyk-escanear.sh` con pruebas en bash puro
+
+**Files:**
+- Create: `scripts/snyk-escanear.sh`
+- Create: `tests/scripts/snyk-escanear.test.sh`
+- Modify: `package.json` (scripts `seguridad:snyk`, `test:scripts`)
+
+**Interfaces:**
+- Produce: `bash scripts/snyk-escanear.sh [--monitor]`. Exit 0 sin vulnerabilidades que superen el umbral; exit 1 sin `SNYK_TOKEN` o con vulnerabilidades altas/críticas; exit 2 en error de ejecución, autenticación o proyectos no soportados.
+- Consumes: `npx` (real en producción; falso en las pruebas del script, sin llamar a Snyk de verdad).
+
+- [ ] **Paso 1: Escribir la prueba que falla (RED)**
+
+`tests/scripts/snyk-escanear.test.sh` (bash puro, sin dependencias): al frente del `PATH` pone un `npx` falso (script temporal que registra sus argumentos en un archivo y sale con el código de `NPX_FALSO_CODIGO`) y verifica, en subshells aisladas:
+- sin `SNYK_TOKEN` → exit 1 y mensaje en stderr.
+- `NPX_FALSO_CODIGO=0,1,2,3` → exit `0,1,2,2` respectivamente, con el mensaje esperado para cada uno.
+- los argumentos capturados incluyen `snyk@1.1307.4 test --all-projects --severity-threshold=high --json-file-output=`.
+- `--monitor` invoca `monitor` solo cuando el `test` termina en 0 o 1 (no en 2 ni 3).
+- el token falso reconocible no aparece ni en stdout ni en stderr de ninguna corrida.
+
+El script de prueba termina con código distinto de cero si algo falla e imprime un resumen (casos totales, cuántos pasaron).
+
+Run: `bash -n tests/scripts/snyk-escanear.test.sh && bash tests/scripts/snyk-escanear.test.sh`
+Expected: FALLA (no existe `scripts/snyk-escanear.sh` todavía).
+
+- [ ] **Paso 2: Implementar el script**
+
+`scripts/snyk-escanear.sh`: `set -euo pipefail`; sin `SNYK_TOKEN` imprime a stderr que falta exportarlo en la sesión (nunca escribirlo en archivos) y termina con exit 1; construye `salida="${SNYK_SALIDA:-docs/entrega-u3/evidencia/snyk-resultado.json}"` y crea su carpeta si falta; corre `npx --yes snyk@1.1307.4 test --all-projects --severity-threshold=high --json-file-output="$salida"` capturando su código de salida sin que `set -e` aborte el script (bloque `if cmd; then codigo=0; else codigo=$?; fi`); traduce ese código al mensaje y al exit documentados en `plan.md` §5; si se pidió `--monitor` y el análisis terminó en 0 o 1, corre además `npx --yes snyk@1.1307.4 monitor --all-projects`, reporta su fallo sin cambiar el código de salida del test. Nunca imprime el token. Comentarios en español.
+
+- [ ] **Paso 3: Correr la prueba y verificar que pasa (GREEN)**
+
+Run: `bash -n scripts/snyk-escanear.sh && bash tests/scripts/snyk-escanear.test.sh`
+Expected: todos los casos pasan.
+
+- [ ] **Paso 4: Scripts de npm**
+
+En `package.json`, dentro de `scripts`, agregar (respetando el formato existente):
+
+```json
+"seguridad:snyk": "bash scripts/snyk-escanear.sh",
+"test:scripts": "bash tests/scripts/snyk-escanear.test.sh"
+```
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add scripts/snyk-escanear.sh tests/scripts/snyk-escanear.test.sh package.json
+git diff --staged
+git commit -m "feat(seguridad): script de analisis de dependencias con Snyk como compuerta"
+```
+
+### T025 [US5] Job de CI y política de excepciones
+
+**Files:**
+- Modify: `.github/workflows/release.yml` (job nuevo `seguridad`; `needs`/`if` del job de pruebas)
+- Create: `.snyk`
+
+**Interfaces:**
+- Consumes: `scripts/snyk-escanear.sh` de T024.
+- Produce: job `seguridad` ("Dependencias (Snyk)"), `needs: integracion`; el job de pruebas pasa a `needs: [integracion, calidad, seguridad]`.
+
+- [ ] **Paso 1: Job `seguridad` en `release.yml`**
+
+Insertar después del job `calidad`: checkout; `actions/setup-node@v4` con `node-version: '20'` (igual que los demás jobs); paso "Verificar token" con `env: SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}` que escribe `hay=true` o `hay=false` en `$GITHUB_OUTPUT` según si el secreto llegó vacío, y si falta emite `::notice::` explicando que el análisis se omite por falta de `SNYK_TOKEN`; paso "Analizar dependencias" con `if: steps.token.outputs.hay == 'true'` que corre `bash scripts/snyk-escanear.sh` con el mismo `env`; paso "Publicar evidencia" (`if: always()`) que sube `docs/entrega-u3/evidencia/snyk-resultado.json` como artefacto si el archivo existe (`if-no-files-found: ignore`).
+
+- [ ] **Paso 2: Encadenar el job de pruebas**
+
+El job de pruebas pasa de `needs: [integracion, calidad]` a `needs: [integracion, calidad, seguridad]`, y su `if:` agrega `&& (needs.seguridad.result == 'success')` a la condición existente (el job `seguridad` siempre corre y termina en éxito tanto si encontró 0 vulnerabilidades como si se omitió por falta de token; solo falla si encontró alguna de severidad alta o crítica o si el análisis mismo falló).
+
+- [ ] **Paso 3: Política de excepciones `.snyk`**
+
+`.snyk` en la raíz: `version: v1.25.0`, `ignore: {}`, con un comentario en español explicando que cada excepción que se agregue debe llevar `reason` (justificación) y `expires` (fecha ISO) obligatorios, y que al vencer `expires` el hallazgo vuelve a bloquear la liberación.
+
+- [ ] **Paso 4: Validar**
+
+```bash
+ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }; puts "ok"' .github/workflows/release.yml
+bash -n scripts/snyk-escanear.sh
+bash tests/scripts/snyk-escanear.test.sh
+```
+
+Expected: `ok` y las pruebas del script en verde.
+
+- [ ] **Paso 5: Commit**
+
+```bash
+git add .github/workflows/release.yml .snyk
+git diff --staged
+git commit -m "ci(seguridad): compuerta de Snyk en el pipeline de liberacion"
+```
+
+### T026 [US5] Evidencia con token real (a cargo del usuario)
+
+**Files:**
+- Create: `docs/entrega-u3/evidencia/snyk-*` (corridas reales con y sin vulnerabilidad, captura del dashboard de Snyk).
+
+**Interfaces:**
+- Consumes: `SNYK_TOKEN` real del autor (cuenta gratuita de Snyk), nunca disponible en la sesión agéntica.
+
+No ejecutable por un agente sin `SNYK_TOKEN`: el usuario exporta su token en su sesión y corre `npm run seguridad:snyk` (corrida limpia) y una corrida con una dependencia vulnerable a propósito, guarda la salida como evidencia y revisa que ningún archivo contenga el token antes de commitear.
+
+**Checkpoint**: US5 completa; el pipeline queda con la compuerta de Snyk activa (o correctamente omitida sin token) sin afectar a US1-US4.
+
+---
+
 ## Dependencies & Execution Order
 
 - T001 → T002 → T003 → T004 (rama general).
@@ -5509,6 +5625,7 @@ Mover R17–R20 a "In review" (mismos comandos de T001 paso 4). Comentar en cada
 - T010 → T011 → T012 → T013 → T014 → T015 (rama de trazabilidad; necesita T008 terminado).
 - T016 → T017 → T018 → T019 → T020 → T021 (rama de auditoría; independiente de US2/US3, puede ir en paralelo a ellas).
 - T022 necesita la evidencia de T004, T009, T015 y T021. T023 al final.
+- T024 → T025 → T026 (rama `feat/109-snyk`, sale de `feat/105-u3-sdd`; independiente de US1-US4, módulo adicional del issue #109).
 
 ## Cobertura del spec
 
@@ -5527,4 +5644,8 @@ Mover R17–R20 a "In review" (mismos comandos de T001 paso 4). Comentar en cada
 | FR-015 | T018 |
 | FR-017, FR-018 | T016, T019 |
 | FR-019, FR-020, FR-021, FR-022 | T020 |
+| FR-023, FR-024 | T024, T025 |
+| FR-025 | T025 |
+| FR-026 | T024 |
 | SC-001 … SC-008 | T004, T009, T015, T017, T021, T022 |
+| SC-009 | T024, T025, T026 |

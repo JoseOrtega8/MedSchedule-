@@ -133,6 +133,36 @@ auditoría en la base de datos y verificar que la verificación de integridad se
    hoja de cálculo, **Then** ninguna celda se interpreta como fórmula y la exportación misma
    quedó auditada.
 
+### User Story 5 - Compuerta de vulnerabilidades en dependencias (Priority: P5)
+
+Como responsable de la liberación, necesito que el pipeline detecte dependencias PHP y JS con
+vulnerabilidades conocidas antes de desplegar, en lugar de enterarme por un aviso externo después
+de que el código ya está en producción. Hoy `composer.lock` y `package-lock.json` no se analizan en
+ningún punto del pipeline.
+
+**Why this priority**: No depende del monitoreo, la trazabilidad ni la auditoría; se agrega al
+final como módulo adicional porque su valor es independiente de los otros tres puntos.
+
+**Independent Test**: Introducir una dependencia con una vulnerabilidad de severidad alta o crítica
+conocida y verificar que el pipeline se detiene antes de las pruebas y el despliegue; quitarla y
+verificar que el pipeline continúa; quitar el token y verificar que el job se omite con un aviso
+visible; aceptar un hallazgo en `.snyk` con justificación y fecha de expiración y verificar que no
+bloquea hasta que esa fecha llega.
+
+**Acceptance Scenarios**:
+
+1. **Given** una dependencia de `composer.lock` o `package-lock.json` con una vulnerabilidad de
+   severidad alta o crítica, **When** corre el pipeline de liberación, **Then** el pipeline termina
+   en estado fallido antes de las etapas de pruebas y despliegue.
+2. **Given** ninguna dependencia con vulnerabilidad de severidad alta o crítica, **When** corre el
+   pipeline de liberación, **Then** el pipeline continúa a las etapas siguientes.
+3. **Given** que no existe el secreto `SNYK_TOKEN` en el repositorio, **When** corre el pipeline de
+   liberación, **Then** el job de análisis de dependencias se omite y queda un aviso visible en la
+   corrida, sin detener el pipeline por esa causa.
+4. **Given** un hallazgo aceptado en `.snyk` con justificación y fecha de expiración vigente,
+   **When** corre el análisis, **Then** ese hallazgo no bloquea la liberación hasta que la fecha de
+   expiración se cumple.
+
 ### Edge Cases
 
 - ¿Qué pasa si el almacenamiento de métricas o el receptor de trazas no está disponible? La
@@ -197,6 +227,15 @@ auditoría en la base de datos y verificar que la verificación de integridad se
 - **FR-021**: El visor de auditoría DEBE permitir exportar a CSV con escape contra inyección de
   fórmulas, y auditar la exportación.
 - **FR-022**: Todo input de los visores DEBE validarse antes de procesarse.
+- **FR-023**: El pipeline DEBE analizar las dependencias declaradas en `composer.lock` (PHP) y
+  `package-lock.json` (JS) en busca de vulnerabilidades conocidas.
+- **FR-024**: El pipeline DEBE detener la liberación antes de las pruebas y el despliegue cuando el
+  análisis encuentra una vulnerabilidad de severidad alta o crítica.
+- **FR-025**: Un hallazgo NUNCA DEBE quedar exento de la compuerta salvo que esté aceptado en el
+  archivo de política del análisis con una justificación y una fecha de expiración; al cumplirse
+  esa fecha vuelve a bloquear.
+- **FR-026**: El token de autenticación del análisis de dependencias NUNCA DEBE versionarse; se lee
+  únicamente de una variable de entorno en tiempo de ejecución.
 
 ### Key Entities
 
@@ -208,6 +247,8 @@ auditoría en la base de datos y verificar que la verificación de integridad se
 - **Traza / span**: árbol temporal de una petición; vive fuera de la base de datos de la
   aplicación.
 - **Alerta**: regla con umbral derivado de un nivel de servicio y una notificación asociada.
+- **Excepción de vulnerabilidad**: hallazgo del análisis de dependencias aceptado en la política del
+  repositorio con justificación y fecha de expiración; deja de estar exenta al expirar.
 
 ## Success Criteria *(mandatory)*
 
@@ -229,6 +270,9 @@ auditoría en la base de datos y verificar que la verificación de integridad se
   detectadas por la verificación de integridad, que señala el registro exacto.
 - **SC-008**: La suite de pruebas de la aplicación permanece en verde en CI con el monitoreo y las
   trazas desactivados.
+- **SC-009**: El 100 % de las corridas del pipeline con una dependencia de severidad alta o crítica
+  sin excepción vigente en la política terminan el job de análisis de dependencias en estado
+  fallido antes de las etapas de pruebas y despliegue.
 
 ## Assumptions
 
@@ -245,3 +289,4 @@ auditoría en la base de datos y verificar que la verificación de integridad se
   auditoría es una vista nueva.
 - Las decisiones técnicas (herramientas y versiones) se documentan en `plan.md`, no aquí.
 - No se reentrega la unidad 2; la observación sobre SonarQube se atiende en esta unidad.
+- El análisis de dependencias corre con la cuenta gratuita de Snyk del autor.
