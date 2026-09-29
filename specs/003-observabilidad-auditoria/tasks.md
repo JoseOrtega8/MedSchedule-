@@ -35,6 +35,7 @@ Este archivo describe lo que realmente se implementó. Decisiones que cambiaron 
 - **T012**: el canal `json` usa driver `monolog` + `StreamHandler`: el driver `single` ignora `processors` en Laravel 12.53 y los logs salían sin redactar ni contexto de traza.
 - **T012**: la redacción se amplió a `PATRONES` en el texto (correo, `Bearer`/`Basic`, CURP), a excepciones del contexto (clase, mensaje redactado, archivo y línea; `QueryException` sin bindings) y a claves por subcadena (`remember_token`, `access_token`, `api_secret`…).
 - **T012**: hueco residual (repo público, datos clínicos): `Handler::reportThrowable` escribe el log con `$e->getMessage()` como mensaje principal, y en una `QueryException` ese mensaje trae los bindings interpolados (`SQL: ... allergies = Penicilina-Grave ...`); `RedactarDatosSensibles` solo pasaba el mensaje por `PATRONES` (correo/Bearer/CURP), no por eso. Se agregó `App\Support\MensajeSeguro::de_excepcion()` (para `QueryException`, `'QueryException: ' . getSql()` + SQLSTATE si `getCode()` no está vacío; para el resto, el mensaje por los mismos `PATRONES`), usado en `RedactarDatosSensibles` (contexto y ahora también el `message` del registro, buscando `QueryException` a cualquier profundidad, incluida una encadenada como `getPrevious()`) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que cambiaron `$span->recordException($error)` por `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])` (mismo evento, sin bindings ni stacktrace con argumentos). Se agregaron a `CLAVES` las subcadenas `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature` (no `key` ni `hash` sueltos: romperían claves inocentes como `cache_key`). El `catch` de `TrazasServiceProvider::trazar_jobs` (cierre de span de job fallido, ver T011) tenía el mismo `recordException()`; en una ronda posterior se corrigió con el mismo patrón (`addEvent` + `MensajeSeguro`), cubierto por `SpansHijosTest::test_query_exception_en_job_no_expone_bindings_en_su_span`.
+- **T012**: segunda vuelta del hueco anterior: una `QueryException` ENVUELTA por otra excepción (`RuntimeException('fallo: '.$q->getMessage())`) o por `Illuminate\View\ViewException` real (una consulta que falla dentro de Blade, `$e->getMessage().' (View: ...)'`) seguía exponiendo los bindings en `context.exception.message` y en `exception.message` de los eventos de span: `MensajeSeguro::de_excepcion` solo miraba el mensaje propio, nunca `getPrevious()`. Se reescribió para recorrer **toda** la cadena de causas y sustituir, por cada `QueryException` encontrada, tanto su `getMessage()` completo como el de su `PDOException` previa (el mensaje crudo del driver, p.ej. `Duplicate entry '...'`, por si algo copió solo esa parte). De paso: `getSql()` con literales incrustados (comillas o números sueltos tras `=`/`IN (`) se enmascara (`enmascarar_literales`, regex acotadas); `PATRONES`/`MASCARA` se movieron de `RedactarDatosSensibles` a `MensajeSeguro` (`RedactarDatosSensibles::redactar_texto` delega en `MensajeSeguro::redactar_texto()`, sin dependencia circular); y se agregó el tap `App\Logging\AplicarRedaccion` (`pushProcessor` de `AgregarContextoTraza`/`RedactarDatosSensibles`) en los canales `single`/`daily`, que el driver homónimo de Laravel no aplicaba (ignoran `processors`).
 - **T013**: el folio usa el `request_id` como respaldo cuando las trazas están apagadas (antes decía "no disponible").
 - **T016**: no existe el concepto de fila histórica sin sello: la migración sella las filas existentes y `verificar()` trata como rota cualquier fila con `hash` nulo (se quitó `sin_sellar_historicos`).
 - **T016**: se quitó la FK `activity_logs.user_id` (conservando el índice): su `ON DELETE SET NULL` alteraba filas selladas al borrar un usuario.
@@ -2373,9 +2374,9 @@ git commit -m "feat(trazas): spans de consultas sin bindings, jobs y llamadas a 
 ### T012 [US3] Logs estructurados con contexto de traza y redacción de PII
 
 **Files:**
-- Create: `app/Logging/AgregarContextoTraza.php`, `app/Logging/RedactarDatosSensibles.php`, `app/Support/MensajeSeguro.php`
-- Modify: `config/logging.php` (canal `json`), `.env.example` (`LOG_STACK`)
-- Test: `tests/Unit/Logging/RedactarDatosSensiblesTest.php`, `tests/Feature/Trazas/ContextoLogTest.php`, `tests/Feature/Trazas/SpanExcepcionSeguraTest.php`
+- Create: `app/Logging/AgregarContextoTraza.php`, `app/Logging/RedactarDatosSensibles.php`, `app/Support/MensajeSeguro.php`, `app/Logging/AplicarRedaccion.php`
+- Modify: `config/logging.php` (canal `json`, tap en `single`/`daily`), `.env.example` (`LOG_STACK`), `app/Providers/TrazasServiceProvider.php` (job fallido, ver T011)
+- Test: `tests/Unit/Logging/RedactarDatosSensiblesTest.php`, `tests/Unit/Support/MensajeSeguroTest.php`, `tests/Feature/Trazas/ContextoLogTest.php`, `tests/Feature/Trazas/SpanExcepcionSeguraTest.php`, `tests/Feature/Trazas/SpansHijosTest.php`
 
 **Interfaces:**
 - Consumes: `Trazas::trace_id_actual()`, `Trazas::span_id_actual()`; atributo `request_id`.
@@ -2614,7 +2615,6 @@ Expected: FAIL (clases inexistentes).
 namespace App\Logging;
 
 use App\Support\MensajeSeguro;
-use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
 use Throwable;
@@ -2630,10 +2630,11 @@ use Throwable;
 //
 // Las excepciones (Laravel las pone en context['exception']) se reducen a
 // clase, mensaje redactado, archivo y linea: nunca el trace con argumentos.
+// La logica de PATRONES/MASCARA y de "una QueryException encadenada como
+// causa" vive una sola vez en App\Support\MensajeSeguro: esta clase solo la
+// usa (redactar_texto delega en MensajeSeguro::redactar_texto()).
 class RedactarDatosSensibles implements ProcessorInterface
 {
-	public const MASCARA = '[redactado]';
-
 	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
 	// (asi 'remember_token', 'access_token', 'api_secret' o
 	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
@@ -2647,27 +2648,15 @@ class RedactarDatosSensibles implements ProcessorInterface
 		'api_key', 'apikey', 'credential', 'phone', 'telefono', 'signature',
 	];
 
-	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
-	// del log y los valores string de context/extra cuya clave no es sensible
-	// (p.ej. un correo interpolado dentro de 'mensaje' => "reset para a@b.c").
-	// La coincidencia completa se reemplaza por MASCARA, incluida la palabra
-	// Bearer/Basic en el segundo patron: asi no se filtra ni el esquema de auth.
-	public const PATRONES = [
-		// correos electronicos
-		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/',
-		// credenciales Bearer/Basic en texto (se enmascara la coincidencia completa)
-		'/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]+/i',
-		// CURP mexicana (18 caracteres)
-		'/\b[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d\b/',
-	];
-
 	public function __invoke(LogRecord $registro): LogRecord
 	{
-		// Primero se sustituyen los mensajes de QueryException encontrados en
-		// el contexto (getMessage() trae los bindings interpolados, ver
-		// resumir_excepcion): esto debe pasar ANTES de convertir los Throwable
-		// del contexto a su resumen seguro, porque usa los objetos originales.
-		$mensaje = $this->redactar_mensaje_de_query_exceptions($registro->message, $registro->context);
+		// Los Throwable del contexto (a cualquier profundidad, antes de
+		// convertirlos a su resumen) pueden coincidir textualmente con el
+		// 'message' principal del registro: Handler::reportThrowable escribe
+		// el log con $e->getMessage() como mensaje. MensajeSeguro::de_excepcion
+		// ya recorre toda la cadena de causas (getPrevious()) buscando
+		// QueryException encadenadas, directas o envueltas por otra excepcion.
+		$mensaje = $this->redactar_mensaje_de_excepciones($registro->message, $registro->context);
 
 		return $registro->with(
 			message: $this->redactar_texto($mensaje),
@@ -2676,47 +2665,25 @@ class RedactarDatosSensibles implements ProcessorInterface
 		);
 	}
 
-	// Illuminate\Foundation\Exceptions\Handler::reportThrowable usa
-	// $e->getMessage() como mensaje principal del log; en una QueryException
-	// ese mensaje trae los valores de la consulta incrustados (ver
-	// QueryException::formatMessage). Se busca, a cualquier profundidad del
-	// contexto, cada QueryException (directa o como causa encadenada de otra
-	// excepcion via getPrevious()) y se reemplaza toda ocurrencia de su
-	// getMessage() por el texto seguro de MensajeSeguro.
-	private function redactar_mensaje_de_query_exceptions(string $mensaje, array $contexto): string
+	private function redactar_mensaje_de_excepciones(string $mensaje, array $contexto): string
 	{
-		foreach ($this->query_exceptions_en_contexto($contexto) as $consulta) {
-			$mensaje = str_replace($consulta->getMessage(), MensajeSeguro::de_excepcion($consulta), $mensaje);
+		foreach ($this->excepciones_en_contexto($contexto) as $excepcion) {
+			$mensaje = str_replace($excepcion->getMessage(), MensajeSeguro::de_excepcion($excepcion), $mensaje);
 		}
 
 		return $mensaje;
 	}
 
-	private function query_exceptions_en_contexto(array $contexto): array
+	private function excepciones_en_contexto(array $contexto): array
 	{
 		$encontradas = [];
 		foreach ($contexto as $valor) {
 			if ($valor instanceof Throwable) {
-				$encontradas = array_merge($encontradas, $this->query_exceptions_en_cadena($valor));
+				$encontradas[] = $valor;
 			} elseif (is_array($valor)) {
-				$encontradas = array_merge($encontradas, $this->query_exceptions_en_contexto($valor));
+				$encontradas = array_merge($encontradas, $this->excepciones_en_contexto($valor));
 			}
 		}
-
-		return $encontradas;
-	}
-
-	// Recorre getPrevious() de una excepcion buscando QueryException: cubre
-	// tanto la excepcion directa como una QueryException encadenada como causa
-	private function query_exceptions_en_cadena(Throwable $excepcion): array
-	{
-		$encontradas = [];
-		do {
-			if ($excepcion instanceof QueryException) {
-				$encontradas[] = $excepcion;
-			}
-			$excepcion = $excepcion->getPrevious();
-		} while ($excepcion !== null);
 
 		return $encontradas;
 	}
@@ -2725,7 +2692,7 @@ class RedactarDatosSensibles implements ProcessorInterface
 	{
 		foreach ($datos as $clave => $valor) {
 			if (is_string($clave) && $this->es_clave_sensible($clave)) {
-				$datos[$clave] = self::MASCARA;
+				$datos[$clave] = MensajeSeguro::MASCARA;
 			} elseif ($valor instanceof Throwable) {
 				$datos[$clave] = $this->resumir_excepcion($valor);
 			} elseif (is_array($valor)) {
@@ -2762,10 +2729,12 @@ class RedactarDatosSensibles implements ProcessorInterface
 		];
 	}
 
-	// Enmascara, dentro de un texto libre, cualquier coincidencia de los PATRONES
+	// Enmascara, dentro de un texto libre, cualquier coincidencia de los
+	// PATRONES de MensajeSeguro (correo, Bearer/Basic, CURP): un unico lugar
+	// para esa logica, sin duplicarla ni depender en circulo de MensajeSeguro.
 	private function redactar_texto(string $texto): string
 	{
-		return preg_replace(self::PATRONES, self::MASCARA, $texto);
+		return MensajeSeguro::redactar_texto($texto);
 	}
 }
 ```
@@ -2777,37 +2746,93 @@ class RedactarDatosSensibles implements ProcessorInterface
 
 namespace App\Support;
 
-use App\Logging\RedactarDatosSensibles;
 use Illuminate\Database\QueryException;
 use Throwable;
 
-// Helper unico para obtener el mensaje de una excepcion sin PII: lo mismo lo
-// usa RedactarDatosSensibles (mensaje del log y resumen del contexto) que los
-// puntos que exportan trazas a Tempo (evento 'exception' del span), asi ambos
-// caminos quedan seguros de la misma forma y con una sola definicion.
+// Helper unico para obtener, a partir de una excepcion o de texto libre, una
+// version sin PII. Lo usa RedactarDatosSensibles (mensaje del registro,
+// contexto y resumen de excepciones, delegando tambien PATRONES/MASCARA via
+// self::redactar_texto()) y los tres puntos que exportan trazas a Tempo
+// (evento 'exception' del span en Trazas::en_span, IniciarTraza::handle y
+// TrazasServiceProvider::trazar_jobs), asi todos los caminos quedan seguros
+// de la misma forma y con una sola definicion de la logica.
 class MensajeSeguro
 {
+	public const MASCARA = '[redactado]';
+
+	// Patrones para detectar PII/credenciales dentro de texto libre. La
+	// coincidencia completa se reemplaza por MASCARA, incluida la palabra
+	// Bearer/Basic en el segundo patron: asi no se filtra ni el esquema de auth.
+	public const PATRONES = [
+		// correos electronicos
+		'/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/',
+		// credenciales Bearer/Basic en texto (se enmascara la coincidencia completa)
+		'/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/=-]+/i',
+		// CURP mexicana (18 caracteres)
+		'/\b[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d\b/',
+	];
+
 	public static function de_excepcion(Throwable $excepcion): string
 	{
 		if ($excepcion instanceof QueryException) {
 			return self::de_query_exception($excepcion);
 		}
 
-		// Reutiliza los PATRONES/MASCARA de RedactarDatosSensibles: no se
-		// duplica la lista de expresiones regulares en dos sitios.
-		return preg_replace(
-			RedactarDatosSensibles::PATRONES,
-			RedactarDatosSensibles::MASCARA,
-			$excepcion->getMessage()
-		);
+		return self::redactar_texto(self::sustituir_causas_encadenadas($excepcion->getMessage(), $excepcion));
+	}
+
+	// Unico lugar que aplica PATRONES/MASCARA sobre texto libre: tanto esta
+	// clase como RedactarDatosSensibles::redactar_texto delegan aqui, para no
+	// duplicar la logica en dos sitios (ni tener una dependencia circular
+	// entre App\Support y App\Logging).
+	public static function redactar_texto(string $texto): string
+	{
+		return preg_replace(self::PATRONES, self::MASCARA, $texto);
+	}
+
+	// Recorre TODA la cadena de causas (getPrevious()) de $excepcion, no solo
+	// un nivel. Por cada QueryException encontrada sustituye, dentro de
+	// $texto, toda ocurrencia de:
+	// - su getMessage() completo (el mensaje que arma Laravel, con los
+	//   bindings interpolados en el SQL; ver QueryException::formatMessage)
+	// - el getMessage() de SU PDOException previa (getPrevious() de la
+	//   QueryException: el mensaje crudo del driver, p.ej.
+	//   "Duplicate entry 'Penicilina-Grave' for key ...")
+	// por el texto seguro de esa consulta. Cubre tanto una excepcion que
+	// reenvia el mensaje completo de Laravel (ej.
+	// RuntimeException('fallo: '.$q->getMessage())) como una que solo copia
+	// el mensaje crudo del driver sin el formato de Laravel, y tambien
+	// Illuminate\View\ViewException, cuyo mensaje es
+	// $e->getMessage().' (View: ...)' (ver vendor
+	// Illuminate\View\Engines\CompilerEngine::getMessage()/handleViewException()).
+	private static function sustituir_causas_encadenadas(string $texto, Throwable $excepcion): string
+	{
+		$causa = $excepcion->getPrevious();
+
+		while ($causa !== null) {
+			if ($causa instanceof QueryException) {
+				$seguro = self::de_query_exception($causa);
+				$texto = str_replace($causa->getMessage(), $seguro, $texto);
+
+				$previa = $causa->getPrevious();
+				if ($previa !== null) {
+					$texto = str_replace($previa->getMessage(), $seguro, $texto);
+				}
+			}
+
+			$causa = $causa->getPrevious();
+		}
+
+		return $texto;
 	}
 
 	// getMessage() de una QueryException interpola los bindings dentro del SQL
 	// (ver Illuminate\Database\QueryException::formatMessage): por eso el texto
-	// seguro usa getSql(), la sentencia parametrizada sin bindings.
+	// seguro usa getSql(), la sentencia parametrizada sin bindings, con sus
+	// literales incrustados (si los hubiera) tambien enmascarados.
 	private static function de_query_exception(QueryException $excepcion): string
 	{
-		$texto = 'QueryException: ' . $excepcion->getSql();
+		$texto = 'QueryException: ' . self::enmascarar_literales($excepcion->getSql());
 		$sqlstate = $excepcion->getCode();
 
 		if (!empty($sqlstate)) {
@@ -2815,6 +2840,27 @@ class MensajeSeguro
 		}
 
 		return $texto;
+	}
+
+	// Enmascara, dentro de una sentencia SQL, literales entre comillas simples
+	// o dobles ('...' o "...") y numeros sueltos tras '=' o dentro de
+	// 'IN (...)'. Regex acotadas (clase de caracteres negada sin
+	// cuantificadores anidados: [^'\\]*, no (a|b)*) para evitar backtracking
+	// catastrofico.
+	//
+	// Limite conocido: no es un parser SQL. Una sentencia bien parametrizada
+	// (con '?') no deberia tener nada que enmascarar aqui; esto es una red de
+	// seguridad extra por si algun binding se incrusto igual, no una garantia
+	// contra cualquier forma de incrustar un valor (p.ej. comillas escapadas
+	// de forma no estandar, o un valor numerico que no siga a '=' ni a 'IN').
+	private static function enmascarar_literales(string $sql): string
+	{
+		$sql = preg_replace('/\'[^\'\\\\]*\'/', "'?'", $sql);
+		$sql = preg_replace('/"[^"\\\\]*"/', '"?"', $sql);
+		$sql = preg_replace('/(=\s*)\d+(\.\d+)?/', '$1?', $sql);
+		$sql = preg_replace('/(\bIN\s*\(\s*)[\d,\s]+(\))/i', '$1?$2', $sql);
+
+		return $sql;
 	}
 }
 ```
@@ -2863,7 +2909,36 @@ class AgregarContextoTraza implements ProcessorInterface
 }
 ```
 
-- [ ] **Paso 4: Canal `json`**
+`app/Logging/AplicarRedaccion.php`:
+
+```php
+<?php
+
+namespace App\Logging;
+
+use Illuminate\Log\Logger;
+
+// Los canales 'single' y 'daily' usan los drivers homonimos de Laravel, que
+// NO leen la clave 'processors' de config/logging.php (solo lo hace
+// createMonologDriver, el driver del canal 'json'): storage/logs/laravel.log
+// se escribia sin contexto de traza ni PII enmascarada. Este 'tap' agrega los
+// mismos processors del canal 'json' sobre el Logger ya armado.
+class AplicarRedaccion
+{
+	public function __invoke(Logger $logger): void
+	{
+		// pushProcessor() antepone (Monolog\Logger::pushProcessor hace
+		// array_unshift): el ultimo agregado se ejecuta primero. Para
+		// conservar el mismo orden que el canal 'json'
+		// ([AgregarContextoTraza, RedactarDatosSensibles]) se agrega
+		// RedactarDatosSensibles primero y AgregarContextoTraza al final.
+		$logger->pushProcessor(new RedactarDatosSensibles());
+		$logger->pushProcessor(new AgregarContextoTraza());
+	}
+}
+```
+
+- [ ] **Paso 4: Canal `json` y tap en `single`/`daily`**
 
 En `config/logging.php`, dentro de `'channels' => [`, después de `'single'`:
 
@@ -2885,7 +2960,33 @@ En `config/logging.php`, dentro de `'channels' => [`, después de `'single'`:
         ],
 ```
 
-Driver `monolog` con `StreamHandler` (ya importado arriba en `config/logging.php`) y no `single`: en Laravel 12.53 el driver `single` ignora la clave `processors`, así que los processors nunca corrían. Por eso `ContextoLogTest` incluye una prueba de integración que escribe por el canal real (redirigiendo `handler_with.stream` a un archivo temporal) y no solo prueba los processors aislados. (`config/logging.php` usa espacios: respetar su indentación.) En `.env.example` cambiar `LOG_STACK=single` por:
+Driver `monolog` con `StreamHandler` (ya importado arriba en `config/logging.php`) y no `single`: en Laravel 12.53 el driver `single` ignora la clave `processors`, así que los processors nunca corrían. Por eso `ContextoLogTest` incluye una prueba de integración que escribe por el canal real (redirigiendo `handler_with.stream` a un archivo temporal) y no solo prueba los processors aislados. (`config/logging.php` usa espacios: respetar su indentación.)
+
+El mismo motivo (el driver ignora `processors`) aplica a los canales `single` y `daily`: `storage/logs/laravel.log` se escribía sin contexto de traza ni PII enmascarada. Se les agrega `'tap' => [App\Logging\AplicarRedaccion::class]`:
+
+```php
+        'single' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+            // El driver 'single' ignora 'processors': este tap agrega
+            // contexto de traza y enmascara PII igual que el canal 'json'
+            'tap' => [App\Logging\AplicarRedaccion::class],
+        ],
+
+        'daily' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+            // Ver 'single': el driver 'daily' tampoco lee 'processors'
+            'tap' => [App\Logging\AplicarRedaccion::class],
+        ],
+```
+
+En `.env.example` cambiar `LOG_STACK=single` por:
 
 ```dotenv
 LOG_STACK=single,json
@@ -2893,8 +2994,10 @@ LOG_STACK=single,json
 
 - [ ] **Paso 5: Correr las pruebas y verificar que pasan; probar el canal real**
 
-Run: `pruebas --filter="RedactarDatosSensiblesTest|ContextoLogTest|SpanExcepcionSeguraTest"`
-Expected: PASS (18 pruebas). La redacción cubre: claves sensibles por **subcadena** sin distinguir mayúsculas (`token`, `password`, `secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`, `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature`: así `remember_token`, `access_token`, `api_secret` o `cache_key` — esta última NO se enmascara, no contiene ninguna subcadena sensible — quedan resueltas correctamente); `PATRONES` dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones en el contexto, reducidas a clase, mensaje seguro (`MensajeSeguro::de_excepcion`), archivo y línea, sin trace. `MensajeSeguro` centraliza el mensaje seguro de una excepción: para una `QueryException` es `'QueryException: ' . getSql()` (+ SQLSTATE si `getCode()` no está vacío), y para cualquier otra excepción su mensaje pasado por los mismos `PATRONES`. Se usa en `RedactarDatosSensibles` (contexto y, ahora también, el `message` principal del registro — `Handler::reportThrowable` escribe `$e->getMessage()` como mensaje, y en una `QueryException` esa cadena trae los bindings interpolados) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que ya no usan `$span->recordException()` (guarda el stacktrace con argumentos) sino `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])`. Límite documentado en la clase: una contraseña escrita en texto libre sin clave propia no se detecta.
+Run: `pruebas --filter="RedactarDatosSensiblesTest|ContextoLogTest|SpanExcepcionSeguraTest|MensajeSeguroTest"`
+Expected: PASS (29 pruebas). La redacción cubre: claves sensibles por **subcadena** sin distinguir mayúsculas (`token`, `password`, `secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`, `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature`: así `remember_token`, `access_token`, `api_secret` o `cache_key` — esta última NO se enmascara, no contiene ninguna subcadena sensible — quedan resueltas correctamente); `PATRONES` dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones en el contexto, reducidas a clase, mensaje seguro (`MensajeSeguro::de_excepcion`), archivo y línea, sin trace.
+
+`MensajeSeguro` centraliza TODA la lógica de mensaje seguro (`PATRONES`/`MASCARA` viven solo ahí; `RedactarDatosSensibles::redactar_texto` delega en `MensajeSeguro::redactar_texto()`, sin dependencia circular): para una `QueryException` es `'QueryException: '` + `getSql()` con sus literales entre comillas o números sueltos (tras `=` o `IN (...)`) enmascarados (`enmascarar_literales`, regex acotadas sin backtracking catastrófico) + SQLSTATE si `getCode()` no está vacío; para cualquier otra excepción, recorre **toda** la cadena de causas (`getPrevious()`) buscando una `QueryException` —encontrada, sustituye dentro del texto tanto su `getMessage()` completo como el de su `PDOException` previa (el mensaje crudo del driver, p.ej. `Duplicate entry '...'`, por si algo copió solo esa parte)— y al final aplica `PATRONES`. Esto cubre una `QueryException` ENVUELTA por cualquier otra excepción (p.ej. `RuntimeException('fallo: '.$q->getMessage())`) y también `Illuminate\View\ViewException` real (una consulta que falla dentro de Blade: su mensaje es `$e->getMessage().' (View: ...)'`, ver vendor `CompilerEngine::getMessage()`/`handleViewException()`). Se usa en `RedactarDatosSensibles` (mensaje del registro, contexto y resumen de excepciones) y en los tres `catch` que exportan trazas (`Trazas::en_span`, `IniciarTraza::handle`, `TrazasServiceProvider::trazar_jobs`), que usan `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])` en lugar de `$span->recordException()` (que además guarda el stacktrace con argumentos). Límite documentado en la clase: una contraseña escrita en texto libre sin clave propia no se detecta; `enmascarar_literales` no es un parser SQL completo.
 
 ```bash
 php artisan tinker --execute="Log::channel('json')->info('prueba de canal', ['password' => 'x', 'email' => 'a@b.c']);"
