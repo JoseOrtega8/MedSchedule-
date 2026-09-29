@@ -34,6 +34,7 @@ Este archivo describe lo que realmente se implementó. Decisiones que cambiaron 
 - **T011**: el span del job se cierra también en `JobExceptionOccurred`: si al job le quedan reintentos, Laravel no dispara `JobProcessed` ni `JobFailed` y el span quedaba abierto.
 - **T012**: el canal `json` usa driver `monolog` + `StreamHandler`: el driver `single` ignora `processors` en Laravel 12.53 y los logs salían sin redactar ni contexto de traza.
 - **T012**: la redacción se amplió a `PATRONES` en el texto (correo, `Bearer`/`Basic`, CURP), a excepciones del contexto (clase, mensaje redactado, archivo y línea; `QueryException` sin bindings) y a claves por subcadena (`remember_token`, `access_token`, `api_secret`…).
+- **T012**: hueco residual (repo público, datos clínicos): `Handler::reportThrowable` escribe el log con `$e->getMessage()` como mensaje principal, y en una `QueryException` ese mensaje trae los bindings interpolados (`SQL: ... allergies = Penicilina-Grave ...`); `RedactarDatosSensibles` solo pasaba el mensaje por `PATRONES` (correo/Bearer/CURP), no por eso. Se agregó `App\Support\MensajeSeguro::de_excepcion()` (para `QueryException`, `'QueryException: ' . getSql()` + SQLSTATE si `getCode()` no está vacío; para el resto, el mensaje por los mismos `PATRONES`), usado en `RedactarDatosSensibles` (contexto y ahora también el `message` del registro, buscando `QueryException` a cualquier profundidad, incluida una encadenada como `getPrevious()`) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que cambiaron `$span->recordException($error)` por `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])` (mismo evento, sin bindings ni stacktrace con argumentos). Se agregaron a `CLAVES` las subcadenas `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature` (no `key` ni `hash` sueltos: romperían claves inocentes como `cache_key`). El `catch` de `TrazasServiceProvider::trazar_jobs` (cierre de span de job fallido) conserva `recordException()`: queda fuera del alcance de esta corrección.
 - **T013**: el folio usa el `request_id` como respaldo cuando las trazas están apagadas (antes decía "no disponible").
 - **T016**: no existe el concepto de fila histórica sin sello: la migración sella las filas existentes y `verificar()` trata como rota cualquier fila con `hash` nulo (se quitó `sin_sellar_historicos`).
 - **T016**: se quitó la FK `activity_logs.user_id` (conservando el índice): su `ON DELETE SET NULL` alteraba filas selladas al borrar un usuario.
@@ -1872,6 +1873,7 @@ Expected: FAIL (`Target class [App\Observability\Trazas\Trazas] does not exist`)
 namespace App\Observability\Trazas;
 
 use Illuminate\Support\Facades\Log;
+use App\Support\MensajeSeguro;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -1919,7 +1921,14 @@ class Trazas
 		try {
 			return $accion();
 		} catch (Throwable $error) {
-			$span->recordException($error);
+			// No se usa recordException(): guarda el stacktrace con argumentos
+			// y, en una QueryException, exception.message trae los bindings
+			// (getMessage() los interpola). addEvent() con MensajeSeguro deja
+			// el mismo evento 'exception' pero sin esos valores.
+			$span->addEvent('exception', [
+				'exception.type' => $error::class,
+				'exception.message' => MensajeSeguro::de_excepcion($error),
+			]);
 			$span->setStatus(StatusCode::STATUS_ERROR);
 			throw $error;
 		} finally {
@@ -1955,6 +1964,7 @@ class Trazas
 namespace App\Http\Middleware;
 
 use App\Observability\Trazas\Trazas;
+use App\Support\MensajeSeguro;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -2029,7 +2039,12 @@ class IniciarTraza
 
 			return $respuesta;
 		} catch (Throwable $error) {
-			$span->recordException($error);
+			// Ver Trazas::en_span: addEvent() + MensajeSeguro en lugar de
+			// recordException() para no exportar valores de consulta a Tempo.
+			$span->addEvent('exception', [
+				'exception.type' => $error::class,
+				'exception.message' => MensajeSeguro::de_excepcion($error),
+			]);
 			$span->setStatus(StatusCode::STATUS_ERROR);
 			throw $error;
 		} finally {
@@ -2352,9 +2367,9 @@ git commit -m "feat(trazas): spans de consultas sin bindings, jobs y llamadas a 
 ### T012 [US3] Logs estructurados con contexto de traza y redacción de PII
 
 **Files:**
-- Create: `app/Logging/AgregarContextoTraza.php`, `app/Logging/RedactarDatosSensibles.php`
+- Create: `app/Logging/AgregarContextoTraza.php`, `app/Logging/RedactarDatosSensibles.php`, `app/Support/MensajeSeguro.php`
 - Modify: `config/logging.php` (canal `json`), `.env.example` (`LOG_STACK`)
-- Test: `tests/Unit/Logging/RedactarDatosSensiblesTest.php`, `tests/Feature/Trazas/ContextoLogTest.php`
+- Test: `tests/Unit/Logging/RedactarDatosSensiblesTest.php`, `tests/Feature/Trazas/ContextoLogTest.php`, `tests/Feature/Trazas/SpanExcepcionSeguraTest.php`
 
 **Interfaces:**
 - Consumes: `Trazas::trace_id_actual()`, `Trazas::span_id_actual()`; atributo `request_id`.
@@ -2592,6 +2607,7 @@ Expected: FAIL (clases inexistentes).
 
 namespace App\Logging;
 
+use App\Support\MensajeSeguro;
 use Illuminate\Database\QueryException;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
@@ -2615,10 +2631,14 @@ class RedactarDatosSensibles implements ProcessorInterface
 	// Subcadenas en minusculas: una clave se enmascara si CONTIENE cualquiera
 	// (asi 'remember_token', 'access_token', 'api_secret' o
 	// 'password_confirmation' quedan cubiertas sin listarlas una por una)
+	// 'key' y 'hash' sueltos NO se agregan como subcadena: romperian claves
+	// inocentes como 'cache_key' (debe quedar intacta). Por eso se listan
+	// formas mas especificas: 'api_key' y 'apikey'.
 	public const CLAVES = [
 		'token', 'password', 'secret', 'authorization', 'cookie',
 		'curp', 'email',
 		'allergies', 'chronic_conditions', 'blood_type', 'emergency_contact',
+		'api_key', 'apikey', 'credential', 'phone', 'telefono', 'signature',
 	];
 
 	// Patrones para detectar PII/credenciales dentro de texto libre: el mensaje
@@ -2637,11 +2657,62 @@ class RedactarDatosSensibles implements ProcessorInterface
 
 	public function __invoke(LogRecord $registro): LogRecord
 	{
+		// Primero se sustituyen los mensajes de QueryException encontrados en
+		// el contexto (getMessage() trae los bindings interpolados, ver
+		// resumir_excepcion): esto debe pasar ANTES de convertir los Throwable
+		// del contexto a su resumen seguro, porque usa los objetos originales.
+		$mensaje = $this->redactar_mensaje_de_query_exceptions($registro->message, $registro->context);
+
 		return $registro->with(
-			message: $this->redactar_texto($registro->message),
+			message: $this->redactar_texto($mensaje),
 			context: $this->redactar($registro->context),
 			extra: $this->redactar($registro->extra),
 		);
+	}
+
+	// Illuminate\Foundation\Exceptions\Handler::reportThrowable usa
+	// $e->getMessage() como mensaje principal del log; en una QueryException
+	// ese mensaje trae los valores de la consulta incrustados (ver
+	// QueryException::formatMessage). Se busca, a cualquier profundidad del
+	// contexto, cada QueryException (directa o como causa encadenada de otra
+	// excepcion via getPrevious()) y se reemplaza toda ocurrencia de su
+	// getMessage() por el texto seguro de MensajeSeguro.
+	private function redactar_mensaje_de_query_exceptions(string $mensaje, array $contexto): string
+	{
+		foreach ($this->query_exceptions_en_contexto($contexto) as $consulta) {
+			$mensaje = str_replace($consulta->getMessage(), MensajeSeguro::de_excepcion($consulta), $mensaje);
+		}
+
+		return $mensaje;
+	}
+
+	private function query_exceptions_en_contexto(array $contexto): array
+	{
+		$encontradas = [];
+		foreach ($contexto as $valor) {
+			if ($valor instanceof Throwable) {
+				$encontradas = array_merge($encontradas, $this->query_exceptions_en_cadena($valor));
+			} elseif (is_array($valor)) {
+				$encontradas = array_merge($encontradas, $this->query_exceptions_en_contexto($valor));
+			}
+		}
+
+		return $encontradas;
+	}
+
+	// Recorre getPrevious() de una excepcion buscando QueryException: cubre
+	// tanto la excepcion directa como una QueryException encadenada como causa
+	private function query_exceptions_en_cadena(Throwable $excepcion): array
+	{
+		$encontradas = [];
+		do {
+			if ($excepcion instanceof QueryException) {
+				$encontradas[] = $excepcion;
+			}
+			$excepcion = $excepcion->getPrevious();
+		} while ($excepcion !== null);
+
+		return $encontradas;
 	}
 
 	private function redactar(array $datos): array
@@ -2673,15 +2744,13 @@ class RedactarDatosSensibles implements ProcessorInterface
 		return false;
 	}
 
-	// Reduce una excepcion a datos sin PII. De una QueryException se toma la
-	// sentencia SIN bindings (getSql), porque getMessage() los interpola.
+	// Reduce una excepcion a datos sin PII: mensaje seguro (MensajeSeguro),
+	// clase, archivo y linea. Nunca el trace con argumentos.
 	private function resumir_excepcion(Throwable $excepcion): array
 	{
-		$mensaje = $excepcion instanceof QueryException ? $excepcion->getSql() : $excepcion->getMessage();
-
 		return [
 			'class' => $excepcion::class,
-			'message' => $this->redactar_texto($mensaje),
+			'message' => MensajeSeguro::de_excepcion($excepcion),
 			'file' => $excepcion->getFile(),
 			'line' => $excepcion->getLine(),
 		];
@@ -2691,6 +2760,55 @@ class RedactarDatosSensibles implements ProcessorInterface
 	private function redactar_texto(string $texto): string
 	{
 		return preg_replace(self::PATRONES, self::MASCARA, $texto);
+	}
+}
+```
+
+`app/Support/MensajeSeguro.php`:
+
+```php
+<?php
+
+namespace App\Support;
+
+use App\Logging\RedactarDatosSensibles;
+use Illuminate\Database\QueryException;
+use Throwable;
+
+// Helper unico para obtener el mensaje de una excepcion sin PII: lo mismo lo
+// usa RedactarDatosSensibles (mensaje del log y resumen del contexto) que los
+// puntos que exportan trazas a Tempo (evento 'exception' del span), asi ambos
+// caminos quedan seguros de la misma forma y con una sola definicion.
+class MensajeSeguro
+{
+	public static function de_excepcion(Throwable $excepcion): string
+	{
+		if ($excepcion instanceof QueryException) {
+			return self::de_query_exception($excepcion);
+		}
+
+		// Reutiliza los PATRONES/MASCARA de RedactarDatosSensibles: no se
+		// duplica la lista de expresiones regulares en dos sitios.
+		return preg_replace(
+			RedactarDatosSensibles::PATRONES,
+			RedactarDatosSensibles::MASCARA,
+			$excepcion->getMessage()
+		);
+	}
+
+	// getMessage() de una QueryException interpola los bindings dentro del SQL
+	// (ver Illuminate\Database\QueryException::formatMessage): por eso el texto
+	// seguro usa getSql(), la sentencia parametrizada sin bindings.
+	private static function de_query_exception(QueryException $excepcion): string
+	{
+		$texto = 'QueryException: ' . $excepcion->getSql();
+		$sqlstate = $excepcion->getCode();
+
+		if (!empty($sqlstate)) {
+			$texto .= ' [SQLSTATE ' . $sqlstate . ']';
+		}
+
+		return $texto;
 	}
 }
 ```
@@ -2769,8 +2887,8 @@ LOG_STACK=single,json
 
 - [ ] **Paso 5: Correr las pruebas y verificar que pasan; probar el canal real**
 
-Run: `pruebas --filter="RedactarDatosSensiblesTest|ContextoLogTest"`
-Expected: PASS (12 pruebas). La redacción cubre: claves sensibles por **subcadena** sin distinguir mayúsculas (`token`, `password`, `secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`: así `remember_token`, `access_token` o `api_secret` quedan cubiertas); `PATRONES` dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones en el contexto, reducidas a clase, mensaje redactado (de una `QueryException` solo la sentencia sin bindings), archivo y línea, sin trace. Límite documentado en la clase: una contraseña escrita en texto libre sin clave propia no se detecta.
+Run: `pruebas --filter="RedactarDatosSensiblesTest|ContextoLogTest|SpanExcepcionSeguraTest"`
+Expected: PASS (18 pruebas). La redacción cubre: claves sensibles por **subcadena** sin distinguir mayúsculas (`token`, `password`, `secret`, `authorization`, `cookie`, `curp`, `email`, campos clínicos, `emergency_contact`, `api_key`, `apikey`, `credential`, `phone`, `telefono`, `signature`: así `remember_token`, `access_token`, `api_secret` o `cache_key` — esta última NO se enmascara, no contiene ninguna subcadena sensible — quedan resueltas correctamente); `PATRONES` dentro del mensaje y de valores de texto (correo, `Bearer`/`Basic`, CURP); y excepciones en el contexto, reducidas a clase, mensaje seguro (`MensajeSeguro::de_excepcion`), archivo y línea, sin trace. `MensajeSeguro` centraliza el mensaje seguro de una excepción: para una `QueryException` es `'QueryException: ' . getSql()` (+ SQLSTATE si `getCode()` no está vacío), y para cualquier otra excepción su mensaje pasado por los mismos `PATRONES`. Se usa en `RedactarDatosSensibles` (contexto y, ahora también, el `message` principal del registro — `Handler::reportThrowable` escribe `$e->getMessage()` como mensaje, y en una `QueryException` esa cadena trae los bindings interpolados) y en los `catch` de `Trazas::en_span` e `IniciarTraza::handle`, que ya no usan `$span->recordException()` (guarda el stacktrace con argumentos) sino `$span->addEvent('exception', ['exception.type' => ..., 'exception.message' => MensajeSeguro::de_excepcion($error)])`. Límite documentado en la clase: una contraseña escrita en texto libre sin clave propia no se detecta.
 
 ```bash
 php artisan tinker --execute="Log::channel('json')->info('prueba de canal', ['password' => 'x', 'email' => 'a@b.c']);"
