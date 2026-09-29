@@ -5,11 +5,13 @@ namespace Tests\Feature\Trazas;
 use App\Observability\Trazas\Trazas;
 use App\Models\User;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
 use Mockery;
+use PDOException;
 use RuntimeException;
 
 class SpansHijosTest extends TrazasTestCase
@@ -84,5 +86,53 @@ class SpansHijosTest extends TrazasTestCase
 		$this->assertNotEmpty($spans, 'El span del job debio exportarse aunque el job se libere para reintento');
 		$this->assertSame('Error', $spans[0]->getStatus()->getCode());
 		$this->assertNull(app(Trazas::class)->trace_id_actual(), 'El scope del span del job debio liberarse');
+	}
+
+	// TrazasServiceProvider::trazar_jobs cierra el span de un job fallido (via
+	// JobFailed o, como aqui, JobExceptionOccurred) igual que Trazas::en_span:
+	// una QueryException no debe exponer los bindings de la consulta
+	public function test_query_exception_en_job_no_expone_bindings_en_su_span(): void
+	{
+		$job = Mockery::mock(Job::class);
+		$job->shouldReceive('getJobId')->andReturn('job-de-prueba-2');
+		$job->shouldReceive('resolveName')->andReturn('App\\Jobs\\JobDePrueba');
+		$job->shouldReceive('getQueue')->andReturn('default');
+		$job->shouldReceive('payload')->andReturn([]);
+
+		$excepcion = new QueryException(
+			'mysql',
+			'update patient_profiles set allergies = ? where id = ?',
+			['Penicilina-Grave', 5],
+			new PDOException('dup')
+		);
+
+		event(new JobProcessing('sync', $job));
+		event(new JobExceptionOccurred('sync', $job, $excepcion));
+
+		$spans = $this->spans_que_empiezan_con('job ');
+		$this->assertNotEmpty($spans);
+		$span = $spans[0];
+
+		foreach ($span->getAttributes()->toArray() as $valor) {
+			$this->assertStringNotContainsString('Penicilina-Grave', (string) $valor);
+		}
+
+		$eventos = $span->getEvents();
+		$this->assertNotEmpty($eventos, 'Se esperaba un evento "exception" en el span del job');
+
+		$evento_excepcion = null;
+		foreach ($eventos as $evento) {
+			$this->assertStringNotContainsString('Penicilina-Grave', json_encode($evento->getAttributes()->toArray()));
+			if ($evento->getName() === 'exception') {
+				$evento_excepcion = $evento;
+			}
+		}
+
+		$this->assertNotNull($evento_excepcion, 'Se esperaba un evento "exception" en el span del job');
+		$this->assertSame(QueryException::class, $evento_excepcion->getAttributes()->get('exception.type'));
+		$this->assertStringContainsString(
+			'update patient_profiles set allergies = ? where id = ?',
+			(string) $evento_excepcion->getAttributes()->get('exception.message')
+		);
 	}
 }

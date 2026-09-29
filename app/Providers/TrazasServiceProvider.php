@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Observability\Trazas\Trazas;
+use App\Support\MensajeSeguro;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
@@ -116,7 +117,12 @@ class TrazasServiceProvider extends ServiceProvider
 			[$span, $alcance] = $abiertos[$clave];
 			unset($abiertos[$clave]);
 			if ($error !== null) {
-				$span->recordException($error);
+				// Ver Trazas::en_span: addEvent() + MensajeSeguro en lugar de
+				// recordException() para no exportar valores de consulta a Tempo.
+				$span->addEvent('exception', [
+					'exception.type' => $error::class,
+					'exception.message' => MensajeSeguro::de_excepcion($error),
+				]);
 				$span->setStatus(StatusCode::STATUS_ERROR);
 			}
 			$alcance->detach();
