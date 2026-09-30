@@ -3,9 +3,13 @@
 ## 2.1 Principio de diseño
 
 El pipeline de liberación vive en `.github/workflows/release.yml` y no contiene lógica propia:
-cada etapa invoca un script de `scripts/`, el mismo que se ejecuta en local o en el Codespace.
-Así el pipeline no puede divergir de lo que cada integrante corre en su máquina, y una compuerta
-que falla en GitHub Actions se reproduce con un solo comando.
+cada etapa invoca un script de `scripts/`, el mismo que se ejecuta en local. Así el pipeline no
+puede divergir de lo que cada integrante corre en su máquina, y una compuerta que falla en GitHub
+Actions se reproduce con un solo comando. En esta unidad los scripts se probaron en dos lugares:
+en local (macOS con Docker Desktop y MySQL de MAMP), donde se generó toda la evidencia, y en
+GitHub Actions, en el pipeline de cada pull request. No se ejecutaron en un Codespace: el
+devcontainer de la Unidad 2 no incluye Docker (apartado 3.1), que los stacks de `infra/`
+necesitan.
 
 Las etapas se encadenan con `needs`: ninguna corre si la anterior falló. Esta unidad agrega dos
 compuertas entre la integración y las pruebas: la puerta de calidad de SonarQube y el análisis

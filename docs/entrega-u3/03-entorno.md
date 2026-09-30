@@ -4,7 +4,7 @@
 
 | Pieza | Dónde se declara | Para qué |
 |---|---|---|
-| Entorno de liberación | `.devcontainer/` (Unidad 2) | Aplicación PHP 8.2 + Node 20 + MySQL 8.0, reproducible en GitHub Codespaces |
+| Entorno de liberación | `.devcontainer/` (Unidad 2) | Aplicación PHP 8.2 + Node 20 + MySQL 8.0, reproducible en GitHub Codespaces (usado en la Unidad 2; en esta unidad la evidencia se generó en local, ver 3.1) |
 | Stack de análisis estático | `infra/sonarqube/docker-compose.yml` (Unidad 2) | SonarQube Community + PostgreSQL 16 |
 | Stack de observabilidad | `infra/monitoreo/docker-compose.yml` (esta unidad) | Prometheus, Alertmanager, Grafana, Loki, Tempo, Alloy, exporters, Redis y Mailpit |
 | Pipeline | `.github/workflows/release.yml` y `ci.yml` | Integración, compuertas, pruebas y despliegue |
@@ -13,7 +13,10 @@ El entorno de liberación sigue siendo el de la Unidad 2: GitHub Codespaces a pa
 `.devcontainer/`. El devcontainer actual declara Node 20, `sshd` y GitHub CLI como features y
 publica los puertos 8000 (Laravel) y 3306 (MySQL); no declara Docker dentro del contenedor.
 Por eso los dos stacks de `infra/` se levantaron con Docker local (Docker Desktop en macOS),
-contra la aplicación servida en el puerto 8000 del anfitrión.
+contra la aplicación servida en el puerto 8000 del anfitrión, y ninguna prueba de esta unidad se
+ejecutó en un Codespace. Llevar la observabilidad al Codespace requiere agregar la feature de
+Docker dentro del contenedor (`docker-in-docker`) al devcontainer; queda como mejora para la
+siguiente unidad.
 
 ## 3.2 Cómo se levanta
 
