@@ -6,6 +6,7 @@
 **Materia:** Desarrollo Web Profesional — Grupo IDGS 8-2, Universidad Tecnológica de Hermosillo.
 **Profesor:** Iván Rogelio Chenoweth.
 **Fecha:** septiembre de 2026.
+**Video explicativo:** [https://drive.google.com/file/d/1KFyXhFXilEccMf-rFCS2PLoa3g_oUmtq/view?usp=sharing](https://drive.google.com/file/d/1KFyXhFXilEccMf-rFCS2PLoa3g_oUmtq/view?usp=sharing).
 
 ## 0.1 Observación de la Unidad 2: dashboards de SonarQube
 
