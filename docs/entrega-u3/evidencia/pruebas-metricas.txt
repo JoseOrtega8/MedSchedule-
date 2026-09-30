@@ -1,26 +1,26 @@
-$ env DB_HOST=127.0.0.1 DB_PORT=8889 DB_USERNAME=root DB_PASSWORD=<local> php artisan test --filter=Metricas
-# fecha (UTC): 2026-09-29T17:12:56Z - rama feat/107-trazabilidad (22056c3)
+$ php artisan test --filter='Metricas'
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB), PHP 8.2.29, MySQL 8.0 del devcontainer (base medschedule_test)
+# fecha (UTC): 2026-09-30T00:40:32Z - rama feat/107-trazabilidad (22056c3)
 
    PASS  Tests\Unit\Providers\MetricasServiceProviderTest
   ✓ conexion redis persistente por defecto
   ✓ conexion persistente se puede desactivar
 
    PASS  Tests\Feature\Metricas\EndpointMetricasTest
-  ✓ sin token responde 404                                               0.38s  
-  ✓ token incorrecto responde 404                                        0.01s  
-  ✓ token correcto devuelve metricas                                     0.01s  
-  ✓ cita agendada y cancelada incrementa contadores                      0.03s  
+  ✓ sin token responde 404                                               4.04s  
+  ✓ token incorrecto responde 404                                        0.02s  
+  ✓ token correcto devuelve metricas                                     0.04s  
+  ✓ cita agendada y cancelada incrementa contadores                      0.08s  
 
    PASS  Tests\Feature\Metricas\MetricasHttpTest
-  ✓ peticion registra contador e histograma                              0.02s  
-  ✓ redis caido no afecta la respuesta                                   0.02s  
+  ✓ peticion registra contador e histograma                              0.07s  
+  ✓ redis caido no afecta la respuesta                                   0.08s  
 
    PASS  Tests\Feature\Trazas\IniciarTrazaTest
-  ✓ scrape de metricas no produce spans                                  0.03s  
+  ✓ scrape de metricas no produce spans                                  0.05s  
 
   Tests:    9 passed (21 assertions)
-  Duration: 0.57s  
+  Duration: 4.54s
 
-codigo de salida: 1
-# Nota: el codigo de salida 1 no viene de estas pruebas (todas pasan). Lo produce un aviso del ejecutor de PHPUnit
-# anterior a la unidad: "No tests found in class Tests\Feature\Auth\RegistrationTest" (vendor/bin/phpunit --display-warnings lo muestra: "OK, but there were issues! ... PHPUnit Warnings: 1").
+
+codigo de salida: 0

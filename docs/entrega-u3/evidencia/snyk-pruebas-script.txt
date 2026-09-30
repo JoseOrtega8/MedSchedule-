@@ -1,5 +1,6 @@
 # Pruebas del script de Snyk (npx falso; no requiere token)
-# Fecha: 2026-09-29T15:15:40Z  Commit: f1e3512 (feat/109-snyk)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+# Fecha: 2026-09-30T00:37:36Z  Commit: dcc2648 (feat/109-snyk)
 $ bash tests/scripts/snyk-escanear.test.sh
 OK   sin SNYK_TOKEN sale con 1 (codigo 1)
 OK   sin SNYK_TOKEN avisa del problema

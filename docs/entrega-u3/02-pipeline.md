@@ -5,11 +5,11 @@
 El pipeline de liberación vive en `.github/workflows/release.yml` y no contiene lógica propia:
 cada etapa invoca un script de `scripts/`, el mismo que se ejecuta en local. Así el pipeline no
 puede divergir de lo que cada integrante corre en su máquina, y una compuerta que falla en GitHub
-Actions se reproduce con un solo comando. En esta unidad los scripts se probaron en dos lugares:
-en local (macOS con Docker Desktop y MySQL de MAMP), donde se generó toda la evidencia, y en
-GitHub Actions, en el pipeline de cada pull request. No se ejecutaron en un Codespace: el
-devcontainer de la Unidad 2 no incluye Docker (apartado 3.1), que los stacks de `infra/`
-necesitan.
+Actions se reproduce con un solo comando. En esta unidad los scripts se ejecutaron en dos
+lugares: en GitHub Codespaces, el entorno de liberación del proyecto, donde se generó toda la
+evidencia (pruebas, compuertas, stacks de `infra/`, carga con k6 y capturas), y en GitHub
+Actions, en el pipeline de cada pull request. Para que los stacks corran dentro del Codespace se
+agregó Docker al devcontainer (apartado 3.1).
 
 Las etapas se encadenan con `needs`: ninguna corre si la anterior falló. Esta unidad agrega dos
 compuertas entre la integración y las pruebas: la puerta de calidad de SonarQube y el análisis
@@ -36,7 +36,7 @@ escritas en los archivos:
 
 | Compuerta | Condición | Consecuencia |
 |---|---|---|
-| Calidad (SonarQube) | El job solo corre si la variable del repositorio `SONAR_HABILITADO` vale `true` | Un SonarQube en `localhost` no es alcanzable desde un runner de GitHub. Sin una instancia accesible el job se omite y el pipeline continúa; la misma compuerta se ejecuta en local con `scripts/sonarqube-escanear.sh` |
+| Calidad (SonarQube) | El job solo corre si la variable del repositorio `SONAR_HABILITADO` vale `true` | Un SonarQube en `localhost` no es alcanzable desde un runner de GitHub. Sin una instancia accesible el job se omite y el pipeline continúa; la misma compuerta se ejecuta en el Codespace con `scripts/sonarqube-escanear.sh` |
 | Seguridad (Snyk) | El job siempre corre; el análisis solo si existe el secreto `SNYK_TOKEN` | Sin token, el análisis se omite con un aviso `::notice::` visible en la corrida y el job termina en éxito. Sin token no hay compuerta de dependencias, solo el aviso |
 | Pruebas funcionales (PHPUnit) | `release.yml` define `PERMITIR_FALLO_FUNCIONAL: 'true'` | La suite arrastra fallos anteriores documentados en el issue #86. Mientras siga abierto, un fallo de PHPUnit se reporta en el resumen como "informativo" pero no detiene el pipeline. En `ci.yml` solo corre un subconjunto de cuatro clases, que además hereda un `\|\| true` que descarta el código de salida |
 | Pruebas de carga (k6) | Cuatro umbrales en `tests/carga/jri-prueba.js`: `http_req_duration` `p(95)<5000`, `http_req_failed` `rate<0.01`, `tasa_login_exitoso` `rate>0.99` y `duracion_panel` `p(95)<5000` | Si k6 termina con cualquier código distinto de 0 (99 al incumplir un umbral, u otro si la prueba misma falla), `scripts/pruebas-liberacion.sh` sale con 1 y el despliegue no corre |
@@ -59,7 +59,7 @@ documentado; incorporarlo al script queda como mejora pendiente.
 | Orden | Etapa | Corre en |
 |---|---|---|
 | 1 | `integracion` | GitHub Actions |
-| 2a | `calidad` (si `SONAR_HABILITADO`) | GitHub Actions; en su defecto, `scripts/sonarqube-escanear.sh` en local, con Docker |
+| 2a | `calidad` (si `SONAR_HABILITADO`) | GitHub Actions; en su defecto, `scripts/sonarqube-escanear.sh` en el Codespace, con Docker |
 | 2b | `seguridad` | GitHub Actions |
 | 3 | `pruebas` (entorno + PHPUnit + k6) | GitHub Actions, con servicio MySQL 8.0 |
 | 4 | `despliegue` (solo `main`) | GitHub Actions, entorno `produccion` |

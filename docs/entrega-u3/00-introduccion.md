@@ -11,7 +11,8 @@
 
 La revisión de la Unidad 2 señaló que los dashboards de SonarQube no se localizaban en la
 entrega: aparecían como rutas de archivo al final del documento. En esta unidad se muestran
-aquí, al inicio y como imágenes, tomadas sobre el análisis de la rama de la Unidad 3.
+aquí, al inicio y como imágenes, tomadas sobre el análisis de la rama de la Unidad 3 con el
+SonarQube que corre dentro del Codespace del proyecto (apartado 3).
 
 Las capturas corresponden al proyecto `medschedule-feat-105-u3-sdd` justo después de la corrida
 con la puerta estricta descrita en el apartado 0.1.1; por eso el panel muestra la puerta en
@@ -33,7 +34,7 @@ estado fallido.
 
 **Actividad.** Historial de análisis de la rama, con el veredicto de cada uno.
 
-![Vista Measures de SonarQube con las líneas duplicadas por carpeta](evidencia/sonar-05-duplicacion.png)
+![Vista Measures de SonarQube con las líneas duplicadas por archivo (2.7 % global)](evidencia/sonar-05-duplicacion.png)
 
 **Duplicación.** 2.7 % de líneas duplicadas en total; todas están en `resources/js` (5.6 %, 198 líneas), y `app`, `database` y `routes` tienen 0 %.
 
@@ -49,7 +50,8 @@ el veredicto. En esta unidad `scripts/sonarqube-escanear.sh` ejecuta el escáner
 veredicto de la puerta y termina con código 1 si no se supera. El mismo parámetro se agregó al
 job `analisis-estatico` de `ci.yml` y al job nuevo `calidad` de `release.yml` (apartado 11).
 
-Para demostrarlo se hicieron dos corridas del mismo script sobre el mismo código:
+Para demostrarlo se hicieron dos corridas del mismo script sobre el mismo código, dentro del
+Codespace (commit `6c99cfb`):
 
 | Corrida | Puerta de calidad | Resultado | Evidencia |
 |---|---|---|---|
@@ -76,7 +78,7 @@ repositorio, no de estimaciones. Cada una se puede rastrear a su origen:
 | Tiempo de notificación de una caída | `evidencia/monitoreo-alerta-tiempos.txt` |
 | Tableros, trazas y visor de auditoría | Capturas `evidencia/monitoreo-*.png`, `evidencia/trazas-*.png`, `evidencia/auditoria-*.png` |
 | Costo de la instrumentación | `evidencia/k6-sin-instrumentacion.txt`, `evidencia/k6-con-instrumentacion.txt` y `evidencia/k6-atribucion.txt` |
-| Pruebas de PHPUnit de cada módulo | Ejecutadas localmente: `evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`, `evidencia/pruebas-auditoria.txt` |
+| Pruebas de PHPUnit de cada módulo | Ejecutadas en el Codespace: `evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`, `evidencia/pruebas-auditoria.txt` |
 | Integridad de la auditoría | `evidencia/auditoria-verificar-integra.txt` y `evidencia/auditoria-verificar-rota.txt` |
 | Análisis de dependencias | `evidencia/snyk-00-antes.txt`, `evidencia/snyk-*.png`, `evidencia/snyk-puerta-*.txt` y `evidencia/snyk-pruebas-script.txt` |
 | Versiones de herramientas | Imagen fijada en `infra/monitoreo/docker-compose.yml`, `composer.lock` y scripts |

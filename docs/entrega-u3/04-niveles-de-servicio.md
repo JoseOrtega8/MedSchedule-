@@ -72,7 +72,7 @@ En total son 13 evaluaciones: 7 esperan la alerta y 6 esperan que no dispare. Se
 
 `docker run --rm --entrypoint promtool -v <copia-de-infra/monitoreo/prometheus>:/w prom/prometheus:v3.14.0 test rules /w/alertas.test.yml`
 
-Resultado: `SUCCESS`, código de salida 0 (`evidencia/promtool-alertas.txt`).
+Resultado en el Codespace: `SUCCESS`, código de salida 0 (`evidencia/promtool-alertas.txt`).
 
 ## 4.6 Tiempo de notificación
 
@@ -84,11 +84,11 @@ alrededor de 2 min 15 s en el peor caso.
 
 | Medición | Valor |
 |---|---|
-| Hora de inicio de la caída (se detuvo `php artisan serve`) | 05:14:36 UTC |
-| `AplicacionCaida` en estado `firing` en Prometheus | 05:15:45 UTC |
-| Hora de llegada del correo a Mailpit | 05:16:16 UTC |
-| Tiempo transcurrido | **1 min 40 s** (100 s): cumple el objetivo de menos de 3 minutos |
+| Hora de inicio de la caída (se detuvo `php artisan serve`) | 01:50:05 UTC |
+| `AplicacionCaida` pendiente en Prometheus (`activeAt`; pasa a `firing` tras 1 min de `for`) | 01:50:30 UTC |
+| Hora de llegada del correo a Mailpit | 01:52:00 UTC |
+| Tiempo transcurrido | **1 min 55 s** (115 s): cumple el objetivo de menos de 3 minutos |
 
-Fuente: `evidencia/monitoreo-alerta-tiempos.txt`, medido el 2026-09-29 consultando cada 2 s la
-API de alertas de Prometheus y la de mensajes de Mailpit. Al levantar de nuevo la aplicación
-(05:17:22 UTC), el correo de resolución llegó a las 05:18:17 UTC.
+Fuente: `evidencia/monitoreo-alerta-tiempos.txt`, medido el 2026-09-30 en el Codespace,
+consultando cada 2 s la API de mensajes de Mailpit y leyendo de la API de alertas de Prometheus
+el momento en que la alerta quedó pendiente. La aplicación se levantó de nuevo a las 01:53:32 UTC.

@@ -25,7 +25,7 @@ necesitan Redis, Tempo ni Loki (`phpunit.xml` fija `METRICAS_ALMACEN=memoria` y
 | `ci.yml` | Solo un subconjunto de cuatro clases: `--filter="AuthTest\|ActivityLogControllerTest\|ExampleTest\|EnsureAdminRoleTest" \|\| true` | No |
 | `release.yml` | La suite completa, en modo informativo (`PERMITIR_FALLO_FUNCIONAL`) | Sí, pero un fallo no detiene el pipeline |
 
-Por eso las pruebas de cada módulo se ejecutaron localmente y su salida se guarda como
+Por eso las pruebas de cada módulo se ejecutaron en el Codespace y su salida se guarda como
 evidencia (`evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`,
 `evidencia/pruebas-auditoria.txt`).
 
@@ -34,11 +34,11 @@ evidencia (`evidencia/pruebas-metricas.txt`, `evidencia/pruebas-trazas.txt`,
 | Compuerta | Detiene | Dónde corre | Condición para que actúe |
 |---|---|---|---|
 | Sintaxis, formato y compilación | Calidad, seguridad, pruebas y despliegue | GitHub Actions (`integracion`) | Siempre |
-| Puerta de calidad de SonarQube | Pruebas y despliegue | GitHub Actions (`calidad`) o local con Docker (`scripts/sonarqube-escanear.sh`) | En Actions, solo con `SONAR_HABILITADO=true` y una instancia accesible; en local, siempre que se ejecuta el script |
+| Puerta de calidad de SonarQube | Pruebas y despliegue | GitHub Actions (`calidad`) o el Codespace con Docker (`scripts/sonarqube-escanear.sh`) | En Actions, solo con `SONAR_HABILITADO=true` y una instancia accesible; en el Codespace, siempre que se ejecuta el script |
 | Vulnerabilidades altas o críticas (Snyk) | Pruebas y despliegue | GitHub Actions (`seguridad`) o local (`npm run seguridad:snyk`) | Solo con `SNYK_TOKEN`; sin él, aviso visible y el job termina en éxito |
 | Umbrales de k6 | Despliegue | GitHub Actions (`pruebas`) | Siempre |
-| PHPUnit | Nada, por ahora | GitHub Actions (`pruebas` y `ci.yml`) y local | `release.yml` corre la suite completa en modo informativo por `PERMITIR_FALLO_FUNCIONAL`; `ci.yml` corre solo un subconjunto de cuatro clases con `\|\| true`; ambos mientras siga abierto el issue #86. Las pruebas de los módulos se ejecutan localmente |
-| Pruebas de las reglas de alerta (`promtool test rules`) | Nada en el pipeline | Local, en la imagen `prom/prometheus:v3.14.0` | Se ejecutan a mano al cambiar `alertas.yml`; salida en `evidencia/promtool-alertas.txt` |
+| PHPUnit | Nada, por ahora | GitHub Actions (`pruebas` y `ci.yml`) y el Codespace | `release.yml` corre la suite completa en modo informativo por `PERMITIR_FALLO_FUNCIONAL`; `ci.yml` corre solo un subconjunto de cuatro clases con `\|\| true`; ambos mientras siga abierto el issue #86. Las pruebas de los módulos se ejecutan en el Codespace |
+| Pruebas de las reglas de alerta (`promtool test rules`) | Nada en el pipeline | En el Codespace, con la imagen `prom/prometheus:v3.14.0` | Se ejecutan a mano al cambiar `alertas.yml`; salida en `evidencia/promtool-alertas.txt` |
 | Pruebas del script de Snyk (`npm run test:scripts`) | Nada en el pipeline | Local | Se ejecutan a mano al cambiar el script; salida en `evidencia/snyk-pruebas-script.txt` |
 
 Queda dicho de forma explícita: la compuerta funcional no es total mientras siga abierto el

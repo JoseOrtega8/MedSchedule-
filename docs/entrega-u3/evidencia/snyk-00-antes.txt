@@ -1,6 +1,7 @@
 # Snyk - ANTES de la compuerta (rama feat/105-u3-sdd)
-Fecha (UTC): 2026-09-29T20:17:59Z
-Rama / commit: feat/105-u3-sdd @ 2eb69e7
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+Fecha (UTC): 2026-09-30T00:41:19Z
+Rama / commit: feat/105-u3-sdd @ 6c99cfb
 
 ## 1) El pipeline de liberacion no tiene job de seguridad
 Comando: grep -n "seguridad\|snyk" .github/workflows/release.yml
@@ -10,7 +11,7 @@ Codigo de salida de grep: 1  (1 = sin coincidencias)
 ## 2) Las vulnerabilidades ya existian y nada las detenia
 Comando: SNYK_TOKEN=<TOKEN> npx --yes snyk@1.1307.4 test --all-projects --severity-threshold=high
 Codigo de salida: 1
-(El token se paso por variable de entorno y no aparece en la salida.)
+(El token es el secreto SNYK_TOKEN de Codespaces, se paso por variable de entorno y no aparece en la salida.)
 
 ### Resumen (desde el JSON de la corrida; solo severidad alta o critica por el umbral)
 - composer.lock: 16 issues, 22 rutas vulnerables (critical: 1, high: 15, medium: 0, low: 0)
@@ -48,7 +49,7 @@ Codigo de salida: 1
 Target file:       composer.lock
 Tested 108 dependencies for known issues, found 16 issues, 22 vulnerable paths.
 Target file:       package-lock.json
-✔ Tested ~/.medschedule-evidencia/u3-sdd for known issues, no vulnerable paths found.
+✔ Tested ~/wt/u3-sdd for known issues, no vulnerable paths found.
 Target file:       vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json
 ✔ Tested 51 dependencies for known issues, no vulnerable paths found.
 Target file:       vendor/mockery/mockery/composer.lock

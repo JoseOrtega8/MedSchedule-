@@ -42,7 +42,7 @@ El script traduce los códigos del CLI de Snyk a tres resultados:
 | Error de ejecución o de autenticación | 2 | 2 | Se detiene |
 | Ningún proyecto soportado | 3 | 2 | Se detiene |
 | Código no documentado | otro | 2 | Se detiene |
-| Sin `SNYK_TOKEN` en la sesión | — (no se ejecuta) | 1 | En local, falla con un mensaje en stderr |
+| Sin `SNYK_TOKEN` en la sesión | — (no se ejecuta) | 1 | Fuera de GitHub Actions (por ejemplo, en el Codespace sin el secreto), falla con un mensaje en stderr |
 
 El token se lee únicamente de la variable de entorno `SNYK_TOKEN`; el script nunca lo imprime ni
 lo escribe en un archivo.
@@ -108,7 +108,7 @@ Un análisis del mismo código sin umbral dio 1 crítica, 15 altas, 19 medias y 
 
 ### Después, primero: la compuerta falla
 
-En la rama `feat/109-snyk` (commit `f1e3512`), `scripts/snyk-escanear.sh` encontró las mismas
+En la rama `feat/109-snyk` (commit `f1e3512`), ejecutado en el Codespace, `scripts/snyk-escanear.sh` encontró las mismas
 16 vulnerabilidades (1 crítica y 15 altas), imprimió "Se encontraron vulnerabilidades de
 severidad alta o critica" y terminó con **código 1** (`evidencia/snyk-puerta-falla.txt`). En el
 pipeline, ese código detiene el job `seguridad` y, con él, las pruebas y el despliegue.

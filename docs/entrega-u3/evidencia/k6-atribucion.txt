@@ -1,88 +1,63 @@
 # Atribucion del costo de la instrumentacion (metricas Redis, trazas OTEL, log JSON)
-# Fecha (UTC): 2026-09-29, rama feat/107-trazabilidad. "antes" = e2327f0; "despues" = f5db96e
-#   ca25ae8 perf(trazas): conexion persistente de Predis para las metricas
-#   0c9a306 perf(trazas): exportar OTLP/JSON sin google/protobuf en PHP puro
-#   f5db96e perf(trazas): router de medicion que emula fastcgi_finish_request
-# Maquina: Apple M4, PHP 8.4.1 (OPcache activo en cli-server), k6 v2.2.0, stack de monitoreo arriba.
-# La maquina se compartia con otras cargas (load average 3 a 14): el p95 de k6 varia +-8 ms entre
-# corridas identicas (A: 33.7 a 48.5 ms), mas que la meta de +10 % (~3 ms). Por eso la atribucion
-# se hace primero con una microprueba secuencial de bajo ruido y despues se confirma con k6.
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB, AMD EPYC 7763), PHP 8.2.29, k6 v2.3.0
+# Stack de monitoreo y SonarQube (en reposo) arriba en el mismo Codespace. Fecha (UTC): 2026-09-30
+# Rama feat/107-trazabilidad: "antes" = e2327f0 (exportador oficial con google/protobuf, Predis sin conexion persistente)
+#                              "despues" = 22056c3 (exportador OTLP/JSON propio, Predis persistente)
 
 ## 1. Microprueba secuencial (ab -n 400 -c 1, php artisan serve, sin concurrencia)
-# Una variable a la vez. Tiempo medio por peticion en ms (promedio de 2 a 4 corridas validas).
-# "portada" = GET / ; "panel" = GET /patient/dashboard/data autenticado (mas consultas SQL = mas spans).
+# Una variable a la vez. Tiempo medio por peticion en ms, promedio de 2 corridas (datos crudos al final).
+# "portada" = GET / ; "panel" = GET /patient/dashboard/data autenticado.
+# Ruido entre corridas identicas: hasta ~2 ms (por eso J sale ligeramente negativo).
 #
-# config                              | portada antes | portada despues | panel antes | panel despues
-# A  memoria, OTEL off, single        |   4.39        |   4.32          |   6.50      |   6.53
-# R  solo metricas Redis              |   5.60 (+1.2) |   5.35 (+1.0)   |   8.01 (+1.5)|  8.07 (+1.5)
-# O  solo OTEL                        |   8.45 (+4.1) |   6.23 (+1.9)   |  11.56 (+5.1)|  8.71 (+2.2)
-# J  solo log JSON                    |   4.33 (+0.0) |   4.50 (+0.2)   |   6.49 (+0.0)|  6.61 (+0.1)
-# B  todo (redis, OTEL, single,json)  |   9.29 (+112%)|   7.07 (+64%)   |  12.83 (+97%)|  9.71 (+49%)
-#
-# Desglose de OTEL por peticion (antes): forceFlush() en terminate() = 3.2 ms p50 (3.9 p95), de los
-# que ~0.6 ms son el POST HTTP a Tempo y el resto es serializar con google/protobuf en PHP puro
-# (~0.6 ms fijos + ~0.15 ms por span, mas cargar los descriptores protobuf en cada peticion).
-# Sin forceFlush el costo de OTEL es ~0 (4.5 ms vs 4.4 ms), pero Tempo NO recibe la traza: el
-# TracerProvider se construye con el builder y no registra apagado; en PHP cada peticion arranca
-# de cero, asi que el BatchSpanProcessor no acumula entre peticiones. Quitar el flush pierde trazas.
-# Despues: forceFlush() = 0.96 ms p50 (2.0 p95) con el exportador OTLP/JSON propio.
-# Serializacion OTLP medida aparte (6 spans): JSON 1.5 ms, protobuf binario 1.8 ms (google/protobuf
-# en PHP puro, sin ext-protobuf): cambiar a application/x-protobuf no ayuda.
-# Redis: conexion persistente -0.2 a -0.5 ms; quedan 2 EVAL de Lua por peticion (contador +
-# histograma) y cargar Predis. Con ext-redis (phpredis) el costo bajaba a ~0.45 ms (no aplicado:
-# anade dependencia de extension). Log JSON: ~0, solo escribe cuando hay registros.
+# config                              | portada antes | portada despues | panel antes   | panel despues
+# A  memoria, OTEL off, single        |  17.08        |  17.73        |  19.14        |  19.13       
+# R  solo metricas Redis              |  18.51 (+1.4) |  18.41 (+0.7) |  18.53 (-0.6) |  20.00 (+0.9)
+# J  solo log JSON                    |  16.73 (-0.4) |  16.25 (-1.5) |  16.95 (-2.2) |  18.77 (-0.4)
+# O  solo OTEL                        |  23.44 (+6.4) |  20.31 (+2.6) |  26.98 (+7.8) |  22.72 (+3.6)
+# B  todo (redis, OTEL, single,json)  |  24.35 (+43%) |  22.04 (+24%) |  28.03 (+46%) |  23.40 (+22%)
 
-## 2. k6 (tests/carga/jri-prueba.js, 10 VUs, 2 min), php artisan serve monohilo
-# corrida | codigo  | configuracion                  | mediana  | p95
-# A0      | antes   | memoria, otel=false, single    | 20.72 ms | 48.45 ms
-# A0b     | antes   | memoria, otel=false, single    | 21.89 ms | 45.81 ms
-# B0      | antes   | redis, otel=true, single,json  | 32.87 ms | 62.83 ms
-# R0      | antes   | redis, otel=false, single      | 25.12 ms | 47.66 ms
-# O0      | antes   | memoria, otel=true, single     | 30.30 ms | 49.33 ms
-# J0      | antes   | memoria, otel=false, single,json| 21.15 ms | 44.62 ms
-# A1      | despues | memoria, otel=false, single    | 21.19 ms | 33.70 ms
-# B1      | despues | redis, otel=true, single,json  | 29.15 ms | 57.29 ms
-# R1      | despues | redis, otel=false, single      | 24.68 ms | 48.36 ms
-# O1      | despues | memoria, otel=true, single     | 25.72 ms | 48.46 ms
-# J1      | despues | memoria, otel=false, single,json| 21.18 ms | 49.23 ms
-# A3      | despues | memoria, otel=false, single    | 22.47 ms | 42.65 ms
-# B3      | despues | redis, otel=true, single,json  | 28.82 ms | 54.77 ms
-# AF      | despues | memoria, otel=false, single    | 21.48 ms | 40.95 ms  <- k6-sin-instrumentacion.txt
-# BF      | despues | redis, otel=true, single,json  | 27.62 ms | 53.23 ms  <- k6-con-instrumentacion.txt
-# Evidencia original (29-09 05:xx UTC, e2327f0): A p95 29.83 ms, B p95 56.15 ms (+88 %).
+## 2. k6 (tests/carga/jri-prueba.js, 10 VUs, 2 min), pares alternados el mismo dia, commit 22056c3
+# id  | servidor               | instrumentacion | mediana   | p95 http_req_duration | p95 duracion_panel | load1 al iniciar
+# A1  | artisan serve          | no              |  16.17 ms |  66.37 ms             |  52.32 ms          | 0.88
+# B1  | artisan serve          | completa        |  20.52 ms |  89.60 ms             |  76.97 ms          | 0.46
+# A2  | artisan serve          | no              |  17.01 ms |  73.58 ms             |  60.18 ms          | 0.93
+# B2  | artisan serve          | completa        |  22.39 ms |  74.71 ms             |  59.31 ms          | 1.13
+# A3f | fin-respuesta (*)      | no              |  18.34 ms |  70.30 ms             |  57.67 ms          | 1.37
+# B3f | fin-respuesta (*)      | completa        |  26.09 ms |  96.04 ms             |  84.86 ms          | 0.46
 #
-# Resumen k6 (medianas, mas estables que el p95):
-#   antes:   A0 20.72 / A0b 21.89 ms (media 21.3), B0 32.87 ms -> +54 % en medianas
-#            p95: A0/B0 48.45 -> 62.83 = +30 %; A0b/B0 45.81 -> 62.83 = +37 %
-#   despues: A ~21.6 ms, B ~28.5 ms -> +32 % en medianas
-#            p95 por par: A1/B1 +70 %, A3/B3 +28 %, AF/BF +30 %  (rango +28 % a +70 %)
-#   Carga del sistema al iniciar (load average 1 min): A0 no registrada (~4 al terminar), B0 6.0,
-#   R0 4.3, O0 3.3, J0 4.2, A0b 2.5, A1 3.4, B1 6.5, A3 3.0, B3 4.3, AF 3.9, BF 13.8.
-#   El p95 de k6 NO demuestra mejora: la linea base del mismo dia ya daba +30 % a +37 % y los pares
-#   posteriores caen dentro y fuera de ese rango segun el ruido de la maquina.
+# Diferencia con / sin instrumentacion por par:
+#   A1/B1: mediana +26.9 %, p95 +35.0 %, p95 panel +47.1 %
+#   A2/B2: mediana +31.6 %, p95 +1.5 %, p95 panel -1.4 %
+#   A3f/B3f: mediana +42.3 %, p95 +36.6 %, p95 panel +47.1 %
+# (*) tests/carga/servidor-fin-respuesta.php: enrutador para php -S que emula fastcgi_finish_request(); medicion complementaria.
+# 0 % de errores y codigo de salida 0 en las seis corridas.
 
-## 3. k6 con un servidor que entrega la respuesta antes de terminate() (como php-fpm)
-# (cd public && php -S 0.0.0.0:8000 ../tests/carga/servidor-fin-respuesta.php): emula
-# fastcgi_finish_request(); el export a Tempo ocurre despues de que el cliente recibio la respuesta,
-# pero el servidor sigue siendo monohilo y ese trabajo retrasa a la peticion siguiente.
-# A2f     | despues | memoria, otel=false, single    | 20.31 ms | 34.84 ms
-# B2f     | despues | redis, otel=true, single,json  | 23.66 ms | 50.78 ms
-# A4f     | despues | memoria, otel=false, single    | 20.58 ms | 39.83 ms
-# B4f     | despues | redis, otel=true, single,json  | 25.77 ms | 51.54 ms
-#   medianas: A 20.4 ms, B 24.7 ms -> +21 %; p95 +37 %
+## 3. Conclusion
+# - La correccion bajo el costo de la instrumentacion completa en la microprueba: portada de +43 % a +24 %, panel de +46 % a +22 %.
+# - Las trazas siguen siendo el componente mas caro (O); metricas Redis ~+0.7 a +0.9 ms; log JSON no medible.
+# - En k6 la mediana sube de +27 % a +42 % en los tres pares. El p95 es ruidoso (de +1.5 % a +37 %).
+# - La meta de <= +10 % en p95 NO se cumple de forma consistente. No se ajusta la meta.
+# - El p95 absoluto (<= 96 ms) sigue muy por debajo del acuerdo de 5 s.
 
-## Conclusion
-# La correccion reduce el costo por peticion medido en la microprueba (OTEL +4.1 -> +1.9 ms en portada,
-# +5.1 -> +2.2 ms en panel; instrumentacion completa +112 % -> +64 % en portada, +97 % -> +49 % en panel)
-# y en las medianas de k6 (+54 % -> +32 %). En el p95 de k6 el ruido de la maquina (+-8 ms entre
-# corridas identicas, carga de 2.5 a 13.8) impide demostrar mejora: antes de corregir los pares del
-# mismo dia daban +30 % (A0/B0) y +37 % (A0b/B0); despues, +28 % a +70 %. La meta <= +10 % no se cumple.
-#
-# Detalle:
-# - Dominaba OTEL (~80 % del sobrecosto): export sincrono por peticion en terminate(), y dentro de el
-#   la serializacion con google/protobuf en PHP puro. Corregido con un exportador OTLP/JSON propio.
-# - Segundo, metricas en Redis (~1.0 a 1.5 ms/peticion); la conexion persistente ahorra 0.2-0.5 ms.
-# - Log JSON: sin costo medible.
-# - Costo restante (~2.7 ms portada, ~3.2 ms panel): export HTTP a Tempo en cada peticion (~1 ms),
-#   creacion de spans, 2 EVAL a Redis, todo en el unico hilo de php artisan serve. En php-fpm el
-#   export ocurre despues de fastcgi_finish_request(), fuera de la latencia del cliente.
+## 4. Datos crudos de la microprueba (~/u3/k6/micro.tsv)
+# commit | config | rep | portada_ms | panel_ms | load1
+# 22056c3 | A | 1 | 17.923 | 20.320 | 0.06
+# 22056c3 | R | 1 | 19.180 | 20.846 | 0.59
+# 22056c3 | O | 1 | 21.235 | 22.717 | 1.11
+# 22056c3 | J | 1 | 17.321 | 19.252 | 1.29
+# 22056c3 | B | 1 | 22.304 | 24.519 | 1.60
+# 22056c3 | A | 2 | 17.541 | 17.943 | 2.51
+# 22056c3 | R | 2 | 17.643 | 19.159 | 2.78
+# 22056c3 | O | 2 | 19.384 | 22.714 | 2.33
+# 22056c3 | J | 2 | 15.170 | 18.289 | 2.09
+# 22056c3 | B | 2 | 21.767 | 22.290 | 1.99
+# e2327f0 | A | 1 | 16.252 | 18.469 | 2.55
+# e2327f0 | R | 1 | 19.242 | 19.179 | 2.56
+# e2327f0 | O | 1 | 25.023 | 28.442 | 2.52
+# e2327f0 | J | 1 | 15.937 | 17.705 | 2.80
+# e2327f0 | B | 1 | 25.061 | 30.534 | 2.77
+# e2327f0 | A | 2 | 17.914 | 19.809 | 2.76
+# e2327f0 | R | 2 | 17.772 | 17.873 | 2.67
+# e2327f0 | O | 2 | 21.860 | 25.522 | 2.53
+# e2327f0 | J | 2 | 17.525 | 16.198 | 2.54
+# e2327f0 | B | 2 | 23.631 | 25.521 | 2.57

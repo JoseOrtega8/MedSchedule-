@@ -149,9 +149,8 @@ El módulo agrega 40 métodos de prueba: 36 en `tests/Feature/Auditoria/` y 4 un
 | `test_login_fallido_se_audita_con_correo_enmascarado` | El correo no se guarda completo |
 
 Resultado registrado en `evidencia/pruebas-auditoria.txt` (rama `feat/108-auditoria`, commit
-`366f585`): **40 pruebas aprobadas, 211 aserciones, 0 fallos**. El comando termina con código 1
-por un aviso de PHPUnit anterior a esta unidad
-(`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas pruebas.
+`251e6ee`, ejecutado en el Codespace): **43 pruebas aprobadas, 216 aserciones, 0 fallos, código
+de salida 0**.
 
 ## 8.9 Antes y después
 
@@ -169,7 +168,7 @@ que usaría un controlador. Por esa razón el registro muestra la IP 127.0.0.1 y
 
 ### Antes: un cambio sin rastro y una alteración inadvertida
 
-En `feat/105-u3-sdd`, como administrador, se cambió la cita 2 de fecha (2026-09-29 → 2026-10-06)
+En `feat/105-u3-sdd`, como administrador, se cambió la cita 2 de fecha (2026-09-30 → 2026-10-06)
 y de doctor (2 → 4). La tabla `activity_logs` siguió con sus 3 filas y ninguna habla de la cita 2.
 
 ![Salida de terminal: cambio de fecha y doctor de la cita 2 y activity_logs sin ningún registro del cambio](evidencia/auditoria-01-antes-sin-rastro.png)
@@ -186,11 +185,11 @@ En `feat/108-auditoria` se repitió el mismo cambio en la cita 2. Después, la c
 confirmó la cita con una petición HTTP real (`PATCH /appointments/2`), que genera un segundo
 evento en la línea de tiempo.
 
-![Visor de auditoría con el indicador verde "Cadena íntegra · 12 registros" y el registro #12: Admin actualizó la cita #2](evidencia/auditoria-03-listado.png)
+![Visor de auditoría con el indicador verde "Cadena íntegra · 16 registros" y el registro #12: Admin actualizó la cita #2](evidencia/auditoria-03-listado.png)
 
-![Detalle del registro #12: Admin, 05:25:46 UTC, desde 127.0.0.1; doctor_id 2 → 4 y appointment_date 2026-09-29 → 2026-10-06](evidencia/auditoria-04-diff.png)
+![Detalle del registro #12: Admin, 01:57:37 UTC, desde 127.0.0.1; doctor_id 2 → 4 y appointment_date 2026-09-30 → 2026-10-06](evidencia/auditoria-04-diff.png)
 
-![Línea de tiempo de la cita #2: actualización del administrador (05:25:46) y confirmación de la doctora por HTTP (05:27:35)](evidencia/auditoria-05-linea-tiempo.png)
+![Línea de tiempo de la cita #2: actualización del administrador (01:57:37) y confirmación de la doctora por HTTP (01:59:14)](evidencia/auditoria-05-linea-tiempo.png)
 
 ### Después: la alteración se detecta
 
@@ -198,7 +197,7 @@ Con la cadena íntegra, la verificación termina en éxito (`evidencia/auditoria
 
 | Salida de `php artisan auditoria:verificar` | Código de salida |
 |---|---|
-| `Registros revisados: 15` / `Cadena íntegra.` | 0 |
+| `Registros revisados: 16` / `Cadena íntegra.` | 0 |
 
 En la base de la rama de auditoría, ya migrada y sellada, se alteró a mano la fila equivalente a
 la del "antes": la id 7, "Cita agendada con Dr. Test" (en esta base el id es otro porque la
@@ -208,7 +207,7 @@ y su descripción a "Cita agendada por el administrador", y se repitió la verif
 
 | Salida de `php artisan auditoria:verificar` | Código de salida |
 |---|---|
-| `Registros revisados: 7` / `Cadena rota. Registro roto: 7 (2026-09-29T04:48:21+00:00)` | 1 |
+| `Registros revisados: 7` / `Cadena rota. Registro roto: 7 (2026-09-30T01:57:36+00:00)` | 1 |
 
 La verificación se detiene en el primer eslabón roto y señala exactamente la fila alterada.
 

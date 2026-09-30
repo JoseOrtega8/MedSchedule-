@@ -118,13 +118,11 @@ almacén en memoria:
 | `test_token_correcto_devuelve_metricas` | Con la credencial correcta devuelve el formato de Prometheus |
 | `test_cita_agendada_y_cancelada_incrementa_contadores` | Los contadores de negocio responden a los eventos de la cita |
 
-Resultado registrado en `evidencia/pruebas-metricas.txt`: **9 pruebas aprobadas, 21 aserciones,
-0 fallos**. Se corrió con `--filter=Metricas` sobre la rama `feat/107-trazabilidad` (commit
+Resultado registrado en `evidencia/pruebas-metricas.txt`, ejecutado en el Codespace: **9 pruebas
+aprobadas, 21 aserciones, 0 fallos, código de salida 0**. Se corrió con `--filter=Metricas` sobre la rama `feat/107-trazabilidad` (commit
 `22056c3`), que contiene la de monitoreo; por eso el filtro también toma una prueba de trazas cuyo
 nombre incluye "metricas" (`test_scrape_de_metricas_no_produce_spans`) y las dos pruebas de
-`tests/Unit/Providers/MetricasServiceProviderTest.php` sobre la conexión persistente de Redis. El
-comando termina con código 1 por un aviso de PHPUnit anterior a esta unidad
-(`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas pruebas.
+`tests/Unit/Providers/MetricasServiceProviderTest.php` sobre la conexión persistente de Redis.
 
 ## 6.8 Antes y después
 
@@ -140,23 +138,24 @@ Con el stack de monitoreo detenido se detuvo la aplicación. No hubo aviso de ni
 Con el stack arriba se repitió la caída. La sonda de disponibilidad empezó a fallar,
 `AplicacionCaida` pasó a `firing` y Alertmanager entregó el correo en Mailpit.
 
-![Tablero de servicio de Grafana durante la caída: disponibilidad de la última hora bajando a 89.06 % y la alerta activa en la tabla de alertas](evidencia/monitoreo-05-alerta-grafana.png)
+![Tablero de servicio de Grafana durante la caída: disponibilidad de la última hora bajando a 94.17 % y la alerta activa en la tabla de alertas](evidencia/monitoreo-05-alerta-grafana.png)
 
 ![Correo [FIRING:1] AplicacionCaida recibido en Mailpit con sus etiquetas y anotaciones](evidencia/monitoreo-06-correo-mailpit.png)
 
 | Medición | Valor |
 |---|---|
-| Tiempo entre la caída y la llegada del correo | **1 min 40 s** (05:14:36 → 05:16:16 UTC, `evidencia/monitoreo-alerta-tiempos.txt`) |
+| Tiempo entre la caída y la llegada del correo | **1 min 55 s** (01:50:05 → 01:52:00 UTC, `evidencia/monitoreo-alerta-tiempos.txt`) |
 | Objetivo de la especificación (SC-003) | Menos de 3 minutos |
 
 ### Después: los tableros muestran datos reales
 
 Los tableros se capturaron con tráfico real generado por la prueba de carga de k6 de la
-Unidad 2 contra la aplicación local. Las citas del tablero de negocio se agendaron y cancelaron
-desde la aplicación con una cuenta de paciente de prueba. El pico inicial de errores 5xx del
+Unidad 2 contra la aplicación que corre en el Codespace. Las citas del tablero de negocio se
+agendaron y cancelaron con el modelo `Appointment` de Eloquent (el observador de citas cuenta
+cada alta y cada cancelación) sobre la base de prueba. El pico inicial de errores 5xx del
 tablero de servicio corresponde a `/about`, un defecto conocido desde la Unidad 2 (issue #97).
 
-![Tablero MedSchedule - Servicio con el tráfico de k6 por ruta, errores 5xx, percentiles p50, p95 y p99 y disponibilidad de 100 %](evidencia/monitoreo-01-servicio.png)
+![Tablero MedSchedule - Servicio con el tráfico de k6 por ruta, errores 5xx, percentiles p50, p95 y p99 y disponibilidad de 97.63 % en la última hora (la aplicación se reinició entre corridas de k6)](evidencia/monitoreo-01-servicio.png)
 
 ![Tablero MedSchedule - Negocio con 10 citas agendadas y 6 canceladas, 2 citas de hoy y 0 jobs fallidos](evidencia/monitoreo-02-negocio.png)
 
@@ -164,7 +163,7 @@ tablero de servicio corresponde a `/about`, un defecto conocido desde la Unidad 
 
 ## 6.9 Límites
 
-- El stack corre en local; su despliegue productivo y la persistencia más allá de los volúmenes
+- El stack corre dentro del Codespace; su despliegue productivo y la persistencia más allá de los volúmenes
   de Docker quedan fuera de alcance.
 - No se miden CPU ni memoria del anfitrión (node-exporter y cAdvisor quedaron fuera de alcance).
 - Grafana permite lectura anónima con rol `Viewer`, solo porque escucha en `127.0.0.1`. En un

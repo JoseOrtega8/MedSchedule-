@@ -4,59 +4,71 @@
 
 | Pieza | Dónde se declara | Para qué |
 |---|---|---|
-| Entorno de liberación | `.devcontainer/` (Unidad 2) | Aplicación PHP 8.2 + Node 20 + MySQL 8.0, reproducible en GitHub Codespaces (usado en la Unidad 2; en esta unidad la evidencia se generó en local, ver 3.1) |
+| Entorno de liberación | `.devcontainer/` (Unidad 2, ampliado en esta unidad) | Aplicación PHP 8.2 + Node 20 + MySQL 8.0 + Docker, en GitHub Codespaces |
 | Stack de análisis estático | `infra/sonarqube/docker-compose.yml` (Unidad 2) | SonarQube Community + PostgreSQL 16 |
 | Stack de observabilidad | `infra/monitoreo/docker-compose.yml` (esta unidad) | Prometheus, Alertmanager, Grafana, Loki, Tempo, Alloy, exporters, Redis y Mailpit |
 | Pipeline | `.github/workflows/release.yml` y `ci.yml` | Integración, compuertas, pruebas y despliegue |
 
-El entorno de liberación sigue siendo el de la Unidad 2: GitHub Codespaces a partir de
-`.devcontainer/`. El devcontainer actual declara Node 20, `sshd` y GitHub CLI como features y
-publica los puertos 8000 (Laravel) y 3306 (MySQL); no declara Docker dentro del contenedor.
-Por eso los dos stacks de `infra/` se levantaron con Docker local (Docker Desktop en macOS),
-contra la aplicación servida en el puerto 8000 del anfitrión, y ninguna prueba de esta unidad se
-ejecutó en un Codespace. Llevar la observabilidad al Codespace requiere agregar la feature de
-Docker dentro del contenedor (`docker-in-docker`) al devcontainer; queda como mejora para la
-siguiente unidad.
+El entorno de liberación es GitHub Codespaces a partir de `.devcontainer/`, igual que en la
+Unidad 2. Para esta unidad el devcontainer se amplió (commit `6c99cfb`):
 
-## 3.2 Cómo se levanta
+- **Docker dentro del contenedor** (feature `docker-in-docker`): los dos stacks de `infra/` se
+  levantan con `docker compose` dentro del propio Codespace.
+- **Requisito de máquina** (`hostRequirements`): 4 núcleos y 16 GB de memoria. Con menos, la
+  aplicación, MySQL, SonarQube y el stack de observabilidad no caben a la vez.
+- **Puertos reenviados** 8000, 3306, 3000, 9000, 9090, 9093 y 8025, todos con visibilidad
+  privada: solo la cuenta dueña del Codespace puede abrirlos.
+
+Toda la evidencia de este documento se generó en el Codespace `ideal-rotary-phone-pj7rjv7qwj6gfjpq`
+(rama `feat/105-u3-sdd`): AMD EPYC 7763 con 4 núcleos, 16 GB, Debian 12, PHP 8.2.29, Node 20,
+Docker 29.8 con Compose 2.40 y k6 2.3.0 (`evidencia/codespace-entorno.txt`). Cada archivo de
+evidencia de terminal lleva en su encabezado el entorno donde se ejecutó.
+
+## 3.2 Cómo se levanta dentro del Codespace
 
 | Paso | Comando | Resultado |
 |---|---|---|
-| 1 | `php artisan serve --host=0.0.0.0 --port=8000` | Aplicación escuchando para Prometheus y la sonda de disponibilidad |
-| 2 | `bash scripts/monitoreo-local.sh` | Levanta `infra/monitoreo/` y espera a Prometheus, Alertmanager y Grafana |
-| 3 | `bash scripts/sonarqube-local.sh` | Levanta `infra/sonarqube/` (solo para el análisis estático) |
+| 1 | Crear el Codespace desde la rama (botón "Code → Codespaces" en GitHub o `gh codespace create`) | Contenedor con PHP, Node, MySQL y Docker; `post-create.sh` instala dependencias |
+| 2 | `php artisan serve --host=0.0.0.0 --port=8000` | Aplicación escuchando para Prometheus y la sonda de disponibilidad |
+| 3 | `bash scripts/monitoreo-local.sh` | Levanta `infra/monitoreo/` y espera a Prometheus, Alertmanager y Grafana |
+| 4 | `sudo sysctl -w vm.max_map_count=262144` y `bash scripts/sonarqube-local.sh` | Levanta `infra/sonarqube/` (Elasticsearch, dentro de SonarQube, exige ese límite del kernel) |
 
 `scripts/monitoreo-local.sh` comprueba que exista `infra/monitoreo/.env` y que `METRICS_TOKEN`
 esté en el `.env` de la aplicación; copia ese token a un archivo local
 (`infra/monitoreo/prometheus/secretos/metrics_token`, excluido en `.gitignore`) que solo monta
 Prometheus, y nunca lo imprime.
 
+Dos ajustes son propios del Codespace y no cambian el repositorio:
+
+- `MYSQL_EXPORTER_HOST` apunta al MySQL del devcontainer en su red de Docker (puerto 3306), en
+  lugar del valor por defecto pensado para un MySQL en el anfitrión.
+- El directorio `infra/monitoreo/prometheus/secretos` necesita permiso de lectura para el
+  usuario del contenedor de Prometheus (`chmod 755` sobre el directorio; el archivo del token
+  conserva sus permisos).
+
 ## 3.3 Puertos
 
-Todos los puertos del stack de observabilidad se publican solo en `127.0.0.1`: es un entorno
-local y ninguno queda expuesto a la red.
+Todos los puertos de los stacks se publican solo en `127.0.0.1` del Codespace: ninguno queda
+expuesto a la red. Desde el navegador se abren con el reenvío de puertos de Codespaces (pestaña
+"Ports" o `gh codespace ports forward <puerto>:<puerto>`), que exige la sesión de GitHub de la
+cuenta dueña.
 
-| Servicio | Puerto en el anfitrión | Uso |
+| Servicio | Puerto | Uso |
 |---|---|---|
 | Prometheus | `127.0.0.1:9090` | Consultas, estado de reglas y alertas |
 | Alertmanager | `127.0.0.1:9093` | Estado de las notificaciones |
 | Grafana | `127.0.0.1:3000` | Tableros y exploración de logs y trazas |
 | Mailpit | `127.0.0.1:8025` | Buzón donde llegan las alertas |
-| Redis | `127.0.0.1:6380` | Almacén de métricas de la aplicación (6380 para no chocar con otro Redis local) |
+| Redis | `127.0.0.1:6380` | Almacén de métricas de la aplicación (6380 para no chocar con otro Redis) |
 | Tempo (OTLP/HTTP) | `127.0.0.1:4318` | Receptor de trazas que envía la aplicación |
+| SonarQube | `127.0.0.1:9000` | Análisis estático y puerta de calidad |
 | blackbox-exporter, mysqld-exporter, Loki, Alloy | Sin puerto publicado | Solo se comunican dentro de la red del compose |
 
-El stack de SonarQube (`infra/sonarqube/docker-compose.yml`) también se publica solo en
-`127.0.0.1:9000`.
-
-## 3.4 Requisito de Docker Desktop en macOS
+## 3.4 Lectura del log por Alloy
 
 Alloy lee el log JSON de la aplicación montando `storage/logs` del proyecto
-(`../../storage/logs:/logs:ro`). En macOS, Docker Desktop solo puede montar rutas incluidas en
-**Settings → Resources → File sharing**. El proyecto vive en
-`/Applications/MAMP/htdocs/MedSchedule-`, fuera de las rutas compartidas por defecto, así que
-esa ruta debe agregarse. Sin ella, `docker compose up` no puede crear el contenedor de Alloy y
-el servicio no levanta: Docker Desktop rechaza el montaje con un error "Mounts denied".
+(`../../storage/logs:/logs:ro`). Dentro del Codespace el Docker interno ve el mismo sistema de
+archivos que la aplicación, así que el montaje funciona sin configuración adicional.
 
 ## 3.5 Variables de entorno
 
@@ -85,7 +97,7 @@ del control de versiones; los archivos `.env.example` llevan los secretos vacío
 |---|---|
 | `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` | Administrador de Grafana. El compose se niega a arrancar si faltan |
 | `MYSQL_EXPORTER_PASSWORD` | Contraseña del usuario de solo lectura `exporter` de MySQL |
-| `MYSQL_EXPORTER_HOST` | MySQL a vigilar: `host.docker.internal:8889` con MAMP local (valor por defecto) |
+| `MYSQL_EXPORTER_HOST` | MySQL a vigilar. El valor por defecto (`host.docker.internal:8889`) es para un MySQL en el anfitrión; en el Codespace apunta al MySQL del devcontainer (apartado 3.2) |
 
 ### Secretos de sesión o del repositorio
 
@@ -99,7 +111,7 @@ del control de versiones; los archivos `.env.example` llevan los secretos vacío
 ## 3.6 Las pruebas no necesitan el stack
 
 `phpunit.xml` fija `METRICAS_ALMACEN=memoria` y `OTEL_ENABLED=false`, así que la suite corre sin
-Redis, sin Tempo y sin Loki. Las pruebas de los tres módulos se ejecutan localmente y su salida
+Redis, sin Tempo y sin Loki. Las pruebas de los tres módulos se ejecutaron en el Codespace y su salida
 se guarda como evidencia (`evidencia/pruebas-*.txt`); en GitHub Actions, `release.yml` corre la
 suite completa en modo informativo y `ci.yml` solo un subconjunto de cuatro clases que no
 incluye las de esta unidad (apartado 11).

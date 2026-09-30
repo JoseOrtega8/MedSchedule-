@@ -1,13 +1,15 @@
-# rama feat/108-auditoria (366f585) - base medschedule_ev_auditoria - 2026-09-29T05:28:13Z
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+# rama feat/108-auditoria (251e6ee) - base medschedule_auditoria - 2026-09-30T02:06:05Z
+# sql = php ~/u3/sql.php (cliente SQL minimo sobre la conexion de Laravel; el devcontainer no trae cliente mysql)
 # Se altera a mano la misma fila que en el "antes" (la cita agendada con Dr. Test; aqui es el id 7 porque la migracion y el sembrado de esta rama registraron antes la creacion de usuarios):
-$ mysql -e "select id, user_id, action, model_id, description from activity_logs where id = 7"
+$ sql "select id, user_id, action, model_id, description from activity_logs where id = 7"
 +----+---------+--------+----------+----------------------------+
 | id | user_id | action | model_id | description                |
 +----+---------+--------+----------+----------------------------+
 |  7 |       3 | create |        1 | Cita agendada con Dr. Test |
 +----+---------+--------+----------+----------------------------+
-$ mysql -e "update activity_logs set user_id = 1, description = 'Cita agendada por el administrador' where id = 7"
+$ sql "update activity_logs set user_id = 1, description = 'Cita agendada por el administrador' where id = 7"
 $ php artisan auditoria:verificar
 Registros revisados: 7
-Cadena rota. Registro roto: 7 (2026-09-29T04:48:21+00:00)
+Cadena rota. Registro roto: 7 (2026-09-30T01:57:36+00:00)
 codigo: 1

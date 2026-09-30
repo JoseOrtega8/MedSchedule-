@@ -158,11 +158,10 @@ trazas usan el `InMemoryExporter` de OpenTelemetry, sin Tempo. Entre ellas:
 | `CodificadorOtlpJsonTest` | El JSON del exportador propio es idéntico al del exportador oficial para spans con padre remoto, enlaces, eventos, estados y atributos de todos los tipos |
 
 Resultado registrado en `evidencia/pruebas-trazas.txt` (filtro
-`Trazas|Redactar|MensajeSeguro|AplicarRedaccion`, commit `22056c3`): **44 pruebas aprobadas,
-120 aserciones, 0 fallos**. El comando termina con código 1 por un aviso de PHPUnit anterior a
-esta unidad (`No tests found in class Tests\Feature\Auth\RegistrationTest`), no por estas
-pruebas; el archivo lo anota. Las pruebas del exportador propio se agregaron después de esa
-corrida y no forman parte de ese archivo.
+`Trazas|Redactar|MensajeSeguro|AplicarRedaccion`, commit `22056c3`, ejecutado en el Codespace):
+**44 pruebas aprobadas, 120 aserciones, 0 fallos, código de salida 0**. Las pruebas del
+exportador propio (`CodificadorOtlpJsonTest`) no entran en ese filtro y corren con la suite
+completa.
 
 ## 7.8 Costo de la instrumentación
 
@@ -173,25 +172,30 @@ de dónde viene el costo y qué se corrigió. El detalle completo está en
 
 ### Primera medición
 
-Con la prueba de k6 de la Unidad 2 (`tests/carga/jri-prueba.js`, 10 usuarios virtuales,
-2 minutos, `php artisan serve`) sobre la primera versión del módulo, el p95 pasó de 29.83 ms sin
-instrumentación a 56.15 ms con ella: +88 %. En los dos casos hubo 0 % de errores.
+Durante el desarrollo, con la prueba de k6 de la Unidad 2 (`tests/carga/jri-prueba.js`,
+10 usuarios virtuales, 2 minutos, `php artisan serve`) sobre la primera versión del módulo, el
+p95 pasó de 29.83 ms sin instrumentación a 56.15 ms con ella: +88 %. Eso motivó la atribución y
+la corrección de abajo. Todas las cifras que siguen se midieron en el Codespace (apartado 3).
 
 ### De dónde viene el costo
 
 Para atribuirlo se usó una microprueba de bajo ruido (`ab -n 400 -c 1`, una petición a la vez),
-encendiendo un componente cada vez. Tiempo medio por petición, en ms:
+encendiendo un componente cada vez, sobre la versión anterior a la corrección (`e2327f0`) y la
+corregida (`22056c3`). Tiempo medio por petición en ms, promedio de dos corridas:
 
 | Configuración | Portada, antes | Portada, después | Panel, antes | Panel, después |
 |---|---|---|---|---|
-| Sin instrumentación | 4.39 | 4.32 | 6.50 | 6.53 |
-| Solo métricas en Redis | 5.60 (+1.2) | 5.35 (+1.0) | 8.01 (+1.5) | 8.07 (+1.5) |
-| Solo trazas | 8.45 (+4.1) | 6.23 (+1.9) | 11.56 (+5.1) | 8.71 (+2.2) |
-| Solo log JSON | 4.33 (+0.0) | 4.50 (+0.2) | 6.49 (+0.0) | 6.61 (+0.1) |
-| Todo | 9.29 (+112 %) | 7.07 (+64 %) | 12.83 (+97 %) | 9.71 (+49 %) |
+| Sin instrumentación | 17.08 | 17.73 | 19.14 | 19.13 |
+| Solo métricas en Redis | 18.51 (+1.4) | 18.41 (+0.7) | 18.53 (−0.6) | 20.00 (+0.9) |
+| Solo trazas | 23.44 (+6.4) | 20.31 (+2.6) | 26.98 (+7.8) | 22.72 (+3.6) |
+| Solo log JSON | 16.73 (−0.4) | 16.25 (−1.5) | 16.95 (−2.2) | 18.77 (−0.4) |
+| Todo | 24.35 (+43 %) | 22.04 (+24 %) | 28.03 (+46 %) | 23.40 (+22 %) |
 
-Las trazas dominaban, con cerca del 80 % del sobrecosto. Dentro de ellas, `forceFlush()` costaba
-3.2 ms (p50): unos 0.6 ms eran el envío HTTP a Tempo y el resto era serializar los spans con
+Entre corridas idénticas hay hasta unos 2 ms de ruido; por eso el log JSON aparece con valores
+negativos: su costo no se distingue del ruido.
+
+Las trazas dominaban el sobrecosto. Dentro de ellas, según la medición hecha durante el
+desarrollo, `forceFlush()` costaba 3.2 ms (p50): unos 0.6 ms eran el envío HTTP a Tempo y el resto era serializar los spans con
 `google/protobuf` en PHP puro, cargando sus descriptores en cada petición.
 
 ### Qué se corrigió
@@ -215,39 +219,30 @@ terminar la petición, se pierden. Se comprobó consultando a Tempo con y sin el
 
 ### Resultado en k6
 
-La máquina de medición era compartida (carga media de 3 a 14) y el p95 de k6 variaba unos ±8 ms
-entre corridas idénticas, más que la meta misma (unos 3 ms). Por eso las medianas y la
-microprueba son la referencia más confiable:
+Se midieron en el Codespace tres pares de corridas de k6 sobre la versión corregida, alternando
+sin y con instrumentación completa. El tercer par usa `tests/carga/servidor-fin-respuesta.php`,
+un enrutador para `php -S` que emula `fastcgi_finish_request()` (con php-fpm, el envío a Tempo
+queda fuera del tiempo que ve el cliente); es una medición complementaria, no la oficial.
 
-| Medida de k6 | Antes de corregir | Después de corregir |
-|---|---|---|
-| Mediana de `http_req_duration`, diferencia con y sin instrumentación | +54 % | +32 % |
-| p95, pares medidos el mismo día | +30 % y +37 % | de +28 % a +70 % |
+| Par | Mediana sin / con | p95 de `http_req_duration` sin / con | p95 de `duracion_panel` sin / con |
+|---|---|---|---|
+| 1 (`php artisan serve`) | 16.17 / 20.52 ms (+26.9 %) | 66.37 / 89.60 ms (+35.0 %) | 52.32 / 76.97 ms (+47.1 %) |
+| 2 (`php artisan serve`) | 17.01 / 22.39 ms (+31.6 %) | 73.58 / 74.71 ms (+1.5 %) | 60.18 / 59.31 ms (−1.4 %) |
+| 3 (fin de respuesta emulado) | 18.34 / 26.09 ms (+42.3 %) | 70.30 / 96.04 ms (+36.6 %) | 57.67 / 84.86 ms (+47.1 %) |
 
-Los archivos de evidencia son el último par medido después de corregir:
+Las corridas de los pares 1 y 2 están en `evidencia/k6-sin-instrumentacion.txt` y
+`evidencia/k6-con-instrumentacion.txt`; la tabla completa, la microprueba y los datos crudos, en
+`evidencia/k6-atribucion.txt`. En las seis corridas hubo 0 % de errores y código de salida 0.
 
-| Corrida | Mediana | p95 de `http_req_duration` | p95 de `duracion_panel` | Carga del sistema al iniciar | Evidencia |
-|---|---|---|---|---|---|
-| Sin instrumentación | 21.48 ms | 40.95 ms | 37.10 ms | 3.93 | `evidencia/k6-sin-instrumentacion.txt` |
-| Con instrumentación | 27.62 ms | 53.23 ms | 48.97 ms | 13.81 | `evidencia/k6-con-instrumentacion.txt` |
-| Diferencia | +28.6 % | +30 % | +32 % | — | — |
+La mediana sube de forma consistente, entre +27 % y +42 %. El p95 es ruidoso: el par 2 casi no
+muestra diferencia, pero los otros dos suben más de 35 %, así que ese par no demuestra que la
+meta se cumpla. En valores absolutos la instrumentación suma unos 4 a 8 ms de mediana por
+petición. Ese costo viene del envío a Tempo en cada petición, la creación de un span por cada
+consulta SQL y las dos operaciones en Redis, todo en el único hilo del servidor de desarrollo.
+El p95 más alto medido, 96 ms, sigue muy por debajo del acuerdo de 5 s.
 
-En las dos corridas hubo 0 % de errores. En valores absolutos, la instrumentación completa suma
-hoy cerca de 2.7 ms por petición en la portada y 3.2 ms en el panel. Ese costo viene de tres
-fuentes: el envío a Tempo en cada petición (cerca de 1 ms), la creación de un span por cada
-consulta SQL y las dos operaciones en Redis. Todo corre en el único hilo de `php artisan serve`.
-El p95 sigue muy por debajo del acuerdo de 5 s.
-
-### Medición complementaria
-
-Con php-fpm, Symfony entrega la respuesta con `fastcgi_finish_request()` antes de `terminate()`,
-así que el envío a Tempo queda fuera del tiempo que ve el cliente. Para estimarlo se midió
-además con `tests/carga/servidor-fin-respuesta.php`, un enrutador para `php -S` que emula esa
-función. Con él la diferencia de medianas fue de +21 % y la de p95 de +37 %. Es una medición
-complementaria, no la oficial: el servidor sigue atendiendo una petición a la vez y el envío
-retrasa a la siguiente.
-
-**Conclusión:** la corrección reduce el costo de forma medible (microprueba y medianas), pero la
+**Conclusión:** la corrección reduce el costo de forma medible (en la microprueba, de +43 % a
++24 % en la portada y de +46 % a +22 % en el panel), pero la
 meta de +10 % en p95 no se cumple, y este documento no la ajusta. Para acercarse quedan opciones
 que cambian funcionalidad o dependencias: medir en php-fpm real, muestrear menos trazas
 (`OTEL_TRACES_SAMPLER_ARG`), dejar de trazar cada consulta o instalar `ext-protobuf` o
@@ -257,9 +252,9 @@ que cambian funcionalidad o dependencias: medir en php-fpm real, muestrear menos
 
 ### Antes: un log de texto plano
 
-Con las trazas apagadas y solo el canal `single` (`OTEL_ENABLED=false`, `LOG_STACK=single`), se
-llamó al panel del paciente (`/patient/dashboard/data`), el endpoint con más consultas por
-petición medido en la Unidad 2. La petición respondió 200 en unos 8 ms y no dejó ninguna línea
+En el Codespace, sobre la rama `feat/105-u3-sdd` (el código de la Unidad 2, sin trazas ni log
+JSON), se llamó al panel del paciente (`/patient/dashboard/data`), el endpoint con más consultas
+por petición medido en la Unidad 2. La petición respondió 200 en unos 16 ms y no dejó ninguna línea
 en `laravel.log`, porque Laravel solo escribe ante un error o un `Log::` explícito. No había
 forma de saber qué consultas corrieron ni cuánto tardó cada una, y la respuesta no traía ningún
 identificador para seguirla.
@@ -269,13 +264,19 @@ identificador para seguirla.
 ### Después: la cascada de la petición
 
 Con `OTEL_ENABLED=true` y `LOG_STACK=single,json` se repitió la llamada y se abrió su traza en
-Grafana a partir del `X-Trace-Id` de la respuesta.
+Grafana a partir del `X-Trace-Id` de la respuesta. Las vistas de esta sección son los paneles de
+traza (Tempo) y de logs (Loki) de Grafana, filtrados por ese identificador.
 
-![Cascada de la traza de GET /patient/dashboard/data en Tempo: span raíz de 9.98 ms y siete spans db.query](evidencia/trazas-02-cascada.png)
+![Cascada de la traza de GET /patient/dashboard/data en Tempo: span raíz de 14.99 ms y ocho spans db.query](evidencia/trazas-02-cascada.png)
 
 La traza responde la pregunta que el log no podía responder, y la respuesta es que **ninguna
-consulta domina y no hay N+1**. La petición dura 9.98 ms y ejecuta 7 consultas que suman unos
-2.6 ms (1.03, 0.24, 0.27, 0.29, 0.17, 0.21 y 0.40 ms). El resto es PHP y el framework. Es la
+consulta domina y no hay N+1**. En el Codespace la petición (traza
+`e5c3116df027b48417827e232e0b8b38`) dura 14.99 ms y ejecuta 8 consultas que suman unos 6.9 ms:
+leer la sesión (1.41 ms), la limpieza aleatoria de sesiones vencidas que Laravel hace en dos de
+cada cien peticiones (0.29 ms), el usuario (0.34 ms), sus roles (0.42 ms), las próximas citas
+(0.51 ms), el conteo por estado (0.41 ms), el perfil del paciente (0.32 ms) y guardar la sesión
+(3.18 ms). Las consultas propias del panel son cuatro y ninguna pasa de 0.6 ms; el resto es PHP
+y el framework. Es la
 misma conclusión de la Unidad 2 (el panel es rápido), ahora con el desglose que la demuestra.
 
 **Hallazgo previo.** Al preparar esta evidencia se encontró que la página `/patient/dashboard`
@@ -296,11 +297,13 @@ identificador de sesión.
 
 ### Después: el folio de un error localiza su traza
 
-Se provocó un error 500 controlado en local: se detuvo MySQL y se abrió `/login`. El usuario ve
-el folio `5c7bcfc35f642827f45fec343aab198b` y nada más. Ese folio localiza en Tempo la traza
+Se provocó un error 500 controlado en el Codespace: se levantó una segunda instancia de la rama
+de trazabilidad apuntando a un servidor de base de datos inexistente (`DB_HOST=no-existe`,
+`APP_DEBUG=false`) y se abrió `/login`. El usuario ve el folio
+`b343a96c3c2ae791115e0022b49ab34e` y nada más. Ese folio localiza en Tempo la traza
 `GET /login` con estado 500. Tiene un solo span porque la base de datos no respondía y no llegó a
 ejecutarse ninguna consulta.
 
-![Página de error 500 con el folio 5c7bcfc35f642827f45fec343aab198b y sin detalle interno](evidencia/trazas-05-folio-500.png)
+![Página de error 500 con el folio b343a96c3c2ae791115e0022b49ab34e y sin detalle interno](evidencia/trazas-05-folio-500.png)
 
 ![Traza GET /login con estado 500 localizada en Tempo con el folio de la página de error](evidencia/trazas-06-folio-en-grafana.png)

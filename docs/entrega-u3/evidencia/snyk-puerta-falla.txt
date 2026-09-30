@@ -1,5 +1,6 @@
 # Snyk - la compuerta FALLA (rama feat/109-snyk, antes de corregir)
-Fecha (UTC): 2026-09-29T20:18:29Z
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+Fecha (UTC): 2026-09-30T00:41:37Z
 Rama / commit: feat/109-snyk @ f1e3512
 Comando: SNYK_TOKEN=<TOKEN> SNYK_SALIDA=<tmp>/falla.json bash scripts/snyk-escanear.sh
 
@@ -33,7 +34,7 @@ Comando: SNYK_TOKEN=<TOKEN> SNYK_SALIDA=<tmp>/falla.json bash scripts/snyk-escan
 Target file:       composer.lock
 Tested 108 dependencies for known issues, found 16 issues, 22 vulnerable paths.
 Target file:       package-lock.json
-✔ Tested ~/.medschedule-evidencia/snyk for known issues, no vulnerable paths found.
+✔ Tested ~/wt/snyk-falla for known issues, no vulnerable paths found.
 Tested 2 projects, 1 contained vulnerable paths.
 Se encontraron vulnerabilidades de severidad alta o critica. Detalle en <tmp>/falla.json.
 

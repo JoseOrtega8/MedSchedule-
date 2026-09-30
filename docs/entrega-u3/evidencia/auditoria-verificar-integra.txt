@@ -1,5 +1,6 @@
 $ php artisan auditoria:verificar
-# fecha (UTC): 2026-09-29T05:28:13Z - rama feat/108-auditoria (366f585) - base medschedule_ev_auditoria
-Registros revisados: 15
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+# fecha (UTC): 2026-09-30T02:05:30Z - rama feat/108-auditoria (251e6ee) - base medschedule_auditoria
+Registros revisados: 16
 Cadena íntegra.
 codigo: 0
