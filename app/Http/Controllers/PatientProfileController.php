@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\PatientProfile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -58,21 +57,7 @@ class PatientProfileController extends Controller
 			}
 		}
 
-		$oldValues = $profile->only(array_keys($validated));
-
 		$profile->update($validated);
-
-		ActivityLog::create([
-			'user_id' => $user->id,
-			'action' => 'update',
-			'model_type' => PatientProfile::class,
-			'model_id' => $profile->id,
-			'description' => 'El paciente actualizó su perfil médico',
-			'ip_address' => $request->ip(),
-			'user_agent' => $request->userAgent(),
-			'old_values' => $oldValues,
-			'new_values' => $validated,
-		]);
 
 		return response()->json([
 			'message' => 'Perfil médico actualizado correctamente.',
@@ -100,16 +85,6 @@ class PatientProfileController extends Controller
 		$path = $request->file('photo')->store('patient_photos', 'public');
 
 		$profile->update(['photo_path' => $path]);
-
-		ActivityLog::create([
-			'user_id' => $user->id,
-			'action' => 'update',
-			'model_type' => PatientProfile::class,
-			'model_id' => $profile->id,
-			'description' => 'El paciente actualizó su foto de perfil',
-			'ip_address' => $request->ip(),
-			'user_agent' => $request->userAgent(),
-		]);
 
 		return response()->json([
 			'message' => 'Foto de perfil actualizada correctamente.',

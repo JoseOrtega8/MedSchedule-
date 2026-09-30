@@ -10,6 +10,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\PatientProfileController;
+use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 
 Route::get('/', function () {
@@ -43,7 +44,9 @@ Route::middleware('auth')->group(function () {
 
 Route::view('/about', 'about.about')->name('about');
 
-Route::middleware(['auth', 'role:admin', 'throttle:60,1'])->group(function () {
+// throttle antes de auditar.denegado: los intentos repetidos de un no admin
+// reciben 429 sin llenar la auditoria de filas selladas
+Route::middleware(['auth', 'throttle:60,1', 'auditar.denegado', 'role:admin'])->group(function () {
 	Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 	Route::get('/dashboard/data', [DashboardController::class, 'adminData'])->name('dashboard.data');
 	Route::get('/admin/dashboard/users-chart', [DashboardController::class, 'getUsersChart'])->name('admin.dashboard.users-chart');
@@ -53,6 +56,13 @@ Route::middleware(['auth', 'role:admin', 'throttle:60,1'])->group(function () {
 	Route::get('/admin/logs/data', [ActivityLogController::class, 'indexData'])->name('admin.logs.data');
 	Route::get('/admin/logs/user/{user_id}', [ActivityLogController::class, 'getByUser'])->name('admin.logs.user');
 	Route::get('/admin/logs/{id}', [ActivityLogController::class, 'show'])->name('admin.logs.show');
+	// Visor de auditoria (unidad 3)
+	Route::get('/admin/auditoria', [AuditoriaController::class, 'index'])->name('admin.auditoria');
+	Route::get('/admin/auditoria/exportar', [AuditoriaController::class, 'exportar'])->name('admin.auditoria.exportar');
+	// [0-9]{1,18} en vez de whereNumber(): un entero de 19+ digitos pasa la regex de
+	// whereNumber pero desborda el `int $id` del controlador y responde 500
+	Route::get('/admin/auditoria/entidad/{entidad}/{id}', [AuditoriaController::class, 'linea_tiempo'])->where('id', '[0-9]{1,18}')->name('admin.auditoria.entidad');
+	Route::get('/admin/auditoria/{registro}', [AuditoriaController::class, 'show'])->whereNumber('registro')->name('admin.auditoria.show');
 	Route::view('/admin/especialidades', 'admin.especialidades')->name('admin.specialties');
 	Route::get('/admin/especialidades/data', [SpecialtyController::class, 'indexData'])->name('admin.specialties.data');
 	Route::post('/admin/especialidades', [SpecialtyController::class, 'store'])->name('admin.specialties.store');
