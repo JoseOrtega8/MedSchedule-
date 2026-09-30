@@ -93,13 +93,57 @@ jobs:
                       -Dsonar.qualitygate.wait=true
                       -Dsonar.qualitygate.timeout=300
 
+    seguridad:
+        name: Dependencias (Snyk)
+        runs-on: ubuntu-latest
+        needs: integracion
+        # A diferencia de "calidad", este job siempre corre: sin SNYK_TOKEN
+        # termina en success con un aviso visible en lugar de omitirse.
+        steps:
+            - name: Descargar el codigo
+              uses: actions/checkout@v4
+
+            - name: Preparar Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - name: Verificar token
+              id: token
+              env:
+                  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+              run: |
+                  if [ -n "${SNYK_TOKEN}" ]; then
+                      echo "hay=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "hay=false" >> "$GITHUB_OUTPUT"
+                      echo "::notice::Sin SNYK_TOKEN configurado: se omite el analisis de dependencias con Snyk."
+                  fi
+
+            - name: Analizar dependencias
+              if: steps.token.outputs.hay == 'true'
+              env:
+                  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+              run: bash scripts/snyk-escanear.sh
+
+            - name: Publicar evidencia
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: snyk-resultado-${{ github.run_number }}
+                  path: docs/entrega-u3/evidencia/snyk-resultado.json
+                  retention-days: 30
+                  if-no-files-found: ignore
+
     pruebas:
         name: Entorno de liberacion y pruebas
         runs-on: ubuntu-latest
-        needs: [integracion, calidad]
-        # Corre si la integracion paso y la puerta de calidad paso o no aplica
-        # (job omitido porque no hay instancia de SonarQube accesible).
-        if: ${{ always() && needs.integracion.result == 'success' && (needs.calidad.result == 'success' || needs.calidad.result == 'skipped') }}
+        needs: [integracion, calidad, seguridad]
+        # Corre si la integracion paso, la puerta de calidad paso o no aplica
+        # (job omitido porque no hay instancia de SonarQube accesible) y el
+        # analisis de dependencias termino en success (siempre corre; sin
+        # SNYK_TOKEN termina en success con el aviso, ver job "seguridad").
+        if: ${{ always() && needs.integracion.result == 'success' && (needs.calidad.result == 'success' || needs.calidad.result == 'skipped') && needs.seguridad.result == 'success' }}
 
         services:
             mysql:

@@ -8,7 +8,9 @@
         "test:e2e": "playwright test",
         "prepare": "husky",
         "carga": "k6 run --env URL_BASE=${URL_BASE:-http://127.0.0.1:8000} tests/carga/jri-prueba.js",
-        "carga:humo": "k6 run --vus 1 --duration 10s --env URL_BASE=${URL_BASE:-http://127.0.0.1:8000} tests/carga/jri-prueba.js"
+        "carga:humo": "k6 run --vus 1 --duration 10s --env URL_BASE=${URL_BASE:-http://127.0.0.1:8000} tests/carga/jri-prueba.js",
+        "seguridad:snyk": "bash scripts/snyk-escanear.sh",
+        "test:scripts": "bash tests/scripts/snyk-escanear.test.sh"
     },
     "devDependencies": {
         "@playwright/test": "^1.62.1",

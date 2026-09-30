@@ -1,0 +1,12 @@
+# Politica de excepciones del analisis de dependencias con Snyk (unidad 3,
+# issue #109). Snyk actua como compuerta del pipeline (scripts/snyk-escanear.sh
+# y el job "seguridad" de .github/workflows/release.yml): una vulnerabilidad de
+# severidad alta o critica en composer.lock o package-lock.json detiene la
+# liberacion.
+#
+# Cada excepcion que se agregue a "ignore" DEBE llevar "reason" (justificacion
+# de por que no se corrige ahora) y "expires" (fecha ISO 8601 en el futuro) de
+# forma obligatoria. Al llegar esa fecha, Snyk vuelve a contar el hallazgo como
+# bloqueante aunque siga en esta lista.
+version: v1.25.0
+ignore: {}
