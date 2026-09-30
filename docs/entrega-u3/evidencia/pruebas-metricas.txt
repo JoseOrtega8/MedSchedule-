@@ -1,0 +1,26 @@
+$ php artisan test --filter='Metricas'
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB), PHP 8.2.29, MySQL 8.0 del devcontainer (base medschedule_test)
+# fecha (UTC): 2026-09-30T00:40:32Z - rama feat/107-trazabilidad (22056c3)
+
+   PASS  Tests\Unit\Providers\MetricasServiceProviderTest
+  ✓ conexion redis persistente por defecto
+  ✓ conexion persistente se puede desactivar
+
+   PASS  Tests\Feature\Metricas\EndpointMetricasTest
+  ✓ sin token responde 404                                               4.04s  
+  ✓ token incorrecto responde 404                                        0.02s  
+  ✓ token correcto devuelve metricas                                     0.04s  
+  ✓ cita agendada y cancelada incrementa contadores                      0.08s  
+
+   PASS  Tests\Feature\Metricas\MetricasHttpTest
+  ✓ peticion registra contador e histograma                              0.07s  
+  ✓ redis caido no afecta la respuesta                                   0.08s  
+
+   PASS  Tests\Feature\Trazas\IniciarTrazaTest
+  ✓ scrape de metricas no produce spans                                  0.05s  
+
+  Tests:    9 passed (21 assertions)
+  Duration: 4.54s
+
+
+codigo de salida: 0

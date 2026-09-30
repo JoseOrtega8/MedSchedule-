@@ -1,0 +1,134 @@
+$ SONAR_TOKEN=<oculto> bash scripts/sonarqube-escanear.sh
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB); SonarQube 26.9.0.129388 en Docker dentro del Codespace
+# puerta asignada al proyecto: "MedSchedule estricta" (api/qualitygates/select).
+# condiciones de la puerta: "metric":"new_duplicated_lines_density","op":"GT","error":"3" "metric":"new_security_hotspots_reviewed","op":"LT","error":"100" "metric":"new_violations","op":"GT","error":"0" "metric":"new_coverage","op":"LT","error":"80" "metric":"coverage","op":"LT","error":"80" 
+# condicion que la hace fallar: metric=coverage op=LT error=80 (cobertura global < 80 %). Se usa coverage y no new_coverage porque en el primer analisis no hay "codigo nuevo" (tasks.md T004 paso 3).
+# fecha (UTC): 2026-09-30T00:49:19Z - rama feat/105-u3-sdd (6c99cfb)
+==> Analizando la rama feat/105-u3-sdd como proyecto medschedule-feat-105-u3-sdd
+00:49:19.654 INFO  Scanner configuration file: /opt/sonar-scanner/conf/sonar-scanner.properties
+00:49:19.658 INFO  Project root configuration file: /usr/src/sonar-project.properties
+00:49:19.675 INFO  SonarScanner CLI 8.1.0.6389
+00:49:19.681 INFO  Linux 6.8.0-1064-azure amd64
+00:49:20.957 INFO  Communicating with SonarQube Community Build 26.9.0.129388
+00:49:20.959 INFO  JRE provisioning: os[linux], arch[x86_64]
+00:49:23.397 INFO  Starting SonarScanner Engine...
+00:49:23.398 INFO  Java 21.0.11 Eclipse Adoptium (64-bit)
+00:49:24.916 INFO  Load global settings
+00:49:25.007 INFO  Load global settings (done) | time=88ms
+00:49:25.011 INFO  Server id: 243B8A4D-AaDvwWseY7gyRangmhbL
+00:49:25.020 INFO  Loading required plugins
+00:49:25.022 INFO  Load plugins index
+00:49:25.037 INFO  Load plugins index (done) | time=15ms
+00:49:25.037 INFO  Load/download plugins
+00:49:25.439 INFO  Load/download plugins (done) | time=400ms
+00:49:25.747 INFO  Process project properties
+00:49:25.756 INFO  Process project properties (done) | time=12ms
+00:49:25.766 INFO  Project key: medschedule-feat-105-u3-sdd
+00:49:25.768 INFO  Base dir: /usr/src
+00:49:25.768 INFO  Working dir: /tmp/.scannerwork
+00:49:25.775 INFO  Load project settings for component key: 'medschedule-feat-105-u3-sdd'
+00:49:25.801 INFO  Load project settings for component key: 'medschedule-feat-105-u3-sdd' (done) | time=22ms
+00:49:25.829 INFO  Load quality profiles
+00:49:25.890 INFO  Load quality profiles (done) | time=61ms
+00:49:25.937 INFO  Load active rules
+00:49:26.377 INFO  Load active rules (done) | time=441ms
+00:49:26.384 INFO  Load analysis cache
+00:49:26.421 INFO  Load analysis cache | time=36ms
+00:49:26.609 INFO  Preprocessing files...
+00:49:26.705 INFO  2 languages detected in 89 preprocessed files (done) | time=94ms
+00:49:26.705 INFO  0 files ignored because of inclusion/exclusion patterns
+00:49:26.706 INFO  1 directory skipped because of exclusion patterns (content not counted)
+00:49:26.706 INFO  Loading plugins for detected languages
+00:49:26.706 INFO  Load/download plugins
+00:49:27.970 INFO  Load/download plugins (done) | time=1264ms
+00:49:28.155 INFO  Load project repositories
+00:49:28.286 INFO  Load project repositories (done) | time=129ms
+00:49:28.318 INFO  Indexing files...
+00:49:28.321 INFO  Project configuration:
+00:49:28.322 INFO    Excluded sources: vendor/**, node_modules/**, public/build/**, public/vendor/**, docs/**, storage/**, bootstrap/cache/**, database/migrations/**
+00:49:28.323 INFO    Excluded tests: tests/playwright-report/**, tests/carga/resultados/**
+00:49:28.479 INFO  89 files indexed (done) | time=164ms
+00:49:28.481 INFO  Quality profile for js: Sonar way
+00:49:28.482 INFO  Quality profile for php: Sonar way
+00:49:28.482 INFO  ------------- Run sensors on module MedSchedule (feat/105-u3-sdd)
+00:49:28.538 INFO  Load metrics repository
+00:49:28.586 INFO  Load metrics repository (done) | time=46ms
+00:49:29.494 INFO  Reflections took 158 ms to scan 1 urls, producing 30 keys and 295 values
+00:49:29.715 INFO  Sensor IaC YAML File Type Classification Sensor [iac]
+00:49:29.720 INFO  Sensor IaC YAML File Type Classification Sensor [iac] (done) | time=6ms
+00:49:29.724 INFO  Sensor PHP sensor [php]
+00:49:29.768 INFO  Starting PHP symbol indexer
+00:49:29.793 INFO  73 source files to be analyzed
+00:49:30.956 INFO  73/73 source files have been analyzed
+00:49:30.958 INFO  Cached information of global symbols will be used for 0 out of 73 files. Global symbols were recomputed for the remaining files.
+00:49:30.983 INFO  Starting PHP rules
+00:49:30.985 INFO  73 source files to be analyzed
+00:49:33.122 INFO  73/73 source files have been analyzed
+00:49:33.124 INFO  The PHP analyzer was able to leverage cached data from previous analyses for 0 out of 73 files. These files were not parsed.
+00:49:33.125 INFO  Sensor PHP sensor [php] (done) | time=3402ms
+00:49:33.126 INFO  Sensor Analyzer for "php.ini" files [php]
+00:49:33.127 INFO  Sensor Analyzer for "php.ini" files [php] (done) | time=3ms
+00:49:33.128 INFO  Sensor PHPUnit report sensor [php]
+00:49:33.129 INFO  No PHPUnit tests reports provided (see 'sonar.php.tests.reportPath' property)
+00:49:33.132 INFO  Importing /usr/src/coverage.xml
+00:49:33.138 WARN  An error occurred when reading report file '/usr/src/coverage.xml', nothing will be imported from this report. IOException: /usr/src/coverage.xml (No such file or directory)
+00:49:33.139 INFO  Sensor PHPUnit report sensor [php] (done) | time=10ms
+00:49:33.139 INFO  Sensor IaC hadolint report Sensor [iac]
+00:49:33.139 INFO  Sensor IaC hadolint report Sensor [iac] (done) | time=0ms
+00:49:33.139 INFO  Sensor Java Config Sensor [iac]
+00:49:33.139 INFO  There are no files to be analyzed for the Java language
+00:49:33.139 INFO  Sensor Java Config Sensor [iac] (done) | time=0ms
+00:49:33.140 INFO  Sensor IaC Docker Sensor [iac]
+00:49:33.143 INFO  There are no files to be analyzed for the Docker language
+00:49:33.143 INFO  Sensor IaC Docker Sensor [iac] (done) | time=2ms
+00:49:33.144 INFO  Sensor HTML [web]
+00:49:33.278 INFO  Sensor HTML [web] (done) | time=136ms
+00:49:33.279 INFO  Sensor TextAndSecretsSensor [text]
+00:49:33.297 INFO  Available processors: 4
+00:49:33.299 INFO  Using 4 threads for analysis.
+00:49:33.653 INFO  Start fetching files for the text and secrets analysis
+00:49:33.665 INFO  Using Git CLI to retrieve dirty files
+00:49:34.514 INFO  Retrieving language associated files and files included via "sonar.text.inclusions" that are tracked by git
+00:49:34.515 INFO  Starting the text and secrets analysis
+00:49:34.517 INFO  88 source files to be analyzed for the text and secrets analysis
+00:49:34.673 INFO  88/88 source files have been analyzed for the text and secrets analysis
+00:49:34.678 INFO  Sensor TextAndSecretsSensor [text] (done) | time=1400ms
+00:49:34.681 INFO  ------------- Run sensors on project
+00:49:34.942 INFO  Sensor JavaScript/TypeScript/CSS analysis [javascript]
+00:49:35.235 INFO  Detected os: Linux arch: amd64 alpine: false. Platform: LINUX_X64
+00:49:35.235 INFO  Deploy location /opt/sonar-scanner/.sonar/js/node-runtime, tagetRuntime: /opt/sonar-scanner/.sonar/js/node-runtime/node,  version: /opt/sonar-scanner/.sonar/js/node-runtime/version.txt
+00:49:38.232 INFO  Using embedded Node.js runtime.
+00:49:38.232 INFO  Using Node.js executable: '/opt/sonar-scanner/.sonar/js/node-runtime/node'.
+00:49:40.377 INFO  Memory configuration: OS (15993 MB), Node.js (4288 MB).
+00:49:40.389 INFO  gRPC analyze-project server listening on 127.0.0.1:40103
+00:49:40.579 INFO  Plugin version: [13.8.0.44569]
+00:49:42.573 INFO  Found 0 tsconfig.json file(s): []
+00:49:46.543 INFO  14 source files to be analyzed
+00:49:46.543 INFO  Analyzing 14 file(s) using default options [lib: lib.esnext.d.ts, lib.dom.d.ts]
+00:49:46.543 INFO  14/14 source files have been analyzed
+00:49:46.554 INFO  Hit the cache for 0 out of 14
+00:49:46.555 INFO  Miss the cache for 14 out of 14: ANALYSIS_MODE_INELIGIBLE [14/14]
+00:49:46.555 INFO  Sensor JavaScript/TypeScript/CSS analysis [javascript] (done) | time=11612ms
+00:49:46.555 INFO  Sensor IaC Project Sensor [iac]
+00:49:46.557 INFO  Sensor IaC Project Sensor [iac] (done) | time=2ms
+00:49:46.558 INFO  Sensor Zero Coverage Sensor
+00:49:47.757 INFO  Sensor Zero Coverage Sensor (done) | time=1199ms
+00:49:47.757 INFO  ------------- Gather SCA dependencies on project
+00:49:47.762 INFO  Dependency analysis skipped
+00:49:47.764 INFO  SCM Publisher is disabled
+00:49:47.774 INFO  CPD Executor 8 files had no CPD blocks
+00:49:47.775 INFO  CPD Executor Calculating CPD for 56 files
+00:49:47.811 INFO  CPD Executor CPD calculation finished (done) | time=36ms
+00:49:47.946 INFO  Analysis report generated in 122ms, dir size=998.6 kB
+00:49:48.153 INFO  Analysis report compressed in 206ms, zip size=481.4 kB
+00:49:48.252 INFO  Analysis report uploaded in 98ms
+00:49:48.253 INFO  ------------- Check Quality Gate status
+00:49:48.253 INFO  Waiting for the analysis report to be processed (max 300s)
+00:49:53.495 ERROR QUALITY GATE STATUS: FAILED - View details on http://localhost:9000/dashboard?id=medschedule-feat-105-u3-sdd
+00:49:53.535 INFO  EXECUTION FAILURE
+00:49:53.536 INFO  Total time: 33.886s
+
+La puerta de calidad no se supero o el analisis fallo.
+Detalle en http://localhost:9000/dashboard?id=medschedule-feat-105-u3-sdd
+codigo de salida: 1
+# estado segun api/qualitygates/project_status tras la corrida: "status":"ERROR","metricKey":"coverage","comparator":"LT","errorThreshold":"80","actualValue":"0.0" "status":"OK","metricKey":"new_violations","comparator":"GT","errorThreshold":"0","actualValue":"0" 

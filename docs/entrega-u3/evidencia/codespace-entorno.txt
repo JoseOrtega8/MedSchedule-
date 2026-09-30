@@ -1,0 +1,45 @@
+# Entorno de ejecucion de la evidencia de la Unidad 3 (GitHub Codespaces)
+# fecha (UTC): 2026-09-30T00:34:23Z
+# CODESPACE_NAME no se exporta en sesiones 'gh codespace ssh'; el nombre se toma de 'gh codespace list':
+$ echo $CODESPACE_NAME
+ideal-rotary-phone-pj7rjv7qwj6gfjpq
+
+$ nproc
+4
+
+$ grep MemTotal /proc/meminfo; free -h | head -2
+MemTotal:       16377436 kB
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       1.7Gi       275Mi        65Mi        14Gi        13Gi
+
+$ grep -m1 'model name' /proc/cpuinfo
+model name	: AMD EPYC 7763 64-Core Processor
+
+$ php -v | head -1
+PHP 8.2.29 (cli) (built: Jul  3 2025 23:03:29) (NTS)
+
+$ node -v
+v20.20.2
+
+$ docker version --format '{{.Server.Version}}'
+29.8.1-1
+
+$ docker compose version
+Docker Compose version v2.40.3
+
+$ git -C /workspaces/MedSchedule- log --oneline -1
+6c99cfb build(devcontainer): Docker dentro del Codespace para los stacks de la unidad 3
+
+$ git -C /workspaces/MedSchedule- branch --show-current
+feat/105-u3-sdd
+
+$ cat /etc/os-release | head -2
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+
+$ k6 version
+k6 v2.3.0 (commit/e088784614, go1.26.8, linux/amd64)
+
+$ test -n "$SNYK_TOKEN" && echo "SNYK_TOKEN presente"
+SNYK_TOKEN presente
+# (SNYK_TOKEN es un secreto de Codespaces; en sesiones ssh se carga de /workspaces/.codespaces/shared/.env-secrets sin imprimirlo)

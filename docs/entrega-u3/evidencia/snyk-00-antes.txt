@@ -1,0 +1,66 @@
+# Snyk - ANTES de la compuerta (rama feat/105-u3-sdd)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+Fecha (UTC): 2026-09-30T00:41:19Z
+Rama / commit: feat/105-u3-sdd @ 6c99cfb
+
+## 1) El pipeline de liberacion no tiene job de seguridad
+Comando: grep -n "seguridad\|snyk" .github/workflows/release.yml
+Salida: (vacia)
+Codigo de salida de grep: 1  (1 = sin coincidencias)
+
+## 2) Las vulnerabilidades ya existian y nada las detenia
+Comando: SNYK_TOKEN=<TOKEN> npx --yes snyk@1.1307.4 test --all-projects --severity-threshold=high
+Codigo de salida: 1
+(El token es el secreto SNYK_TOKEN de Codespaces, se paso por variable de entorno y no aparece en la salida.)
+
+### Resumen (desde el JSON de la corrida; solo severidad alta o critica por el umbral)
+- composer.lock: 16 issues, 22 rutas vulnerables (critical: 1, high: 15, medium: 0, low: 0)
+    [critical] symfony/mailer@7.4.6 (1)
+        SNYK-PHP-SYMFONYMAILER-16873898  Arbitrary Argument Injection  -> corregido en: 5.4.52, 6.4.40, 7.4.12, 8.0.12
+    [high] guzzlehttp/guzzle@7.10.0 (3)
+        SNYK-PHP-GUZZLEHTTPGUZZLE-17400374  Missing Encryption of Sensitive Data  -> corregido en: 7.12.1
+        SNYK-PHP-GUZZLEHTTPGUZZLE-18306774  Improper Removal of Sensitive Information Before Storage or Transfer  -> corregido en: 7.15.1
+        SNYK-PHP-GUZZLEHTTPGUZZLE-18306777  Incorrectly Specified Destination in a Communication Channel  -> corregido en: 7.15.1
+    [high] league/commonmark@2.8.0 (7)
+        SNYK-PHP-LEAGUECOMMONMARK-18600654  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600655  Excessive Platform Resource Consumption within a Loop  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600656  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600664  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-20158924  Inefficient Algorithmic Complexity  -> corregido en: 2.9.1
+        SNYK-PHP-LEAGUECOMMONMARK-20158925  Inefficient Algorithmic Complexity  -> corregido en: 2.10.0
+        SNYK-PHP-LEAGUECOMMONMARK-20158941  Inefficient Algorithmic Complexity  -> corregido en: 2.9.1
+    [high] phpseclib/phpseclib@3.0.49 (3)
+        SNYK-PHP-PHPSECLIBPHPSECLIB-15701264  Timing Attack  -> corregido en: 1.0.27, 2.0.52, 3.0.50
+        SNYK-PHP-PHPSECLIBPHPSECLIB-16424082  Deserialization of Untrusted Data  -> corregido en: 1.0.29, 2.0.54, 3.0.52
+        SNYK-PHP-PHPSECLIBPHPSECLIB-19666129  Timing Attack  -> corregido en: 3.0.57, 4.0.1
+    [high] symfony/http-kernel@7.4.6 (1)
+        SNYK-PHP-SYMFONYHTTPKERNEL-16786777  Incorrect Authorization  -> corregido en: 7.4.12, 8.0.12
+    [high] symfony/routing@7.4.6 (1)
+        SNYK-PHP-SYMFONYROUTING-16799802  Incorrect Regular Expression  -> corregido en: 5.4.52, 6.4.40, 7.4.12, 8.0.12
+- package-lock.json: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+- vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+- vendor/mockery/mockery/composer.lock: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+- vendor/phar-io/manifest/composer.lock: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+- vendor/phpunit/phpunit/composer.lock: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+- vendor/theseer/tokenizer/composer.lock: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+
+### Lineas de resultado originales de Snyk
+✗ 2/9 potential projects failed to get dependencies.
+Target file:       composer.lock
+Tested 108 dependencies for known issues, found 16 issues, 22 vulnerable paths.
+Target file:       package-lock.json
+✔ Tested ~/wt/u3-sdd for known issues, no vulnerable paths found.
+Target file:       vendor/laravel/framework/src/Illuminate/Foundation/resources/exceptions/renderer/package-lock.json
+✔ Tested 51 dependencies for known issues, no vulnerable paths found.
+Target file:       vendor/mockery/mockery/composer.lock
+✔ Tested 3 dependencies for known issues, no vulnerable paths found.
+Target file:       vendor/phar-io/manifest/composer.lock
+✔ Tested 6 dependencies for known issues, no vulnerable paths found.
+Target file:       vendor/phpunit/phpunit/composer.lock
+✔ Tested 36 dependencies for known issues, no vulnerable paths found.
+Target file:       vendor/theseer/tokenizer/composer.lock
+✔ Tested 4 dependencies for known issues, no vulnerable paths found.
+Tested 7 projects, 1 contained vulnerable paths.
+
+Conclusion: la rama sin la compuerta ya tenia 16 issues (15 altas, 1 critica) en composer.lock
+y el pipeline de liberacion no ejecutaba ningun analisis que lo impidiera.

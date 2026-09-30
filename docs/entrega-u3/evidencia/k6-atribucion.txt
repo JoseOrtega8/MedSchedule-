@@ -1,0 +1,63 @@
+# Atribucion del costo de la instrumentacion (metricas Redis, trazas OTEL, log JSON)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB, AMD EPYC 7763), PHP 8.2.29, k6 v2.3.0
+# Stack de monitoreo y SonarQube (en reposo) arriba en el mismo Codespace. Fecha (UTC): 2026-09-30
+# Rama feat/107-trazabilidad: "antes" = e2327f0 (exportador oficial con google/protobuf, Predis sin conexion persistente)
+#                              "despues" = 22056c3 (exportador OTLP/JSON propio, Predis persistente)
+
+## 1. Microprueba secuencial (ab -n 400 -c 1, php artisan serve, sin concurrencia)
+# Una variable a la vez. Tiempo medio por peticion en ms, promedio de 2 corridas (datos crudos al final).
+# "portada" = GET / ; "panel" = GET /patient/dashboard/data autenticado.
+# Ruido entre corridas identicas: hasta ~2 ms (por eso J sale ligeramente negativo).
+#
+# config                              | portada antes | portada despues | panel antes   | panel despues
+# A  memoria, OTEL off, single        |  17.08        |  17.73        |  19.14        |  19.13       
+# R  solo metricas Redis              |  18.51 (+1.4) |  18.41 (+0.7) |  18.53 (-0.6) |  20.00 (+0.9)
+# J  solo log JSON                    |  16.73 (-0.4) |  16.25 (-1.5) |  16.95 (-2.2) |  18.77 (-0.4)
+# O  solo OTEL                        |  23.44 (+6.4) |  20.31 (+2.6) |  26.98 (+7.8) |  22.72 (+3.6)
+# B  todo (redis, OTEL, single,json)  |  24.35 (+43%) |  22.04 (+24%) |  28.03 (+46%) |  23.40 (+22%)
+
+## 2. k6 (tests/carga/jri-prueba.js, 10 VUs, 2 min), pares alternados el mismo dia, commit 22056c3
+# id  | servidor               | instrumentacion | mediana   | p95 http_req_duration | p95 duracion_panel | load1 al iniciar
+# A1  | artisan serve          | no              |  16.17 ms |  66.37 ms             |  52.32 ms          | 0.88
+# B1  | artisan serve          | completa        |  20.52 ms |  89.60 ms             |  76.97 ms          | 0.46
+# A2  | artisan serve          | no              |  17.01 ms |  73.58 ms             |  60.18 ms          | 0.93
+# B2  | artisan serve          | completa        |  22.39 ms |  74.71 ms             |  59.31 ms          | 1.13
+# A3f | fin-respuesta (*)      | no              |  18.34 ms |  70.30 ms             |  57.67 ms          | 1.37
+# B3f | fin-respuesta (*)      | completa        |  26.09 ms |  96.04 ms             |  84.86 ms          | 0.46
+#
+# Diferencia con / sin instrumentacion por par:
+#   A1/B1: mediana +26.9 %, p95 +35.0 %, p95 panel +47.1 %
+#   A2/B2: mediana +31.6 %, p95 +1.5 %, p95 panel -1.4 %
+#   A3f/B3f: mediana +42.3 %, p95 +36.6 %, p95 panel +47.1 %
+# (*) tests/carga/servidor-fin-respuesta.php: enrutador para php -S que emula fastcgi_finish_request(); medicion complementaria.
+# 0 % de errores y codigo de salida 0 en las seis corridas.
+
+## 3. Conclusion
+# - La correccion bajo el costo de la instrumentacion completa en la microprueba: portada de +43 % a +24 %, panel de +46 % a +22 %.
+# - Las trazas siguen siendo el componente mas caro (O); metricas Redis ~+0.7 a +0.9 ms; log JSON no medible.
+# - En k6 la mediana sube de +27 % a +42 % en los tres pares. El p95 es ruidoso (de +1.5 % a +37 %).
+# - La meta de <= +10 % en p95 NO se cumple de forma consistente. No se ajusta la meta.
+# - El p95 absoluto (<= 96 ms) sigue muy por debajo del acuerdo de 5 s.
+
+## 4. Datos crudos de la microprueba (~/u3/k6/micro.tsv)
+# commit | config | rep | portada_ms | panel_ms | load1
+# 22056c3 | A | 1 | 17.923 | 20.320 | 0.06
+# 22056c3 | R | 1 | 19.180 | 20.846 | 0.59
+# 22056c3 | O | 1 | 21.235 | 22.717 | 1.11
+# 22056c3 | J | 1 | 17.321 | 19.252 | 1.29
+# 22056c3 | B | 1 | 22.304 | 24.519 | 1.60
+# 22056c3 | A | 2 | 17.541 | 17.943 | 2.51
+# 22056c3 | R | 2 | 17.643 | 19.159 | 2.78
+# 22056c3 | O | 2 | 19.384 | 22.714 | 2.33
+# 22056c3 | J | 2 | 15.170 | 18.289 | 2.09
+# 22056c3 | B | 2 | 21.767 | 22.290 | 1.99
+# e2327f0 | A | 1 | 16.252 | 18.469 | 2.55
+# e2327f0 | R | 1 | 19.242 | 19.179 | 2.56
+# e2327f0 | O | 1 | 25.023 | 28.442 | 2.52
+# e2327f0 | J | 1 | 15.937 | 17.705 | 2.80
+# e2327f0 | B | 1 | 25.061 | 30.534 | 2.77
+# e2327f0 | A | 2 | 17.914 | 19.809 | 2.76
+# e2327f0 | R | 2 | 17.772 | 17.873 | 2.67
+# e2327f0 | O | 2 | 21.860 | 25.522 | 2.53
+# e2327f0 | J | 2 | 17.525 | 16.198 | 2.54
+# e2327f0 | B | 2 | 23.631 | 25.521 | 2.57

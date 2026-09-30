@@ -1,0 +1,28 @@
+# Pruebas del script de Snyk (npx falso; no requiere token)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+# Fecha: 2026-09-30T00:37:36Z  Commit: dcc2648 (feat/109-snyk)
+$ bash tests/scripts/snyk-escanear.test.sh
+OK   sin SNYK_TOKEN sale con 1 (codigo 1)
+OK   sin SNYK_TOKEN avisa del problema
+OK   codigo 0 de Snyk termina en 0 (codigo 0)
+OK   codigo 0 imprime el mensaje esperado
+OK   codigo 1 de Snyk termina en 1 (codigo 1)
+OK   codigo 1 menciona la severidad
+OK   codigo 1 senala el archivo de detalle
+OK   codigo 2 de Snyk termina en 2 (codigo 2)
+OK   codigo 2 menciona el fallo de ejecucion
+OK   codigo 3 de Snyk termina en 2 (codigo 2)
+OK   codigo 3 menciona proyectos no soportados
+OK   codigo no documentado (7) termina en 2 (codigo 2)
+OK   codigo no documentado se reporta en el mensaje
+OK   invoca snyk test con los argumentos documentados
+OK   crea la carpeta de la salida si no existe
+OK   --monitor corre tras codigo 0
+OK   --monitor corre tras codigo 1
+OK   --monitor no cambia el codigo de salida del test (1) (codigo 1)
+OK   --monitor NO corre tras codigo 2
+OK   --monitor NO corre tras codigo 3
+OK   el token falso no aparece en la salida del script
+
+Resumen: 21/21 pruebas OK
+codigo de salida: 0

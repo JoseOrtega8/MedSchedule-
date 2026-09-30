@@ -1,0 +1,7 @@
+$ docker run --rm --entrypoint promtool -v ~/wt/trazabilidad/infra/monitoreo/prometheus:/w prom/prometheus:v3.14.0 test rules /w/alertas.test.yml
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB), Docker dentro del Codespace
+# fecha (UTC): 2026-09-30T00:37:07Z - rama feat/107-trazabilidad (22056c3)
+  SUCCESS
+
+
+codigo de salida: 0

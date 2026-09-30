@@ -70,10 +70,36 @@ jobs:
             - name: Compilar los assets
               run: npm run build
 
+    calidad:
+        name: Puerta de calidad (SonarQube)
+        runs-on: ubuntu-latest
+        needs: integracion
+        # Igual que en ci.yml: un SonarQube en localhost no es alcanzable desde un
+        # runner de GitHub. El job corre cuando exista una instancia accesible; en
+        # el Codespace la misma compuerta se ejecuta con scripts/sonarqube-escanear.sh.
+        if: ${{ vars.SONAR_HABILITADO == 'true' }}
+        steps:
+            - name: Descargar el codigo
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Analizar y esperar la puerta de calidad
+              uses: SonarSource/sonarqube-scan-action@v5
+              env:
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+              with:
+                  args: >
+                      -Dsonar.qualitygate.wait=true
+                      -Dsonar.qualitygate.timeout=300
+
     pruebas:
         name: Entorno de liberacion y pruebas
         runs-on: ubuntu-latest
-        needs: integracion
+        needs: [integracion, calidad]
+        # Corre si la integracion paso y la puerta de calidad paso o no aplica
+        # (job omitido porque no hay instancia de SonarQube accesible).
+        if: ${{ always() && needs.integracion.result == 'success' && (needs.calidad.result == 'success' || needs.calidad.result == 'skipped') }}
 
         services:
             mysql:

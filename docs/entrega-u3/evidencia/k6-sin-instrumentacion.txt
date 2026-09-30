@@ -1,0 +1,134 @@
+# k6 SIN instrumentacion (METRICAS_ALMACEN=memoria, OTEL_ENABLED=false, LOG_STACK=single)
+# Pares medidos el mismo dia, alternando sin/con instrumentacion (A1,B1,A2,B2). Ver k6-atribucion.txt.
+
+########## corrida A1 ##########
+$ K6_PASSWORD=<contrasena de prueba del seeder> k6 run --quiet tests/carga/jri-prueba.js
+# corrida A1: METRICAS_ALMACEN=memoria, OTEL_ENABLED=false, LOG_STACK=single; servidor: php artisan serve --host=0.0.0.0 --port=8000 reiniciado tras php artisan config:clear (Xdebug apagado por la imagen del devcontainer: zz-xdebug-apagado.ini)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB, AMD EPYC 7763), PHP 8.2.29, k6 v2.3.0; stack de monitoreo y SonarQube (en reposo) arriba en el mismo Codespace
+# fecha (UTC): 2026-09-30T01:15:33Z - rama feat/107-trazabilidad (22056c3) - load average al iniciar (1/5/15 min): 0.88 1.68 1.67
+# --quiet: k6 no imprime el logo ni las lineas de progreso; el resto es la salida tal cual.
+
+
+
+  █ THRESHOLDS 
+
+    duracion_panel
+    ✓ 'p(95)<5000' p(95)=52.32ms
+
+    http_req_duration
+    ✓ 'p(95)<5000' p(95)=66.37ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+    tasa_login_exitoso
+    ✓ 'rate>0.99' rate=100.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2346    19.388118/s
+    checks_succeeded...: 100.00% 2346 out of 2346
+    checks_failed......: 0.00%   0 out of 2346
+
+    ✓ portada responde 200
+    ✓ about responde (200 esperado, 500 con el defecto abierto)
+    ✓ login redirige con 302
+    ✓ panel responde 200
+    ✓ panel devuelve JSON
+
+    CUSTOM
+    duracion_about.................: avg=31.37ms  min=11.78ms med=13.99ms max=731ms    p(90)=43.78ms  p(95)=66.88ms  p(99)=603.35ms
+    duracion_login_get.............: avg=19.88ms  min=10.62ms med=15.52ms max=57.93ms  p(90)=31.93ms  p(95)=44.49ms  p(99)=54.35ms 
+    duracion_login_post............: avg=106.37ms min=10.42ms med=26.19ms max=310.81ms p(90)=261.32ms p(95)=282.58ms p(99)=306.23ms
+    duracion_panel.................: avg=24.15ms  min=15.08ms med=17.39ms max=311.86ms p(90)=38.58ms  p(95)=52.32ms  p(99)=103.86ms
+    duracion_portada...............: avg=24.3ms   min=11.3ms  med=14.63ms max=322.93ms p(90)=35.34ms  p(95)=66.57ms  p(99)=212ms   
+    respuestas_limitadas...........: 19      0.157022/s
+    tasa_about_correcto............: 98.28%  574 out of 584
+    tasa_login_exitoso.............: 100.00% 10 out of 10
+
+    HTTP
+    http_req_duration..............: avg=27.77ms  min=10.42ms med=16.17ms max=731ms    p(90)=40.46ms  p(95)=66.37ms  p(99)=262.66ms
+      { expected_response:true }...: avg=27.77ms  min=10.42ms med=16.17ms max=731ms    p(90)=40.46ms  p(95)=66.37ms  p(99)=262.66ms
+    http_req_failed................: 0.00%   0 out of 1811
+    http_reqs......................: 1811    14.966701/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.57s    min=1.03s   med=1.04s   max=1m17s    p(90)=1.12s    p(95)=1.25s    p(99)=4.62s   
+    iterations.....................: 584     4.826369/s
+    vus............................: 1       min=1          max=10
+    vus_max........................: 10      min=10         max=10
+
+    NETWORK
+    data_received..................: 21 MB   174 kB/s
+    data_sent......................: 1.5 MB  12 kB/s
+
+
+
+codigo de salida: 0
+
+########## corrida A2 ##########
+$ K6_PASSWORD=<contrasena de prueba del seeder> k6 run --quiet tests/carga/jri-prueba.js
+# corrida A2: METRICAS_ALMACEN=memoria, OTEL_ENABLED=false, LOG_STACK=single; servidor: php artisan serve --host=0.0.0.0 --port=8000 reiniciado tras php artisan config:clear (Xdebug apagado por la imagen del devcontainer: zz-xdebug-apagado.ini)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB, AMD EPYC 7763), PHP 8.2.29, k6 v2.3.0; stack de monitoreo y SonarQube (en reposo) arriba en el mismo Codespace
+# fecha (UTC): 2026-09-30T01:21:48Z - rama feat/107-trazabilidad (22056c3) - load average al iniciar (1/5/15 min): 0.93 1.29 1.49
+# --quiet: k6 no imprime el logo ni las lineas de progreso; el resto es la salida tal cual.
+
+
+
+  █ THRESHOLDS 
+
+    duracion_panel
+    ✓ 'p(95)<5000' p(95)=60.18ms
+
+    http_req_duration
+    ✓ 'p(95)<5000' p(95)=73.58ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+    tasa_login_exitoso
+    ✓ 'rate>0.99' rate=100.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2614    21.619303/s
+    checks_succeeded...: 100.00% 2614 out of 2614
+    checks_failed......: 0.00%   0 out of 2614
+
+    ✓ portada responde 200
+    ✓ about responde (200 esperado, 500 con el defecto abierto)
+    ✓ login redirige con 302
+    ✓ panel responde 200
+    ✓ panel devuelve JSON
+
+    CUSTOM
+    duracion_about.................: avg=31.19ms  min=12.06ms med=14.9ms  max=771.23ms p(90)=45.1ms   p(95)=71.79ms  p(99)=604.85ms
+    duracion_login_get.............: avg=23.96ms  min=12.88ms med=18.87ms max=91.03ms  p(90)=41.44ms  p(95)=51.51ms  p(99)=82.11ms 
+    duracion_login_post............: avg=126.73ms min=11.8ms  med=50.84ms max=306.3ms  p(90)=273.74ms p(95)=274.28ms p(99)=298.94ms
+    duracion_panel.................: avg=25.89ms  min=14.96ms med=18.6ms  max=296.7ms  p(90)=44.9ms   p(95)=60.18ms  p(99)=106.58ms
+    duracion_portada...............: avg=26.82ms  min=11.33ms med=15.78ms max=283.87ms p(90)=41.54ms  p(95)=81.07ms  p(99)=236.7ms 
+    respuestas_limitadas...........: 14      0.115788/s
+    tasa_about_correcto............: 98.46%  641 out of 651
+    tasa_login_exitoso.............: 100.00% 10 out of 10
+
+    HTTP
+    http_req_duration..............: avg=29.1ms   min=11.33ms med=17.01ms max=771.23ms p(90)=45.44ms  p(95)=73.58ms  p(99)=261.87ms
+      { expected_response:true }...: avg=29.1ms   min=11.33ms med=17.01ms max=771.23ms p(90)=45.44ms  p(95)=73.58ms  p(99)=261.87ms
+    http_req_failed................: 0.00%   0 out of 2002
+    http_reqs......................: 2002    16.557706/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.41s    min=1.04s   med=1.05s   max=47.37s   p(90)=1.13s    p(95)=1.27s    p(99)=1.97s   
+    iterations.....................: 651     5.384149/s
+    vus............................: 1       min=1          max=10
+    vus_max........................: 10      min=10         max=10
+
+    NETWORK
+    data_received..................: 22 MB   184 kB/s
+    data_sent......................: 1.6 MB  13 kB/s
+
+
+
+codigo de salida: 0

@@ -3,18 +3,29 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspaces/MedSchedule-",
+    // La app, MySQL, SonarQube y el stack de observabilidad corren a la vez dentro
+    // del Codespace: con menos de 4 nucleos y 16 GB no caben juntos.
+    "hostRequirements": { "cpus": 4, "memory": "16gb" },
     "features": {
         "ghcr.io/devcontainers/features/node:1": { "version": "20" },
         // Sin sshd, "gh codespace ssh" no puede conectarse: la imagen base no lo
         // trae y solo el contenedor de recuperacion de Codespaces lo incluye.
         // Hace falta para ejecutar el pipeline desde la linea de comandos.
         "ghcr.io/devcontainers/features/sshd:1": {},
-        "ghcr.io/devcontainers/features/github-cli:1": {}
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        // Docker dentro del Codespace (unidad 3): los stacks de infra/sonarqube e
+        // infra/monitoreo se levantan con docker compose dentro del contenedor app.
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
-    "forwardPorts": [8000, 3306],
+    "forwardPorts": [8000, 3306, 3000, 9000, 9090, 9093, 8025],
     "portsAttributes": {
         "8000": { "label": "Laravel", "visibility": "private" },
-        "3306": { "label": "MySQL", "visibility": "private" }
+        "3306": { "label": "MySQL", "visibility": "private" },
+        "3000": { "label": "Grafana", "visibility": "private" },
+        "9000": { "label": "SonarQube", "visibility": "private" },
+        "9090": { "label": "Prometheus", "visibility": "private" },
+        "9093": { "label": "Alertmanager", "visibility": "private" },
+        "8025": { "label": "Mailpit", "visibility": "private" }
     },
     "customizations": {
         "vscode": {

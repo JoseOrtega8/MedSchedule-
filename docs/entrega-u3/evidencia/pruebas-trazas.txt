@@ -1,0 +1,73 @@
+$ php artisan test --filter='Trazas|Redactar|MensajeSeguro|AplicarRedaccion'
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB), PHP 8.2.29, MySQL 8.0 del devcontainer (base medschedule_test)
+# fecha (UTC): 2026-09-30T00:40:37Z - rama feat/107-trazabilidad (22056c3)
+
+   PASS  Tests\Unit\Logging\AplicarRedaccionTest
+  ✓ logger psr sin pushprocessor no lanza
+
+   PASS  Tests\Unit\Logging\RedactarDatosSensiblesTest
+  ✓ enmascara claves sensibles a cualquier profundidad                   0.02s  
+  ✓ enmascara correo dentro del mensaje
+  ✓ enmascara credencial bearer dentro del mensaje
+  ✓ enmascara curp dentro del mensaje
+  ✓ no modifica texto sin pii
+  ✓ enmascara correo en valor de context con clave no sensible
+  ✓ enmascara claves que contienen token por subcadena
+  ✓ query exception no expone los valores de binding                     0.01s  
+  ✓ mensaje del registro igual al de la query exception queda seguro
+  ✓ mensaje del registro con query exception encadenada como causa
+  ✓ enmascara claves nuevas api key credential phone
+
+   PASS  Tests\Unit\Support\MensajeSeguroTest
+  ✓ query exception directa da texto seguro sin bindings                 0.04s  
+  ✓ excepcion que envuelve query exception con mensaje completo queda segura
+  ✓ excepcion que copia solo el mensaje del driver previo queda segura
+  ✓ view exception real queda segura
+  ✓ excepcion generica sin query exception pasa por patrones
+  ✓ enmascara literales incrustados en getsql
+  ✓ enmascara lista numerica en in
+  ✓ enmascara literales es lineal con espacios en in
+  ✓ patron de correo es lineal con dominio largo                         0.01s  
+
+   PASS  Tests\Feature\Trazas\ContextoLogTest
+  ✓ agrega trace id y span id del span activo                            0.23s  
+  ✓ sin span activo no agrega trace id                                   0.01s  
+  ✓ canal json escribe linea redactada con contexto de traza             0.02s  
+  ✓ canal json redacta la excepcion del contexto                         0.02s  
+  ✓ report de query exception no expone bindings en el canal json        0.02s  
+  ✓ report de excepcion que envuelve query exception no expone bindings… 0.01s  
+  ✓ report de view exception no expone bindings en el canal json         0.01s  
+  ✓ report de query exception no expone bindings en el canal single      0.02s  
+
+   PASS  Tests\Feature\Trazas\IniciarTrazaTest
+  ✓ peticion genera span raiz y cabecera x trace id                      4.01s  
+  ✓ respeta traceparent entrante                                         0.02s  
+  ✓ ningun span guarda la ruta real con tokens                           0.04s  
+  ✓ scrape de metricas no produce spans                                  0.03s  
+
+   PASS  Tests\Feature\Trazas\LogExportacionTest
+  ✓ trazas habilitadas dirigen el log interno a laravel                  0.09s  
+
+   PASS  Tests\Feature\Trazas\PaginaErrorSinTrazasTest
+  ✓ error 500 sin trazas muestra request id como folio                   0.02s  
+
+   PASS  Tests\Feature\Trazas\PaginaErrorTest
+  ✓ error 500 muestra folio sin detalle interno                          0.02s  
+
+   PASS  Tests\Feature\Trazas\SpanExcepcionSeguraTest
+  ✓ query exception en span no expone bindings y registra evento except… 0.02s  
+  ✓ excepcion generica en span registra evento exception                 0.02s  
+  ✓ excepcion que envuelve query exception en span no expone bindings    0.02s  
+
+   PASS  Tests\Feature\Trazas\SpansHijosTest
+  ✓ consultas de la peticion son spans hijos sin bindings                0.05s  
+  ✓ job genera su propio span                                            0.04s  
+  ✓ en span registra y propaga excepciones                               0.02s  
+  ✓ reintento de job cierra su span via exception occurred               0.02s  
+  ✓ query exception en job no expone bindings en su span                 0.02s  
+
+  Tests:    44 passed (120 assertions)
+  Duration: 5.00s
+
+
+codigo de salida: 0

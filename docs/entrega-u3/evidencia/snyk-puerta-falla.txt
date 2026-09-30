@@ -1,0 +1,41 @@
+# Snyk - la compuerta FALLA (rama feat/109-snyk, antes de corregir)
+# Entorno: GitHub Codespaces ideal-rotary-phone-pj7rjv7qwj6gfjpq (4 nucleos, 16 GB)
+Fecha (UTC): 2026-09-30T00:41:37Z
+Rama / commit: feat/109-snyk @ f1e3512
+Comando: SNYK_TOKEN=<TOKEN> SNYK_SALIDA=<tmp>/falla.json bash scripts/snyk-escanear.sh
+
+### Resumen (desde el JSON generado por el script)
+- composer.lock: 16 issues, 22 rutas vulnerables (critical: 1, high: 15, medium: 0, low: 0)
+    [critical] symfony/mailer@7.4.6 (1)
+        SNYK-PHP-SYMFONYMAILER-16873898  Arbitrary Argument Injection  -> corregido en: 5.4.52, 6.4.40, 7.4.12, 8.0.12
+    [high] guzzlehttp/guzzle@7.10.0 (3)
+        SNYK-PHP-GUZZLEHTTPGUZZLE-17400374  Missing Encryption of Sensitive Data  -> corregido en: 7.12.1
+        SNYK-PHP-GUZZLEHTTPGUZZLE-18306774  Improper Removal of Sensitive Information Before Storage or Transfer  -> corregido en: 7.15.1
+        SNYK-PHP-GUZZLEHTTPGUZZLE-18306777  Incorrectly Specified Destination in a Communication Channel  -> corregido en: 7.15.1
+    [high] league/commonmark@2.8.0 (7)
+        SNYK-PHP-LEAGUECOMMONMARK-18600654  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600655  Excessive Platform Resource Consumption within a Loop  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600656  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-18600664  Inefficient Algorithmic Complexity  -> corregido en: 2.9.0
+        SNYK-PHP-LEAGUECOMMONMARK-20158924  Inefficient Algorithmic Complexity  -> corregido en: 2.9.1
+        SNYK-PHP-LEAGUECOMMONMARK-20158925  Inefficient Algorithmic Complexity  -> corregido en: 2.10.0
+        SNYK-PHP-LEAGUECOMMONMARK-20158941  Inefficient Algorithmic Complexity  -> corregido en: 2.9.1
+    [high] phpseclib/phpseclib@3.0.49 (3)
+        SNYK-PHP-PHPSECLIBPHPSECLIB-15701264  Timing Attack  -> corregido en: 1.0.27, 2.0.52, 3.0.50
+        SNYK-PHP-PHPSECLIBPHPSECLIB-16424082  Deserialization of Untrusted Data  -> corregido en: 1.0.29, 2.0.54, 3.0.52
+        SNYK-PHP-PHPSECLIBPHPSECLIB-19666129  Timing Attack  -> corregido en: 3.0.57, 4.0.1
+    [high] symfony/http-kernel@7.4.6 (1)
+        SNYK-PHP-SYMFONYHTTPKERNEL-16786777  Incorrect Authorization  -> corregido en: 7.4.12, 8.0.12
+    [high] symfony/routing@7.4.6 (1)
+        SNYK-PHP-SYMFONYROUTING-16799802  Incorrect Regular Expression  -> corregido en: 5.4.52, 6.4.40, 7.4.12, 8.0.12
+- package-lock.json: 0 issues, 0 rutas vulnerables (critical: 0, high: 0, medium: 0, low: 0)
+
+### Lineas de resultado originales
+Target file:       composer.lock
+Tested 108 dependencies for known issues, found 16 issues, 22 vulnerable paths.
+Target file:       package-lock.json
+✔ Tested ~/wt/snyk-falla for known issues, no vulnerable paths found.
+Tested 2 projects, 1 contained vulnerable paths.
+Se encontraron vulnerabilidades de severidad alta o critica. Detalle en <tmp>/falla.json.
+
+codigo de salida: 1
