@@ -39,6 +39,7 @@ Thumbs.db
 # subcarpetas de docs/, así que hay que reincluirlas de forma explícita.
 !/docs/entrega/
 !/docs/sdd/
+!/docs/entrega-jc/
 
 # Artefacto generado con pandoc a partir de los .md de docs/entrega y docs/sdd.
 # No se versiona: se regenera localmente cuando haga falta.
