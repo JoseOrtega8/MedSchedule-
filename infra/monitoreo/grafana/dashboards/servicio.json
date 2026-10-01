@@ -1,0 +1,50 @@
+{
+	"uid": "medschedule-servicio",
+	"title": "MedSchedule - Servicio",
+	"schemaVersion": 39,
+	"refresh": "15s",
+	"time": { "from": "now-1h", "to": "now" },
+	"panels": [
+		{
+			"type": "timeseries", "title": "Peticiones por segundo por ruta",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [{ "refId": "A", "expr": "sum by (route) (rate(medschedule_http_requests_total[5m]))", "legendFormat": "{{route}}" }]
+		},
+		{
+			"type": "timeseries", "title": "Tasa de errores 5xx (acuerdo < 1 %)",
+			"gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"fieldConfig": { "defaults": { "unit": "percentunit" } },
+			"targets": [
+				{ "refId": "A", "expr": "sum(rate(medschedule_http_requests_total{status=~\"5..\"}[5m])) / sum(rate(medschedule_http_requests_total[5m]))", "legendFormat": "errores 5xx" },
+				{ "refId": "B", "expr": "vector(0.01)", "legendFormat": "acuerdo 1 %" }
+			]
+		},
+		{
+			"type": "timeseries", "title": "Duracion p50 / p95 / p99 contra el acuerdo de 5 s",
+			"gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"fieldConfig": { "defaults": { "unit": "s" } },
+			"targets": [
+				{ "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(medschedule_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+				{ "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(medschedule_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+				{ "refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(medschedule_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" },
+				{ "refId": "D", "expr": "vector(5)", "legendFormat": "acuerdo p95 (5 s)" }
+			]
+		},
+		{
+			"type": "stat", "title": "Disponibilidad ultima hora",
+			"gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2 } },
+			"targets": [{ "refId": "A", "expr": "avg_over_time(probe_success{job=\"disponibilidad\"}[1h])" }]
+		},
+		{
+			"type": "table", "title": "Alertas activas",
+			"gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+			"datasource": { "type": "prometheus", "uid": "prometheus" },
+			"targets": [{ "refId": "A", "expr": "ALERTS{alertstate=\"firing\"}", "format": "table", "instant": true }]
+		}
+	]
+}

@@ -9,6 +9,10 @@ return Application::configure(basePath: dirname(__DIR__))
 		web: __DIR__ . '/../routes/web.php',
 		commands: __DIR__ . '/../routes/console.php',
 		health: '/up',
+		then: function () {
+			\Illuminate\Support\Facades\Route::middleware([])
+				->group(base_path('routes/observabilidad.php'));
+		},
 	)
 	->withMiddleware(function (Middleware $middleware): void {
 		$middleware->alias([
@@ -18,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
 		]);
 
 		$middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+		// Metricas de Prometheus de cada peticion (unidad 3)
+		$middleware->append(\App\Http\Middleware\RegistrarMetricasHttp::class);
 	})
 	->withExceptions(function (Exceptions $exceptions): void {
 		//

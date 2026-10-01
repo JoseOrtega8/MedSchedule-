@@ -1,0 +1,61 @@
+# Reglas de alerta de MedSchedule. Los umbrales salen de los niveles de servicio
+# de la unidad 2 (docs/entrega-u2/03-niveles-de-servicio.md).
+groups:
+    - name: medschedule
+      rules:
+          - alert: AplicacionCaida
+            expr: probe_success{job="disponibilidad"} == 0
+            for: 1m
+            labels:
+                severidad: critica
+            annotations:
+                summary: 'MedSchedule no responde en /up'
+                description: 'La sonda de disponibilidad falla desde hace mas de 1 minuto.'
+
+          # SLO acordado: p95 < 5000 ms
+          - alert: LatenciaP95FueraDeAcuerdo
+            expr: histogram_quantile(0.95, sum by (le) (rate(medschedule_http_request_duration_seconds_bucket[5m]))) > 5
+            for: 5m
+            labels:
+                severidad: critica
+            annotations:
+                summary: 'p95 por encima del acuerdo de 5 s'
+                description: 'El percentil 95 de duracion supera 5 s durante 5 minutos.'
+
+          # Aviso temprano: la U2 senalo que 5 s es holgado frente al p95 real de 76 ms
+          - alert: LatenciaP95Degradada
+            expr: histogram_quantile(0.95, sum by (le) (rate(medschedule_http_request_duration_seconds_bucket[5m]))) > 0.5
+            for: 10m
+            labels:
+                severidad: advertencia
+            annotations:
+                summary: 'p95 degradado por encima de 500 ms'
+                description: 'El percentil 95 supera 500 ms durante 10 minutos; todavia dentro del acuerdo.'
+
+          # SLO acordado: http_req_failed < 1 %
+          - alert: TasaErrores5xxAlta
+            expr: sum(rate(medschedule_http_requests_total{status=~"5.."}[5m])) / sum(rate(medschedule_http_requests_total[5m])) > 0.01
+            for: 1m
+            labels:
+                severidad: critica
+            annotations:
+                summary: 'Mas de 1 % de respuestas 5xx'
+                description: 'La tasa de errores 5xx de los ultimos 5 minutos supera el 1 % acordado.'
+
+          - alert: BaseDeDatosCaida
+            expr: mysql_up == 0
+            for: 1m
+            labels:
+                severidad: critica
+            annotations:
+                summary: 'MySQL no responde'
+                description: 'El exporter no logra conectarse a MySQL desde hace mas de 1 minuto.'
+
+          - alert: JobsFallidos
+            expr: medschedule_jobs_fallidos > 0
+            for: 10m
+            labels:
+                severidad: advertencia
+            annotations:
+                summary: 'Hay jobs fallidos'
+                description: 'La tabla failed_jobs tiene registros desde hace mas de 10 minutos.'

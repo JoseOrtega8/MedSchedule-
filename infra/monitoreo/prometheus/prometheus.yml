@@ -1,0 +1,44 @@
+global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+
+rule_files:
+    - /etc/prometheus/alertas.yml
+
+alerting:
+    alertmanagers:
+        - static_configs:
+              - targets: ['alertmanager:9093']
+
+scrape_configs:
+    # Metricas de la aplicacion; el token lo escribe scripts/monitoreo-local.sh
+    - job_name: medschedule
+      metrics_path: /metrics
+      authorization:
+          type: Bearer
+          credentials_file: /etc/prometheus/secretos/metrics_token
+      static_configs:
+          - targets: ['host.docker.internal:8000']
+
+    # Disponibilidad vista desde afuera, contra la ruta de salud de Laravel
+    - job_name: disponibilidad
+      metrics_path: /probe
+      params:
+          module: [http_2xx]
+      static_configs:
+          - targets: ['http://host.docker.internal:8000/up']
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
+
+    - job_name: mysql
+      static_configs:
+          - targets: ['mysqld-exporter:9104']
+
+    - job_name: prometheus
+      static_configs:
+          - targets: ['localhost:9090']
